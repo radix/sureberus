@@ -113,9 +113,15 @@ def _normalize_schema(schema, value, ctx):
                 result.append(
                     _normalize_schema(schema['schema'], element, ctx.push_stack(idx))
                 )
-            return result
+            value = result
         elif isinstance(value, dict):
-            return _normalize_dict(schema['schema'], value, ctx)
+            value = _normalize_dict(schema['schema'], value, ctx)
+
+    if 'validator' in schema:
+        field = ctx.stack[-1] if len(ctx.stack) else None
+        def error(f, m):
+            raise E.CustomValidatorError(f, m, stack=ctx.stack)
+        schema['validator'](field, value, error)
     return value
 
 def _normalize_multi(schema, value, key, ctx):

@@ -71,3 +71,11 @@ class DisallowedField(NiceError):
     field = attr.ib()
     excluded = attr.ib()
     stack = attr.ib()
+
+
+@attr.s
+class CustomValidatorError(NiceError):
+    fmt = 'Custom validator failed for {field}: {msg}'
+    field = attr.ib()
+    msg = attr.ib()
+    stack = attr.ib()

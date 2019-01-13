@@ -209,3 +209,22 @@ def test_coerce():
             return [item]
     schema = {'coerce': _to_list}
     assert normalize_schema(schema, 33) == [33]
+
+def test_validator():
+    called = []
+    def val(field, value, error):
+        called.append((field, value, error))
+    schema = {'key': {'validator': val}}
+    assert normalize_dict(schema, {'key': 'hi'}) == {'key': 'hi'}
+    assert len(called) == 1
+    assert called[0][0] == 'key'
+    assert called[0][1] == 'hi'
+
+def test_validator_error():
+    def val(field, value, error):
+        error(field, "heyo")
+    schema = {'key': {'validator': val}}
+    with pytest.raises(E.CustomValidatorError) as ei:
+        assert normalize_dict(schema, {'key': 'hi'}) == {'key': 'hi'}
+    assert ei.value.field == 'key'
+    assert ei.value.msg == 'heyo'

@@ -10,19 +10,24 @@ def normalize_dict(dict_schema, value, stack=()):
     new_dict = {}
     for key, key_schema in dict_schema.iteritems():
         if key not in value:
-            default = key_schema.get('default', _marker)
-            if default is not _marker:
-                new_value = default
-            else:
-                default_setter = key_schema.get('default_setter', None)
-                if default_setter is not None:
-                    new_value = default_setter(value)
-                else:
-                    raise E.DictFieldNotFound(key, value=value, stack=stack)
-        else:
-            new_value = normalize_schema(key_schema, value[key], stack=stack + (key,))
-        new_dict[key] = new_value
+            replacement = get_default(key, key_schema, value)
+            if replacement is not _marker:
+                new_dict[key] = replacement
+            elif key_schema.get('required', False) == True:
+                raise E.DictFieldNotFound(key, value=value, stack=stack)
+        if key in value:
+            new_dict[key] = normalize_schema(key_schema, value[key], stack=stack + (key,))
     return new_dict
+
+def get_default(key, key_schema, doc):
+    default = key_schema.get('default', _marker)
+    if default is not _marker:
+        return default
+    else:
+        default_setter = key_schema.get('default_setter', None)
+        if default_setter is not None:
+            return default_setter(doc)
+    return _marker
 
 _marker = object()
 

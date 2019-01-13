@@ -12,23 +12,23 @@ def mk(d, kw, **morekw):
     return schema
 
 
-def Dict(anyof=None, schema={}):
+def Dict(required=True, anyof=None, schema={}):
     kw = {}
     if anyof is not None:
         kw['anyof'] = anyof
-    return mk(None, kw, type='dict', schema=schema)
+    return mk(None, kw, type='dict', schema=schema, required=required)
 
 def SubSchema(_d=None, **kwargs):
     return {'schema': mk(_d, kwargs)}
 
-def String(**kwargs):
-    return mk(None, kwargs, type='string')
+def String(required=True, **kwargs):
+    return mk(None, kwargs, type='string', required=required)
 
-def Integer(**kwargs):
-    return mk(None, kwargs, type='integer')
+def Integer(required=True, **kwargs):
+    return mk(None, kwargs, type='integer', required=required)
 
-def Boolean(**kwargs):
-    return mk(None, kwargs, type='boolean')
+def Boolean(required=True, **kwargs):
+    return mk(None, kwargs, type='boolean', required=required)
 
-def List(_d=None, **kwargs):
-    return mk(_d, kwargs, type='list')
+def List(required=True, _d=None, **kwargs):
+    return mk(_d, kwargs, type='list', required=required)

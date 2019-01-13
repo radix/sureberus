@@ -93,3 +93,15 @@ def test_nullable_with_anyof():
         'anyof': [S.Integer(), S.String()],
     }
     assert normalize_schema(anyof, None) == None
+
+def test_regex():
+    schema = S.String(regex=r'\d+')
+    assert normalize_schema(schema, '3000') == '3000'
+    with pytest.raises(E.RegexMismatch) as ei:
+        normalize_schema(schema, 'foo')
+    assert ei.value.value == 'foo'
+    assert ei.value.regex == r'\d+'
+
+def test_regex_non_string():
+    """regex fields on schemas applied to non-strings are ignored"""
+    assert normalize_schema({'regex': r'\d+'}, 3) == 3

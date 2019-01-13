@@ -29,3 +29,10 @@ class NoneMatched(NiceError):
     value = attr.ib()
     schemas = attr.ib()
     stack = attr.ib()
+
+@attr.s
+class RegexMismatch(NiceError):
+    fmt = "Value {value} did not match regex {regex}"
+    value = attr.ib()
+    regex = attr.ib()
+    stack = attr.ib()

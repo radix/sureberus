@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from copy import deepcopy
+import re
 
 from . import errors as E
 
@@ -38,12 +39,15 @@ def normalize_schema(schema, value, stack=()):
     if 'type' in schema:
         check_type(schema, value, stack)
 
+    if 'regex' in schema:
+        check_regex(schema['regex'], value, stack)
+
     if 'anyof' in schema:
         clone = deepcopy(value)
         errors = []
         for subrule in schema['anyof']:
             cloned_schema = deepcopy(schema)
-            # XXX: this is not very principled
+            # XXX: deleting `anyof` here is not very principled.
             del cloned_schema['anyof']
             cloned_schema.update(subrule)
             subrule = cloned_schema
@@ -67,3 +71,9 @@ def check_type(schema, value, stack):
     if not isinstance(value, types):
         raise E.BadType(value, type_, stack)
 
+def check_regex(regex, value, stack):
+    # apparently you can put `regex` even when `type` isn't `string`, and it
+    # only actually gets run if the runtime value is a string.
+    if isinstance(value, str):
+        if not re.match(regex, value):
+            raise E.RegexMismatch(value, regex, stack)

@@ -64,6 +64,8 @@ _marker = object()
 
 TYPES = {
     'integer': int,
+    'float': (float, int), # cerberus documentation lies -- float also includes ints.
+    'number': (float, int),
     'dict': dict,
     'list': list,
     'string': str,

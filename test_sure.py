@@ -62,6 +62,24 @@ def test_bool():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(S.Boolean(), 'foo')
 
+def test_float():
+    assert normalize_schema(S.Float(), 3.0) == 3.0
+    with pytest.raises(E.BadType):
+        normalize_schema(S.Float(), 'foo')
+
+def test_float_allows_int():
+    """
+    Cerberus documentation apparently lies about 'float' only allowing floats --
+    it also allows integers.
+    """
+    assert normalize_schema(S.Float(), 3) == 3
+
+def test_number():
+    assert normalize_schema(S.Number(), 3.0) == 3.0
+    assert normalize_schema(S.Number(), 3) == 3
+    with pytest.raises(E.BadType):
+        normalize_schema(S.Number(), 'foo')
+
 def test_nested_error():
     schema = {'nested': S.Dict(schema={'num': S.Integer()})}
     with pytest.raises(E.BadType) as ei:

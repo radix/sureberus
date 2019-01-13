@@ -32,6 +32,12 @@ def String(required=True, **kwargs):
 def Integer(required=True, **kwargs):
     return mk(None, kwargs, type='integer', required=required)
 
+def Float(required=True, **kwargs):
+    return mk(None, kwargs, type='float', required=required)
+
+def Number(required=True, **kwargs):
+    return mk(None, kwargs, type='number', required=required)
+
 def Boolean(required=True, **kwargs):
     return mk(None, kwargs, type='boolean', required=required)
 

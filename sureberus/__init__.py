@@ -73,6 +73,10 @@ def _normalize_schema(schema, value, ctx):
     if value is None and schema.get('nullable', False):
         return value
 
+    if 'allowed' in schema:
+        if value not in schema['allowed']:
+            raise E.DisallowedValue(value, values=schema['allowed'])
+
     if 'type' in schema:
         check_type(schema, value, ctx.stack)
 

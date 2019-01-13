@@ -43,3 +43,9 @@ class UnknownFields(NiceError):
     value = attr.ib()
     fields = attr.ib()
     stack = attr.ib()
+
+@attr.s
+class DisallowedValue(NiceError):
+    fmt = 'Value {value!r} is not allowed. Must be on of {values!r}'
+    value = attr.ib()
+    values = attr.ib()

@@ -161,3 +161,9 @@ def test_list_normalize():
     schema = S.List(schema=S.Dict(schema={'x': S.String(default='')}))
     result = normalize_schema(schema, [{}])
     assert result == [{'x': ''}]
+
+def test_allowed():
+    schema = S.String(allowed=['2', '3'])
+    assert normalize_schema(schema, '3') == '3'
+    with pytest.raises(E.DisallowedValue) as ei:
+        normalize_schema(schema, '4')

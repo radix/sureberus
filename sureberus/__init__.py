@@ -7,6 +7,8 @@ import attr
 
 from . import errors as E
 
+__all__ = ['normalize_dict', 'normalize_schema']
+
 
 @attr.s
 class Context(object):
@@ -38,7 +40,7 @@ def _normalize_dict(dict_schema, value, ctx):
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.iteritems():
         if key not in value:
-            replacement = get_default(key, key_schema, value)
+            replacement = _get_default(key, key_schema, value)
             if replacement is not _marker:
                 new_dict[key] = replacement
             elif key_schema.get('required', False) == True:
@@ -50,7 +52,7 @@ def _normalize_dict(dict_schema, value, ctx):
                 raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
     return new_dict
 
-def get_default(key, key_schema, doc):
+def _get_default(key, key_schema, doc):
     default = key_schema.get('default', _marker)
     if default is not _marker:
         return default
@@ -93,7 +95,7 @@ def _normalize_schema(schema, value, ctx):
             raise E.DisallowedValue(value, schema['allowed'], ctx.stack)
 
     if 'type' in schema:
-        check_type(schema, value, ctx.stack)
+        _check_type(schema, value, ctx.stack)
 
     if 'maxlength' in schema:
         if len(value) > schema['maxlength']:
@@ -107,7 +109,7 @@ def _normalize_schema(schema, value, ctx):
             raise E.OutOfBounds(value, schema.get('min'), schema['max'], ctx.stack)
 
     if 'regex' in schema:
-        check_regex(schema['regex'], value, ctx.stack)
+        _check_regex(schema['regex'], value, ctx.stack)
 
     if 'schema' in schema:
         # The meaning of a `schema` key inside a schema changes based on the
@@ -164,13 +166,13 @@ def _normalize_multi(schema, value, key, ctx):
 
 
 
-def check_type(schema, value, stack):
+def _check_type(schema, value, stack):
     type_ = schema['type']
     types = TYPES[type_]
     if not isinstance(value, types):
         raise E.BadType(value, type_, stack)
 
-def check_regex(regex, value, stack):
+def _check_regex(regex, value, stack):
     # apparently you can put `regex` even when `type` isn't `string`, and it
     # only actually gets run if the runtime value is a string.
     if isinstance(value, str):

@@ -4,6 +4,7 @@ from copy import deepcopy
 import re
 
 import attr
+import six
 
 from . import errors as E
 
@@ -66,18 +67,19 @@ _marker = object()
 
 TYPES = {
     'none': type(None),
-    'integer': int,
-    'float': (float, int), # cerberus documentation lies -- float also includes ints.
-    'number': (float, int),
+    'integer': six.integer_types,
+    'float': (float,) + six.integer_types, # cerberus documentation lies -- float also includes ints.
+    'number': (float,) + six.integer_types,
     'dict': dict,
     'list': list,
-    'string': str,
+    'string': six.string_types,
     'boolean': bool,
 }
 
 def _normalize_schema(schema, value, ctx):
     if 'allow_unknown' in schema:
         ctx = ctx.set_allow_unknown(schema['allow_unknown'])
+
     if value is None and schema.get('nullable', False):
         return value
 
@@ -135,6 +137,7 @@ def _normalize_schema(schema, value, ctx):
         def error(f, m):
             raise E.CustomValidatorError(f, m, stack=ctx.stack)
         schema['validator'](field, value, error)
+
     return value
 
 def _normalize_multi(schema, value, key, ctx):

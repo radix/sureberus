@@ -63,6 +63,7 @@ def get_default(key, key_schema, doc):
 _marker = object()
 
 TYPES = {
+    'none': type(None),
     'integer': int,
     'float': (float, int), # cerberus documentation lies -- float also includes ints.
     'number': (float, int),

@@ -86,22 +86,11 @@ def _normalize_schema(schema, value, ctx):
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
 
+    if 'oneof' in schema:
+        return _normalize_multi(schema, value, 'oneof', ctx)
+
     if 'anyof' in schema:
-        clone = deepcopy(value)
-        errors = []
-        for subrule in schema['anyof']:
-            cloned_schema = deepcopy(schema)
-            # XXX: deleting `anyof` here is not very principled.
-            del cloned_schema['anyof']
-            cloned_schema.update(subrule)
-            subrule = cloned_schema
-            try:
-                subresult = _normalize_schema(subrule, clone, ctx)
-            except E.NiceError as e:
-                errors.append(e)
-            else:
-                return subresult
-        raise E.NoneMatched(clone, schema['anyof'], ctx.stack)
+        return _normalize_multi(schema, value, 'anyof', ctx)
 
     if schema.get('type', None) == 'dict' and 'schema' in schema:
         return _normalize_dict(schema['schema'], value, ctx)
@@ -114,6 +103,34 @@ def _normalize_schema(schema, value, ctx):
         return result
 
     return value
+
+def _normalize_multi(schema, value, key, ctx):
+    clone = deepcopy(value)
+    errors = []
+    results = []
+    matched_schemas = []
+    for subrule in schema[key]:
+        cloned_schema = deepcopy(schema)
+        del cloned_schema[key] # This is not very principled...?
+        cloned_schema.update(subrule)
+        subrule = cloned_schema
+        try:
+            subresult = _normalize_schema(subrule, clone, ctx)
+        except E.NiceError as e:
+            errors.append(e)
+        else:
+            if key == 'oneof':
+                results.append(subresult)
+                matched_schemas.append(schema[key])
+            elif key == 'anyof':
+                return subresult
+    if not results:
+        raise E.NoneMatched(clone, schema[key], ctx.stack)
+    elif key == 'oneof' and len(results) > 1:
+        raise E.MoreThanOneMatched(clone, matched_schemas, ctx.stack)
+    else:
+        return results[0]
+
 
 
 def check_type(schema, value, stack):

@@ -31,6 +31,13 @@ class NoneMatched(NiceError):
     stack = attr.ib()
 
 @attr.s
+class MoreThanOneMatched(NiceError):
+    fmt = 'More than one schema matched {value!r} in a `oneof` rule: {matched}'
+    value = attr.ib()
+    matched = attr.ib()
+    stack = attr.ib()
+
+@attr.s
 class RegexMismatch(NiceError):
     fmt = "Value {value!r} did not match regex {regex}"
     value = attr.ib()
@@ -49,7 +56,6 @@ class DisallowedValue(NiceError):
     fmt = 'Value {value!r} is not allowed. Must be on of {values!r}'
     value = attr.ib()
     values = attr.ib()
-
 
 @attr.s
 class MaxLengthExceeded(NiceError):

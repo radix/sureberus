@@ -121,7 +121,6 @@ def test_anyof_with_normalization():
     ifoo_with_default = {'image': 'foo'}
     assert normalize_schema(anyof, ifoo_with_default) == {'image': 'foo', 'opacity': 100}
 
-
 def test_nullable_with_anyof():
     """This is the second reason that sureberus exists."""
     anyof = {
@@ -129,6 +128,18 @@ def test_nullable_with_anyof():
         'anyof': [S.Integer(), S.String()],
     }
     assert normalize_schema(anyof, None) == None
+
+def test_oneof():
+    oneof = {'oneof': [S.Integer(), S.String()]}
+    assert normalize_schema(oneof, 3) == 3
+    assert normalize_schema(oneof, 'three') == 'three'
+    with pytest.raises(E.NoneMatched) as ei:
+        normalize_schema(oneof, object())
+
+def test_oneof_only_one():
+    oneof = {'oneof': [{'maxlength': 3}, S.List()]}
+    with pytest.raises(E.MoreThanOneMatched) as ei:
+        normalize_schema(oneof, [0])
 
 def test_regex():
     schema = S.String(regex=r'\d+')

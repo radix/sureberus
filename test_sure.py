@@ -185,3 +185,8 @@ def test_allowed():
     assert normalize_schema(schema, '3') == '3'
     with pytest.raises(E.DisallowedValue) as ei:
         normalize_schema(schema, '4')
+
+def test_excludes():
+    schema = S.Dict(schema={'x': S.String(excludes=['other'])})
+    with pytest.raises(E.DisallowedField) as ei:
+        normalize_schema(schema, {'x': 'foo', 'other': 'bar'}, allow_unknown=True)

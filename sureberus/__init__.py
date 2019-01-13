@@ -45,6 +45,9 @@ def _normalize_dict(dict_schema, value, ctx):
                 raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
         if key in value:
             new_dict[key] = _normalize_schema(key_schema, value[key], ctx.push_stack(key))
+        for excluded_field in key_schema.get('excludes', ()):
+            if excluded_field in value:
+                raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
     return new_dict
 
 def get_default(key, key_schema, doc):
@@ -75,14 +78,14 @@ def _normalize_schema(schema, value, ctx):
 
     if 'allowed' in schema:
         if value not in schema['allowed']:
-            raise E.DisallowedValue(value, values=schema['allowed'])
+            raise E.DisallowedValue(value, schema['allowed'], ctx.stack)
 
     if 'type' in schema:
         check_type(schema, value, ctx.stack)
 
     if 'maxlength' in schema:
         if len(value) > schema['maxlength']:
-            raise E.MaxLengthExceeded(value, length=schema['maxlength'])
+            raise E.MaxLengthExceeded(value, schema['maxlength'], ctx.stack)
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
 

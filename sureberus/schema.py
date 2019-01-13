@@ -26,3 +26,6 @@ def Integer(**kwargs):
 
 def Boolean(**kwargs):
     return mk(None, kwargs, type='boolean')
+
+def List(_d=None, **kwargs):
+    return mk(_d, kwargs, type='list')

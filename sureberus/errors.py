@@ -18,21 +18,21 @@ class DictFieldNotFound(NiceError):
 
 @attr.s
 class BadType(NiceError):
-    fmt = 'Wanted type {type_}, got {value}'
+    fmt = 'Wanted type {type_}, got {value!r}'
     value = attr.ib()
     type_ = attr.ib()
     stack = attr.ib()
 
 @attr.s
 class NoneMatched(NiceError):
-    fmt = 'None of the following schemas matched {value}: {schemas}'
+    fmt = 'None of the following schemas matched {value!r}: {schemas}'
     value = attr.ib()
     schemas = attr.ib()
     stack = attr.ib()
 
 @attr.s
 class RegexMismatch(NiceError):
-    fmt = "Value {value} did not match regex {regex}"
+    fmt = "Value {value!r} did not match regex {regex}"
     value = attr.ib()
     regex = attr.ib()
     stack = attr.ib()

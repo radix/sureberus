@@ -29,6 +29,7 @@ _marker = object()
 TYPES = {
     'integer': int,
     'dict': dict,
+    'list': list,
     'string': str,
     'boolean': bool,
 }
@@ -62,6 +63,9 @@ def normalize_schema(schema, value, stack=()):
 
     if schema.get('type', None) == 'dict' and 'schema' in schema:
         return normalize_dict(schema['schema'], value, stack)
+    elif schema.get('type', None) == 'list' and 'schema' in schema:
+        for idx, element in enumerate(value):
+            normalize_schema(schema['schema'], element, stack + (idx,))
 
     return value
 

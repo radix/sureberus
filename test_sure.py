@@ -110,3 +110,18 @@ def test_regex():
 def test_regex_non_string():
     """regex fields on schemas applied to non-strings are ignored"""
     assert normalize_schema({'regex': r'\d+'}, 3) == 3
+
+def test_list():
+    schema = S.List()
+    val = [1, 'two', object()]
+    assert normalize_schema(schema, val) == val
+
+def test_list_schema():
+    schema = S.List(schema=S.Integer())
+    val = [1, 2, 3]
+    assert normalize_schema(schema, val) == val
+
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, [1, 'two', object()])
+    assert ei.value.value == 'two'
+    assert ei.value.stack == (1,)

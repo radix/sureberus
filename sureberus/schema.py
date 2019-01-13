@@ -23,3 +23,6 @@ def String(**kwargs):
 
 def Integer(**kwargs):
     return mk(None, kwargs, type='integer')
+
+def Boolean(**kwargs):
+    return mk(None, kwargs, type='boolean')

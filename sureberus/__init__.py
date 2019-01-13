@@ -30,6 +30,7 @@ TYPES = {
     'integer': int,
     'dict': dict,
     'string': str,
+    'boolean': bool,
 }
 
 def normalize_schema(schema, value, stack=()):

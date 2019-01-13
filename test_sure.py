@@ -4,10 +4,10 @@ from sureberus import normalize_dict, normalize_schema
 from sureberus import schema as S
 from sureberus import errors as E
 
+
 id_int = {'id': S.Integer()}
 
-
-def test_sure():
+def test_dict_of_int():
     sample = {'id': 3}
     assert normalize_dict(id_int, sample) == sample
 
@@ -25,6 +25,11 @@ def test_field_not_found():
     assert ei.value.key == 'id'
     assert ei.value.value == {'foo': 'bar'}
     assert ei.value.stack == ()
+
+def test_bool():
+    normalize_schema(S.Boolean(), True)
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(S.Boolean(), 'foo')
 
 def test_nested_error():
     schema = {'nested': S.Dict(schema={'num': S.Integer()})}

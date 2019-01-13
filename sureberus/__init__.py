@@ -6,8 +6,12 @@ import re
 from . import errors as E
 
 
-def normalize_dict(dict_schema, value, stack=()):
+def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
     new_dict = {}
+    if allow_unknown is False:
+        extra_keys = set(value.keys()) - set(dict_schema.keys())
+        if extra_keys:
+            raise E.UnknownFields(value, extra_keys, stack=stack)
     for key, key_schema in dict_schema.iteritems():
         if key not in value:
             replacement = get_default(key, key_schema, value)
@@ -39,7 +43,7 @@ TYPES = {
     'boolean': bool,
 }
 
-def normalize_schema(schema, value, stack=()):
+def normalize_schema(schema, value, stack=(), allow_unknown=False):
     if value is None and schema.get('nullable', False):
         return value
 

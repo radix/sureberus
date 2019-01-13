@@ -21,13 +21,18 @@ def test_bad_type():
 
 def test_field_not_found():
     with pytest.raises(E.DictFieldNotFound) as ei:
-        normalize_dict({'id': S.Integer(required=True)}, {'foo': 'bar'})
+        normalize_dict({'id': S.Integer(required=True)}, {})
     assert ei.value.key == 'id'
-    assert ei.value.value == {'foo': 'bar'}
+    assert ei.value.value == {}
     assert ei.value.stack == ()
 
 def test_not_required():
     assert normalize_dict({'id': S.Integer(required=False)}, {}) == {}
+
+def test_disallow_unknown():
+    with pytest.raises(E.UnknownFields) as ei:
+        normalize_dict(id_int, {'id': 3, 'foo': 'bar'})
+
 
 def test_bool():
     normalize_schema(S.Boolean(), True)

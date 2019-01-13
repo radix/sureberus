@@ -36,3 +36,10 @@ class RegexMismatch(NiceError):
     value = attr.ib()
     regex = attr.ib()
     stack = attr.ib()
+
+@attr.s
+class UnknownFields(NiceError):
+    fmt = "Dict {value!r} had unknown fields: {fields!r}"
+    value = attr.ib()
+    fields = attr.ib()
+    stack = attr.ib()

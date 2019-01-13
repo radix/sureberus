@@ -149,7 +149,7 @@ def _normalize_multi(schema, value, key, ctx):
         subrule = cloned_schema
         try:
             subresult = _normalize_schema(subrule, clone, ctx)
-        except E.NiceError as e:
+        except E.SureError as e:
             errors.append(e)
         else:
             if key == 'oneof':

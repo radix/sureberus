@@ -1,7 +1,7 @@
 import attr
 
 
-class NiceError(Exception):
+class SureError(Exception):
     def __str__(self):
         stack = 'root'
         stack += ''.join('[{!r}]'.format(el) for el in self.stack)
@@ -10,77 +10,77 @@ class NiceError(Exception):
             msg=self.fmt.format(**self.__dict__))
 
 @attr.s
-class DictFieldNotFound(NiceError):
+class DictFieldNotFound(SureError):
     fmt = 'Key {key} not in dict {value}'
     key = attr.ib()
     value = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class BadType(NiceError):
+class BadType(SureError):
     fmt = 'Wanted type {type_}, got {value!r}'
     value = attr.ib()
     type_ = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class NoneMatched(NiceError):
+class NoneMatched(SureError):
     fmt = 'None of the following schemas matched {value!r}: {schemas}'
     value = attr.ib()
     schemas = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class MoreThanOneMatched(NiceError):
+class MoreThanOneMatched(SureError):
     fmt = 'More than one schema matched {value!r} in a `oneof` rule: {matched}'
     value = attr.ib()
     matched = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class RegexMismatch(NiceError):
+class RegexMismatch(SureError):
     fmt = "Value {value!r} did not match regex {regex}"
     value = attr.ib()
     regex = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class UnknownFields(NiceError):
+class UnknownFields(SureError):
     fmt = "Dict {value!r} had unknown fields: {fields!r}"
     value = attr.ib()
     fields = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class DisallowedValue(NiceError):
+class DisallowedValue(SureError):
     fmt = 'Value {value!r} is not allowed. Must be on of {values!r}'
     value = attr.ib()
     values = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class MaxLengthExceeded(NiceError):
+class MaxLengthExceeded(SureError):
     fmt = 'Value {value!r} is greater than max length of {length}'
     value = attr.ib()
     length = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class DisallowedField(NiceError):
+class DisallowedField(SureError):
     fmt = 'Because {field} is defined, the following fields must be excluded: {excluded}'
     field = attr.ib()
     excluded = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class CustomValidatorError(NiceError):
+class CustomValidatorError(SureError):
     fmt = 'Custom validator failed for {field}: {msg}'
     field = attr.ib()
     msg = attr.ib()
     stack = attr.ib()
 
 @attr.s
-class OutOfBounds(NiceError):
+class OutOfBounds(SureError):
     fmt = 'Number {number!r} is out of bounds, must be at least {min} and at most {max}'
     number = attr.ib()
     min = attr.ib()

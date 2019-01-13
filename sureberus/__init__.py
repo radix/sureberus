@@ -76,6 +76,15 @@ def _normalize_schema(schema, value, ctx):
     if value is None and schema.get('nullable', False):
         return value
 
+    if 'oneof' in schema:
+        return _normalize_multi(schema, value, 'oneof', ctx)
+
+    if 'anyof' in schema:
+        return _normalize_multi(schema, value, 'anyof', ctx)
+
+    if 'coerce' in schema:
+        value = schema['coerce'](value)
+
     if 'allowed' in schema:
         if value not in schema['allowed']:
             raise E.DisallowedValue(value, schema['allowed'], ctx.stack)
@@ -88,12 +97,6 @@ def _normalize_schema(schema, value, ctx):
             raise E.MaxLengthExceeded(value, schema['maxlength'], ctx.stack)
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
-
-    if 'oneof' in schema:
-        return _normalize_multi(schema, value, 'oneof', ctx)
-
-    if 'anyof' in schema:
-        return _normalize_multi(schema, value, 'anyof', ctx)
 
     if schema.get('type', None) == 'dict' and 'schema' in schema:
         return _normalize_dict(schema['schema'], value, ctx)

@@ -190,3 +190,12 @@ def test_excludes():
     schema = S.Dict(schema={'x': S.String(excludes=['other'])})
     with pytest.raises(E.DisallowedField) as ei:
         normalize_schema(schema, {'x': 'foo', 'other': 'bar'}, allow_unknown=True)
+
+def test_coerce():
+    def _to_list(item):
+        if isinstance(item, list):
+            return item
+        else:
+            return [item]
+    schema = {'coerce': _to_list}
+    assert normalize_schema(schema, 33) == [33]

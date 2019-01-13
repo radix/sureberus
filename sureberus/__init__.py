@@ -39,7 +39,7 @@ def _normalize_dict(dict_schema, value, ctx):
                 new_dict[k] = value[k]
         else:
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
-    for key, key_schema in dict_schema.iteritems():
+    for key, key_schema in dict_schema.items():
         if key not in value:
             replacement = _get_default(key, key_schema, value)
             if replacement is not _marker:

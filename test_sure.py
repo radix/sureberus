@@ -1,11 +1,12 @@
 import pytest
 
 from sureberus import normalize_dict, normalize_schema
+from sureberus import schema as S
 from sureberus import errors as E
 
-id_int = {'id': {'type': 'integer'}}
-nested_num_int = {'nested': {'type': 'dict', 'schema': {'num': {'type': 'integer'}}}}
-default_num = {'num': {'type': 'integer', 'default': 0}}
+id_int = {'id': S.Integer()}
+nested_num_int = {'nested': S.Dict(schema={'num': S.Integer()})}
+default_num = {'num': S.Integer(default=0)}
 
 
 def test_sure():
@@ -41,11 +42,10 @@ def test_default():
     assert new_dict == {'num': 0}
 
 def test_normalize_schema():
-    schema = {'type': 'integer'}
-    assert normalize_schema(schema, 3)
+    assert normalize_schema(S.Integer(), 3)
 
 def test_anyof():
-    anyof = {'anyof': [{'type': 'integer'}, {'type': 'string'}]}
+    anyof = {'anyof': [S.Integer(), S.String()]}
     assert normalize_schema(anyof, 3) == 3
     assert normalize_schema(anyof, 'three') == 'three'
     with pytest.raises(E.NoneMatched) as ei:
@@ -57,22 +57,12 @@ def test_anyof_with_normalization():
     # ANY OF:
     # - {'image': str, 'opacity': {'type': 'integer', 'default': 100}}
     # - {'gradient': ...}
-    anyof = {
-        'type': 'dict',
-        'anyof': [
-            {
-                'schema': {
-                    'gradient': {'type': 'string'}
-                }
-            },
-            {
-                'schema': {
-                    'image': {'type': 'string'},
-                    'opacity': {'type': 'integer', 'default': 100},
-                }
-            },
+    anyof = S.Dict(
+        anyof=[
+            S.SubSchema(gradient=S.String()),
+            S.SubSchema(image=S.String(), opacity=S.Integer(default=100))
         ]
-    }
+    )
 
     gfoo = {'gradient': 'foo'}
     assert normalize_schema(anyof, gfoo) == gfoo
@@ -86,6 +76,6 @@ def test_nullable_with_anyof():
     """This is the second reason that sureberus exists."""
     anyof = {
         'nullable': True,
-        'anyof': [{'type': 'integer'}, {'type': 'string'}],
+        'anyof': [S.Integer(), S.String()],
     }
     assert normalize_schema(anyof, None) == None

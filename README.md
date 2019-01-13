@@ -15,3 +15,39 @@ You can use sureberus if you want to use `default` or `coerce` inside of a
 
 Sureberus allows you to use `nullable` even if you have `*of-rules` that have
 `type` constraints.
+
+## A slightly nicer schema syntax
+
+If you want to construct a schema from Python code instead of storing it as
+JSON, sureberus provides a more terse syntax for it:
+
+standard dict-based schema, using an 80-character limit and strict
+newline/indent-based line wrapping:
+
+```python
+myschema = {
+    'type': 'dict',
+    'anyof': [
+        {'schema': {'gradient': {'type': 'string'}}},
+        {
+            'schema': {
+                'image': {'type': 'string'},
+                'opacity': {'type': 'integer', 'default': 100},
+            }
+        },
+    ],
+}
+```
+
+
+`sureberus.schema`-based schema, using the same line-wrapping rules:
+
+```python
+from sureberus.schema import Dict, SubSchema, String, Integer
+myschema = Dict(
+    anyof=[
+        SubSchema(gradient=String()),
+        SubSchema(image=String(), opacity=Integer(default=100))
+    ]
+)
+```

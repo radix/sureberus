@@ -30,7 +30,7 @@ def test_not_required():
     assert normalize_dict({'id': S.Integer(required=False)}, {}) == {}
 
 def test_allow_unknown():
-    assert normalize_dict(id_int, {'id': 3, 'foo': 'bar'}) == {'id': 3, 'foo': 'bar'}
+    assert normalize_dict(id_int, {'id': 3, 'foo': 'bar'}, allow_unknown=True) == {'id': 3, 'foo': 'bar'}
 
 def test_disallow_unknown():
     with pytest.raises(E.UnknownFields) as ei:
@@ -40,9 +40,22 @@ def test_disallow_unknown_in_normalize_schema():
     with pytest.raises(E.UnknownFields) as ei:
         normalize_schema(S.Dict(schema=id_int), {'id': 3, 'foo': 'bar'}, allow_unknown=False)
 
-def test_allow_unknown_in_schema():
+def test_allow_unknown_in_dict_schema():
     schema = S.Dict(allow_unknown=True, schema={})
     assert normalize_schema(schema, {'x': 'y'}, allow_unknown=False) == {'x': 'y'}
+
+def test_allow_unknown_in_list_schema():
+    schema = S.List(allow_unknown=True, schema=S.Dict(schema={'x': S.String()}))
+    val = [{'x': 'y', 'extra': 0}]
+    assert normalize_schema(schema, val, allow_unknown=False) == val
+
+def test_allow_unknown_in_anyof_schema():
+    schema = S.Dict(
+        allow_unknown=True,
+        anyof=[S.SubSchema(x=S.String()), S.SubSchema(y=S.String())]
+    )
+    val = {'x': 'foo', 'extra': 'bar'}
+    normalize_schema(schema, val, allow_unknown=False) == val
 
 def test_bool():
     normalize_schema(S.Boolean(), True)

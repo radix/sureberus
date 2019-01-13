@@ -6,7 +6,7 @@ import re
 from . import errors as E
 
 
-def normalize_dict(dict_schema, value, stack=(), allow_unknown=True):
+def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
     new_dict = {}
     extra_keys = set(value.keys()) - set(dict_schema.keys())
     if extra_keys:
@@ -67,7 +67,7 @@ def normalize_schema(schema, value, stack=(), allow_unknown=False):
             cloned_schema.update(subrule)
             subrule = cloned_schema
             try:
-                subresult = normalize_schema(subrule, clone, stack)
+                subresult = normalize_schema(subrule, clone, stack, allow_unknown=allow_unknown)
             except E.NiceError as e:
                 errors.append(e)
             else:
@@ -79,7 +79,9 @@ def normalize_schema(schema, value, stack=(), allow_unknown=False):
     elif schema.get('type', None) == 'list' and 'schema' in schema:
         result = []
         for idx, element in enumerate(value):
-            result.append(normalize_schema(schema['schema'], element, stack + (idx,)))
+            result.append(
+                normalize_schema(schema['schema'], element, stack + (idx,), allow_unknown=allow_unknown)
+            )
         return result
 
     return value

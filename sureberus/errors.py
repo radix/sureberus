@@ -72,10 +72,17 @@ class DisallowedField(NiceError):
     excluded = attr.ib()
     stack = attr.ib()
 
-
 @attr.s
 class CustomValidatorError(NiceError):
     fmt = 'Custom validator failed for {field}: {msg}'
     field = attr.ib()
     msg = attr.ib()
+    stack = attr.ib()
+
+@attr.s
+class OutOfBounds(NiceError):
+    fmt = 'Number {number!r} is out of bounds, must be at least {min} and at most {max}'
+    number = attr.ib()
+    min = attr.ib()
+    max = attr.ib()
     stack = attr.ib()

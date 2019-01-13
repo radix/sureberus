@@ -74,6 +74,24 @@ def test_float_allows_int():
     """
     assert normalize_schema(S.Float(), 3) == 3
 
+def test_min_max():
+    schema = S.Float(min=2.1, max=3.9)
+    assert normalize_schema(schema, 3) == 3
+    assert normalize_schema(schema, 2.1) == 2.1
+    assert normalize_schema(schema, 3.9) == 3.9
+    with pytest.raises(E.OutOfBounds) as ei:
+        normalize_schema(schema, 2.0)
+    assert ei.value.number == 2.0
+    assert ei.value.min == 2.1
+    assert ei.value.max == 3.9
+
+    with pytest.raises(E.OutOfBounds) as ei:
+        normalize_schema(schema, 4)
+    assert ei.value.number == 4
+    assert ei.value.min == 2.1
+    assert ei.value.max == 3.9
+
+
 def test_number():
     assert normalize_schema(S.Number(), 3.0) == 3.0
     assert normalize_schema(S.Number(), 3) == 3

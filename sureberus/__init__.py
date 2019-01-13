@@ -97,6 +97,14 @@ def _normalize_schema(schema, value, ctx):
     if 'maxlength' in schema:
         if len(value) > schema['maxlength']:
             raise E.MaxLengthExceeded(value, schema['maxlength'], ctx.stack)
+
+    if 'min' in schema:
+        if value < schema['min']:
+            raise E.OutOfBounds(value, schema['min'], schema.get('max'), ctx.stack)
+    if 'max' in schema:
+        if value > schema['max']:
+            raise E.OutOfBounds(value, schema.get('min'), schema['max'], ctx.stack)
+
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
 

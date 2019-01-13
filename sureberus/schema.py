@@ -12,8 +12,11 @@ def mk(d, kw, **morekw):
     return schema
 
 
-def Dict(_d=None, **kwargs):
-    return mk(_d, kwargs, type='dict')
+def Dict(anyof=None, schema={}):
+    kw = {}
+    if anyof is not None:
+        kw['anyof'] = anyof
+    return mk(None, kw, type='dict', schema=schema)
 
 def SubSchema(_d=None, **kwargs):
     return {'schema': mk(_d, kwargs)}

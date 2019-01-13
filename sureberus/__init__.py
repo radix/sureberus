@@ -54,9 +54,9 @@ def normalize_schema(schema, value, stack=()):
             cloned_schema.update(subrule)
             subrule = cloned_schema
             try:
-                   subresult = normalize_schema(subrule, clone, stack)
+                subresult = normalize_schema(subrule, clone, stack)
             except E.NiceError as e:
-                   errors.append(e)
+                errors.append(e)
             else:
                 return subresult
         raise E.NoneMatched(clone, schema['anyof'], stack)
@@ -64,8 +64,10 @@ def normalize_schema(schema, value, stack=()):
     if schema.get('type', None) == 'dict' and 'schema' in schema:
         return normalize_dict(schema['schema'], value, stack)
     elif schema.get('type', None) == 'list' and 'schema' in schema:
+        result = []
         for idx, element in enumerate(value):
-            normalize_schema(schema['schema'], element, stack + (idx,))
+            result.append(normalize_schema(schema['schema'], element, stack + (idx,)))
+        return result
 
     return value
 

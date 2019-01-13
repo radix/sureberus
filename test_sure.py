@@ -125,3 +125,8 @@ def test_list_schema():
         normalize_schema(schema, [1, 'two', object()])
     assert ei.value.value == 'two'
     assert ei.value.stack == (1,)
+
+def test_list_normalize():
+    schema = S.List(schema=S.Dict(schema={'x': S.String(default='')}))
+    result = normalize_schema(schema, [{}])
+    assert result == [{'x': ''}]

@@ -3,27 +3,48 @@ from __future__ import print_function
 from copy import deepcopy
 import re
 
+import attr
+
 from . import errors as E
 
 
+@attr.s
+class Context(object):
+    stack = attr.ib()
+    allow_unknown = attr.ib()
+
+    def push_stack(self, x):
+        return Context(stack=self.stack + (x,), allow_unknown=self.allow_unknown)
+
+    def set_allow_unknown(self, x):
+        return Context(stack=self.stack, allow_unknown=x)
+
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
+    ctx = Context(stack=(), allow_unknown=allow_unknown)
+    return _normalize_dict(dict_schema, value, ctx)
+
+def normalize_schema(schema, value, stack=(), allow_unknown=False):
+    ctx = Context(stack=(), allow_unknown=allow_unknown)
+    return _normalize_schema(schema, value, ctx)
+
+def _normalize_dict(dict_schema, value, ctx):
     new_dict = {}
     extra_keys = set(value.keys()) - set(dict_schema.keys())
     if extra_keys:
-        if allow_unknown:
+        if ctx.allow_unknown:
             for k in extra_keys:
                 new_dict[k] = value[k]
         else:
-            raise E.UnknownFields(value, extra_keys, stack=stack)
+            raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.iteritems():
         if key not in value:
             replacement = get_default(key, key_schema, value)
             if replacement is not _marker:
                 new_dict[key] = replacement
             elif key_schema.get('required', False) == True:
-                raise E.DictFieldNotFound(key, value=value, stack=stack)
+                raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
         if key in value:
-            new_dict[key] = normalize_schema(key_schema, value[key], stack=stack + (key,))
+            new_dict[key] = _normalize_schema(key_schema, value[key], ctx.push_stack(key))
     return new_dict
 
 def get_default(key, key_schema, doc):
@@ -46,16 +67,17 @@ TYPES = {
     'boolean': bool,
 }
 
-def normalize_schema(schema, value, stack=(), allow_unknown=False):
-    allow_unknown = schema.get('allow_unknown', allow_unknown)
+def _normalize_schema(schema, value, ctx):
+    if 'allow_unknown' in schema:
+        ctx = ctx.set_allow_unknown(schema['allow_unknown'])
     if value is None and schema.get('nullable', False):
         return value
 
     if 'type' in schema:
-        check_type(schema, value, stack)
+        check_type(schema, value, ctx.stack)
 
     if 'regex' in schema:
-        check_regex(schema['regex'], value, stack)
+        check_regex(schema['regex'], value, ctx.stack)
 
     if 'anyof' in schema:
         clone = deepcopy(value)
@@ -67,20 +89,20 @@ def normalize_schema(schema, value, stack=(), allow_unknown=False):
             cloned_schema.update(subrule)
             subrule = cloned_schema
             try:
-                subresult = normalize_schema(subrule, clone, stack, allow_unknown=allow_unknown)
+                subresult = _normalize_schema(subrule, clone, ctx)
             except E.NiceError as e:
                 errors.append(e)
             else:
                 return subresult
-        raise E.NoneMatched(clone, schema['anyof'], stack)
+        raise E.NoneMatched(clone, schema['anyof'], ctx.stack)
 
     if schema.get('type', None) == 'dict' and 'schema' in schema:
-        return normalize_dict(schema['schema'], value, stack, allow_unknown=allow_unknown)
+        return _normalize_dict(schema['schema'], value, ctx)
     elif schema.get('type', None) == 'list' and 'schema' in schema:
         result = []
         for idx, element in enumerate(value):
             result.append(
-                normalize_schema(schema['schema'], element, stack + (idx,), allow_unknown=allow_unknown)
+                _normalize_schema(schema['schema'], element, ctx.push_stack(idx))
             )
         return result
 

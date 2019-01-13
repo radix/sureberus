@@ -13,7 +13,11 @@ def normalize_dict(dict_schema, value, stack=()):
             if default is not _marker:
                 new_value = default
             else:
-                raise E.DictFieldNotFound(key, value=value, stack=stack)
+                default_setter = key_schema.get('default_setter', None)
+                if default_setter is not None:
+                    new_value = default_setter(value)
+                else:
+                    raise E.DictFieldNotFound(key, value=value, stack=stack)
         else:
             new_value = normalize_schema(key_schema, value[key], stack=stack + (key,))
         new_dict[key] = new_value

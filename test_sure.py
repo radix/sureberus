@@ -5,8 +5,6 @@ from sureberus import schema as S
 from sureberus import errors as E
 
 id_int = {'id': S.Integer()}
-nested_num_int = {'nested': S.Dict(schema={'num': S.Integer()})}
-default_num = {'num': S.Integer(default=0)}
 
 
 def test_sure():
@@ -29,17 +27,30 @@ def test_field_not_found():
     assert ei.value.stack == ()
 
 def test_nested_error():
+    schema = {'nested': S.Dict(schema={'num': S.Integer()})}
     with pytest.raises(E.BadType) as ei:
-        normalize_dict(nested_num_int, {'nested': {'num': 'three!'}})
+        normalize_dict(schema, {'nested': {'num': 'three!'}})
     assert ei.value.value == 'three!'
     assert ei.value.type_ == 'integer'
     assert ei.value.stack == ('nested', 'num')
 
 def test_default():
     old_dict = {}
-    new_dict = normalize_dict(default_num, old_dict)
+    schema = {'num': S.Integer(default=0)}
+    new_dict = normalize_dict(schema, old_dict)
     assert old_dict == {}
     assert new_dict == {'num': 0}
+
+def test_default_setter():
+    old_dict = {'foo': 0}
+    schema = {
+        'foo': S.Integer(),
+        'foo-incremented': {'default_setter': lambda doc: doc['foo'] + 1}
+    }
+    new_dict = normalize_dict(schema, old_dict)
+    assert old_dict == {'foo': 0}
+    assert new_dict == {'foo': 0, 'foo-incremented': 1}
+
 
 def test_normalize_schema():
     assert normalize_schema(S.Integer(), 3)
@@ -57,6 +68,9 @@ def test_anyof_with_normalization():
     # ANY OF:
     # - {'image': str, 'opacity': {'type': 'integer', 'default': 100}}
     # - {'gradient': ...}
+
+    # And when you normalize this, you actually get the `default` applied in the
+    # result, if that rule matches!
     anyof = S.Dict(
         anyof=[
             S.SubSchema(gradient=S.String()),

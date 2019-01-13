@@ -12,11 +12,16 @@ def mk(d, kw, **morekw):
     return schema
 
 
-def Dict(required=True, anyof=None, schema={}):
-    kw = {}
+def validate_kwargs(kwargs):
+    extra = set(kwargs) - {'allow_unknown'}
+    if extra:
+        raise Exception("Unacceptable: {}".format(extra))
+
+def Dict(required=True, anyof=None, schema={}, **kwargs):
+    validate_kwargs(kwargs)
     if anyof is not None:
-        kw['anyof'] = anyof
-    return mk(None, kw, type='dict', schema=schema, required=required)
+        kwargs['anyof'] = anyof
+    return mk(None, kwargs, type='dict', schema=schema, required=required)
 
 def SubSchema(_d=None, **kwargs):
     return {'schema': mk(_d, kwargs)}

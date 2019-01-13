@@ -6,11 +6,14 @@ import re
 from . import errors as E
 
 
-def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
+def normalize_dict(dict_schema, value, stack=(), allow_unknown=True):
     new_dict = {}
-    if allow_unknown is False:
-        extra_keys = set(value.keys()) - set(dict_schema.keys())
-        if extra_keys:
+    extra_keys = set(value.keys()) - set(dict_schema.keys())
+    if extra_keys:
+        if allow_unknown:
+            for k in extra_keys:
+                new_dict[k] = value[k]
+        else:
             raise E.UnknownFields(value, extra_keys, stack=stack)
     for key, key_schema in dict_schema.iteritems():
         if key not in value:
@@ -44,6 +47,7 @@ TYPES = {
 }
 
 def normalize_schema(schema, value, stack=(), allow_unknown=False):
+    allow_unknown = schema.get('allow_unknown', allow_unknown)
     if value is None and schema.get('nullable', False):
         return value
 
@@ -71,7 +75,7 @@ def normalize_schema(schema, value, stack=(), allow_unknown=False):
         raise E.NoneMatched(clone, schema['anyof'], stack)
 
     if schema.get('type', None) == 'dict' and 'schema' in schema:
-        return normalize_dict(schema['schema'], value, stack)
+        return normalize_dict(schema['schema'], value, stack, allow_unknown=allow_unknown)
     elif schema.get('type', None) == 'list' and 'schema' in schema:
         result = []
         for idx, element in enumerate(value):

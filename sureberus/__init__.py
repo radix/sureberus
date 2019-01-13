@@ -80,6 +80,9 @@ def _normalize_schema(schema, value, ctx):
     if 'type' in schema:
         check_type(schema, value, ctx.stack)
 
+    if 'maxlength' in schema:
+        if len(value) > schema['maxlength']:
+            raise E.MaxLengthExceeded(value, length=schema['maxlength'])
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
 

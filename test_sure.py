@@ -142,6 +142,13 @@ def test_regex_non_string():
     """regex fields on schemas applied to non-strings are ignored"""
     assert normalize_schema({'regex': r'\d+'}, 3) == 3
 
+def test_maxlength():
+    with pytest.raises(E.MaxLengthExceeded):
+        normalize_schema({'maxlength': 3}, 'foob')
+
+    with pytest.raises(E.MaxLengthExceeded):
+        normalize_schema({'maxlength': 3}, [0,1,2,3])
+
 def test_list():
     schema = S.List()
     val = [1, 'two', object()]

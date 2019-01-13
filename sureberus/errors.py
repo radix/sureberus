@@ -49,3 +49,10 @@ class DisallowedValue(NiceError):
     fmt = 'Value {value!r} is not allowed. Must be on of {values!r}'
     value = attr.ib()
     values = attr.ib()
+
+
+@attr.s
+class MaxLengthExceeded(NiceError):
+    fmt = 'Value {value!r} is greater than max length of {length}'
+    value = attr.ib()
+    length = attr.ib()

@@ -1,7 +1,7 @@
 import pytest
 
-from sureberus import normalize_dict, normalize_schema, DictFieldNotFound, BadType, NoneMatched
-
+from sureberus import normalize_dict, normalize_schema
+from sureberus import errors as E
 
 id_int = {'id': {'type': 'integer'}}
 nested_num_int = {'nested': {'type': 'dict', 'schema': {'num': {'type': 'integer'}}}}
@@ -14,21 +14,21 @@ def test_sure():
 
 def test_bad_type():
     sample = {'id': '3'}
-    with pytest.raises(BadType) as ei:
+    with pytest.raises(E.BadType) as ei:
         normalize_dict(id_int, sample)
     assert ei.value.value == '3'
     assert ei.value.type_ == 'integer'
     assert ei.value.stack == ('id',)
 
 def test_field_not_found():
-    with pytest.raises(DictFieldNotFound) as ei:
+    with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_dict(id_int, {'foo': 'bar'})
     assert ei.value.key == 'id'
     assert ei.value.value == {'foo': 'bar'}
     assert ei.value.stack == ()
 
 def test_nested_error():
-    with pytest.raises(BadType) as ei:
+    with pytest.raises(E.BadType) as ei:
         normalize_dict(nested_num_int, {'nested': {'num': 'three!'}})
     assert ei.value.value == 'three!'
     assert ei.value.type_ == 'integer'
@@ -48,7 +48,7 @@ def test_anyof():
     anyof = {'anyof': [{'type': 'integer'}, {'type': 'string'}]}
     assert normalize_schema(anyof, 3) == 3
     assert normalize_schema(anyof, 'three') == 'three'
-    with pytest.raises(NoneMatched) as ei:
+    with pytest.raises(E.NoneMatched) as ei:
         normalize_schema(anyof, object())
 
 def test_anyof_with_normalization():

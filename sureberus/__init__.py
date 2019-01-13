@@ -98,16 +98,24 @@ def _normalize_schema(schema, value, ctx):
     if 'regex' in schema:
         check_regex(schema['regex'], value, ctx.stack)
 
-    if schema.get('type', None) == 'dict' and 'schema' in schema:
-        return _normalize_dict(schema['schema'], value, ctx)
-    elif schema.get('type', None) == 'list' and 'schema' in schema:
-        result = []
-        for idx, element in enumerate(value):
-            result.append(
-                _normalize_schema(schema['schema'], element, ctx.push_stack(idx))
-            )
-        return result
-
+    if 'schema' in schema:
+        # The meaning of a `schema` key inside a schema changes based on the
+        # type of the *value*. e.g., it is possible to define a schema like
+        # `{'schema': {'type': 'integer'}}` note that there is no `type`
+        # specified along with this schema. So it checks the value at runtime.
+        # If it is a list, it validates each element of the list with that
+        # sub-schema. If it is a dict, it *tries* to apply the schema directly
+        # as the dict-schema, which leads to a runtime error when it tries to
+        # interpret the string `integer` as a schema! Welp, bug-for-bug...
+        if isinstance(value, list):
+            result = []
+            for idx, element in enumerate(value):
+                result.append(
+                    _normalize_schema(schema['schema'], element, ctx.push_stack(idx))
+                )
+            return result
+        elif isinstance(value, dict):
+            return _normalize_dict(schema['schema'], value, ctx)
     return value
 
 def _normalize_multi(schema, value, key, ctx):

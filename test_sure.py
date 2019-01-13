@@ -175,6 +175,16 @@ def test_list_schema():
     assert ei.value.value == 'two'
     assert ei.value.stack == (1,)
 
+def test_list_schema_without_type():
+    # This is really stupid, but cerberus allows it
+    schema = {'schema': {'type': 'integer'}}
+    assert normalize_schema(schema, [33]) == [33]
+    # Calling normalize_schema(schema, {}) will throw an internal error :(
+
+def test_dict_schema_without_type():
+    schema = {'schema': {'x': {'type': 'integer'}}}
+    assert normalize_schema(schema, {'x': 33}) == {'x': 33}
+
 def test_list_normalize():
     schema = S.List(schema=S.Dict(schema={'x': S.String(default='')}))
     result = normalize_schema(schema, [{}])

@@ -183,8 +183,6 @@ def _normalize_multi(schema, value, key, ctx):
     else:
         return results[0]
 
-
-
 def _check_type(schema, value, stack):
     type_ = schema['type']
     types = TYPES[type_]

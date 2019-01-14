@@ -1,6 +1,14 @@
 import attr
 
 
+class SchemaError(Exception):
+    def __str__(self):
+        return self.fmt.format(**self.format_fields())
+
+    def format_fields(self):
+        return self.__dict__
+
+
 class SureError(Exception):
     def __str__(self):
         stack = 'root'
@@ -11,6 +19,7 @@ class SureError(Exception):
 
     def format_fields(self):
         return self.__dict__
+
 
 @attr.s
 class DictFieldNotFound(SureError):
@@ -135,3 +144,8 @@ class CoerceUnexpectedError(SureError):
         fields = self.__dict__.copy()
         fields['exception'] = '{}: {}'.format(type(self.exception).__name__, self.exception)
         return fields
+
+@attr.s
+class UnknownSchemaDirectives(SchemaError):
+    fmt = "Unknown schema directives {directives!r}"
+    directives = attr.ib()

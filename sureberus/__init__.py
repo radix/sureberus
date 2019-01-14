@@ -88,11 +88,24 @@ _directive_count = 0
 def directive(directive_name, short_circuit=False):
     def decorator(method):
         global _directive_count
-        method.sureberus_directive = {'directive': directive_name, 'short_circuit': short_circuit, 'order': _directive_count, 'method': method}
+        method.sureberus_directive = {
+            'directive': directive_name,
+            'short_circuit': short_circuit,
+            'order': _directive_count,
+            'method': method
+        }
         _directive_count += 1
         return method
     return decorator
 
+
+class _ShortCircuit(object):
+    """
+    A marker to indicate that schema directives should stop being processed, and
+    a value should immediately be returned.
+    """
+    def __init__(self, value):
+        self.value = value
 
 @attr.s
 class Normalizer(object):
@@ -102,18 +115,19 @@ class Normalizer(object):
     def handle_allow_unknown(self, value, directive_value, ctx):
         return (value, ctx.set_allow_unknown(directive_value))
 
-    @directive('nullable', short_circuit=True)
+    @directive('nullable')
     def handle_nullable(self, value, directive_value, ctx):
         if value is None and directive_value:
-            return (value, ctx)
+            return _ShortCircuit(value)
+        return (value, ctx)
 
-    @directive('oneof', short_circuit=True)
+    @directive('oneof')
     def handle_oneof(self, value, directive_value, ctx):
-        return (_normalize_multi(self.schema, value, 'oneof', ctx), ctx)
+        return _ShortCircuit(_normalize_multi(self.schema, value, 'oneof', ctx))
 
-    @directive('anyof', short_circuit=True)
+    @directive('anyof')
     def handle_anyof(self, value, _directive_value, ctx):
-        return (_normalize_multi(self.schema, value, 'anyof', ctx), ctx)
+        return _ShortCircuit(_normalize_multi(self.schema, value, 'anyof', ctx))
 
     @directive('coerce')
     def handle_coerce(self, value, directive_value, ctx):
@@ -183,6 +197,8 @@ class Normalizer(object):
             return (result, ctx)
         elif isinstance(value, dict):
             return (_normalize_dict(directive_value, value, ctx), ctx)
+        # And if you pass something that's not a list or a dict, cerberus just allows it
+        return (value, ctx)
 
     @directive('validator')
     def handle_validator(self, value, directive_value, ctx):
@@ -202,12 +218,20 @@ class Normalizer(object):
 def _normalize_schema(schema, value, ctx):
     normalizer = Normalizer(schema)
     directives = _get_directives(normalizer)
+    known_directives = set(directive['directive'] for directive in directives)
+    # These are handled outside of the directive machinery
+    known_directives.update({'excludes', 'required', 'default', 'default_setter'})
+    unknown_directives = set(schema.keys()) - known_directives
+    if unknown_directives:
+        raise E.UnknownSchemaDirectives(unknown_directives)
     for directive in directives:
         if directive['directive'] in schema:
             directive_value = schema[directive['directive']]
-            value, ctx = directive['method'](normalizer, value, directive_value, ctx)
-            if directive['short_circuit']:
-                return value
+            result = directive['method'](normalizer, value, directive_value, ctx)
+            if isinstance(result, _ShortCircuit):
+                return result.value
+            else:
+                value, ctx = result
     return value
 
 def _get_directives(normalizer):

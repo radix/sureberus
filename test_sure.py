@@ -115,14 +115,15 @@ def test_default():
 
 def test_default_setter():
     old_dict = {'foo': 0}
-    schema = {
+    schema = S.Dict(schema={
         'foo': S.Integer(),
         'foo-incremented': {'default_setter': lambda doc: doc['foo'] + 1}
-    }
-    new_dict = normalize_dict(schema, old_dict)
+    })
+    new_dict = normalize_schema(schema, old_dict)
     assert old_dict == {'foo': 0}
     assert new_dict == {'foo': 0, 'foo-incremented': 1}
 
+    assert normalize_schema(schema, {'foo': 0, 'foo-incremented': 5}) == {'foo': 0, 'foo-incremented': 5}
 
 def test_normalize_schema():
     assert normalize_schema(S.Integer(), 3)
@@ -156,6 +157,13 @@ def test_anyof_with_normalization():
     assert normalize_schema(anyof, ifoo_with_opacity) == ifoo_with_opacity
     ifoo_with_default = {'image': 'foo'}
     assert normalize_schema(anyof, ifoo_with_default) == {'image': 'foo', 'opacity': 100}
+
+def test_nullable():
+    assert normalize_schema({'nullable': True}, None) == None
+    assert normalize_schema(S.Integer(nullable=True), None) == None
+    with pytest.raises(E.BadType):
+        normalize_schema(S.Integer(nullable=False), None)
+
 
 def test_nullable_with_anyof():
     """This is the second reason that sureberus exists."""

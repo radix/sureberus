@@ -41,7 +41,7 @@ def _normalize_dict(dict_schema, value, ctx):
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.items():
         if key not in value:
-            replacement = _get_default(key, key_schema, value)
+            replacement = _get_default(key, key_schema, value, ctx)
             if replacement is not _marker:
                 new_dict[key] = replacement
             elif key_schema.get('required', False) == True:
@@ -53,14 +53,18 @@ def _normalize_dict(dict_schema, value, ctx):
                 raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
     return new_dict
 
-def _get_default(key, key_schema, doc):
+def _get_default(key, key_schema, doc, ctx):
     default = key_schema.get('default', _marker)
     if default is not _marker:
         return default
     else:
         default_setter = key_schema.get('default_setter', None)
         if default_setter is not None:
-            return default_setter(doc)
+            print("default setter")
+            try:
+                return default_setter(doc)
+            except Exception as e:
+                raise E.DefaultSetterUnexpectedError(key, key_schema, doc, e, ctx.stack)
     return _marker
 
 _marker = object()
@@ -90,7 +94,13 @@ def _normalize_schema(schema, value, ctx):
         return _normalize_multi(schema, value, 'anyof', ctx)
 
     if 'coerce' in schema:
-        value = schema['coerce'](value)
+        try:
+            value = schema['coerce'](value)
+        except E.SureError:
+            raise
+        except Exception as e:
+            raise E.CoerceUnexpectedError(schema, value, e, ctx.stack)
+
 
     if 'allowed' in schema:
         if value not in schema['allowed']:
@@ -136,16 +146,23 @@ def _normalize_schema(schema, value, ctx):
         field = ctx.stack[-1] if len(ctx.stack) else None
         def error(f, m):
             raise E.CustomValidatorError(f, m, stack=ctx.stack)
-        schema['validator'](field, value, error)
+        try:
+            schema['validator'](field, value, error)
+        except E.SureError:
+            raise
+        except Exception as e:
+            raise E.ValidatorUnexpectedError(field, schema, value, e, ctx.stack)
+
 
     return value
 
 def _normalize_multi(schema, value, key, ctx):
     clone = deepcopy(value)
-    errors = []
+    #errors = []
     results = []
     matched_schemas = []
     for subrule in schema[key]:
+        print("[RADIX]", subrule)
         cloned_schema = deepcopy(schema)
         del cloned_schema[key] # This is not very principled...?
         cloned_schema.update(subrule)
@@ -153,7 +170,9 @@ def _normalize_multi(schema, value, key, ctx):
         try:
             subresult = _normalize_schema(subrule, clone, ctx)
         except E.SureError as e:
-            errors.append(e)
+            print("[RADIX] ERROR", e)
+            pass
+            #errors.append(e)
         else:
             if key == 'oneof':
                 results.append(subresult)

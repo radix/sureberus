@@ -264,3 +264,47 @@ def test_validator_error():
         assert normalize_dict(schema, {'key': 'hi'}) == {'key': 'hi'}
     assert ei.value.field == 'key'
     assert ei.value.msg == 'heyo'
+
+def test_default_setter_in_starof():
+    """If a default setter raises inside of a *of-rule, it is treated as the
+    rule not validating
+    """
+    called = []
+    def blow_up(x):
+        called.append(True)
+        1 / 0
+    anyof = {
+        'allow_unknown': True,
+        'anyof': [
+            S.Dict(required=False, schema={'foo': S.String(required=False, default_setter=blow_up)}),
+            S.Dict(required=False, schema={'bar': S.String(required=False)}),
+        ]
+    }
+    assert normalize_schema(anyof, {'bar': 'baz'}) == {'bar': 'baz'}
+    assert called == [True]
+
+def test_default_setter_raises():
+    """If a default_setter raises, it is wrapped in a DefaultSetterUnexpectedError."""
+    schema = S.Dict(schema={'key': S.String(required=False, default_setter=lambda x: 1 / 0)})
+    with pytest.raises(E.DefaultSetterUnexpectedError) as ei:
+        normalize_schema(schema, {})
+    assert ei.value.key == 'key'
+    assert ei.value.value == {}
+    assert type(ei.value.exception) == ZeroDivisionError
+
+def test_validator_raises():
+    """If a validator raises, it is wrapped in a ValidatorUnexpectedError."""
+    schema = S.Dict(schema={'key': S.String(required=False, validator=lambda f, v, e: 1 / 0)})
+    with pytest.raises(E.ValidatorUnexpectedError) as ei:
+        normalize_schema(schema, {'key': 'hello'})
+    assert ei.value.field == 'key'
+    assert ei.value.value == 'hello'
+    assert type(ei.value.exception) == ZeroDivisionError
+
+def test_coerce_raises():
+    """If a coerce raises, it is wrapped in a CoerceUnexpectedError."""
+    schema = S.Dict(schema={'key': S.String(required=False, coerce=lambda x: 1 / 0)})
+    with pytest.raises(E.CoerceUnexpectedError) as ei:
+        normalize_schema(schema, {'key': 'hello'})
+    assert ei.value.value == 'hello'
+    assert type(ei.value.exception) == ZeroDivisionError

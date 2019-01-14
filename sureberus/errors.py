@@ -86,3 +86,29 @@ class OutOfBounds(SureError):
     min = attr.ib()
     max = attr.ib()
     stack = attr.ib()
+
+@attr.s
+class DefaultSetterUnexpectedError(SureError):
+    fmt = "default setter raised an exception for key {key!r} in schema {schema!r} and value {value!r}. Exception:\n{exception}"
+    key = attr.ib()
+    schema = attr.ib()
+    value = attr.ib()
+    exception = attr.ib()
+    stack = attr.ib()
+
+@attr.s
+class ValidatorUnexpectedError(SureError):
+    fmt = "validator for field {field!r} in schema {schema!r} failed with value {value!r}. Exception:\n{exception}"
+    field = attr.ib()
+    schema = attr.ib()
+    value = attr.ib()
+    exception = attr.ib()
+    stack = attr.ib()
+
+@attr.s
+class CoerceUnexpectedError(SureError):
+    fmt = "coerce with schema {schema!r} failed with value {value!r}. Exception:\n{exception}"
+    schema = attr.ib()
+    value = attr.ib()
+    exception = attr.ib()
+    stack = attr.ib()

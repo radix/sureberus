@@ -237,6 +237,15 @@ def test_excludes():
     with pytest.raises(E.DisallowedField) as ei:
         normalize_schema(schema, {'x': 'foo', 'other': 'bar'}, allow_unknown=True)
 
+def test_excludes_single():
+    schema = S.Dict(schema={'x': S.String(excludes='other')})
+    with pytest.raises(E.DisallowedField) as ei:
+        normalize_schema(schema, {'x': 'foo', 'other': 'bar'}, allow_unknown=True)
+
+def test_excludes_only_if_exists():
+    schema = S.Dict(allow_unknown=True, schema={'this': S.String(required=False, excludes='other')})
+    assert normalize_schema(schema, {'other': 'foo'}) == {'other': 'foo'}
+
 def test_coerce():
     def _to_list(item):
         if isinstance(item, list):

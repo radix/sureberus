@@ -48,9 +48,12 @@ def _normalize_dict(dict_schema, value, ctx):
                 raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
         if key in value:
             new_dict[key] = _normalize_schema(key_schema, value[key], ctx.push_stack(key))
-        for excluded_field in key_schema.get('excludes', ()):
-            if excluded_field in value:
-                raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
+            excludes = key_schema.get('excludes', [])
+            if not isinstance(excludes, list):
+                excludes = [excludes]
+            for excluded_field in excludes:
+                if excluded_field in value:
+                    raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
     return new_dict
 
 def _get_default(key, key_schema, doc, ctx):
@@ -99,7 +102,6 @@ def _normalize_schema(schema, value, ctx):
             raise
         except Exception as e:
             raise E.CoerceUnexpectedError(schema, value, e, ctx.stack)
-
 
     if 'allowed' in schema:
         if value not in schema['allowed']:
@@ -151,7 +153,6 @@ def _normalize_schema(schema, value, ctx):
             raise
         except Exception as e:
             raise E.ValidatorUnexpectedError(field, schema, value, e, ctx.stack)
-
 
     return value
 

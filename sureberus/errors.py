@@ -11,7 +11,7 @@ class SureError(Exception):
 
 @attr.s
 class DictFieldNotFound(SureError):
-    fmt = 'Key {key} not in dict {value}'
+    fmt = 'required field {key} in dict {value}'
     key = attr.ib()
     value = attr.ib()
     stack = attr.ib()
@@ -39,7 +39,7 @@ class MoreThanOneMatched(SureError):
 
 @attr.s
 class RegexMismatch(SureError):
-    fmt = "Value {value!r} did not match regex {regex}"
+    fmt = "value does not match regex {value!r} {regex!r}"
     value = attr.ib()
     regex = attr.ib()
     stack = attr.ib()

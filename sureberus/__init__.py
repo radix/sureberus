@@ -53,7 +53,7 @@ def _normalize_dict(dict_schema, value, ctx):
                 excludes = [excludes]
             for excluded_field in excludes:
                 if excluded_field in value:
-                    raise E.DisallowedField(key, key_schema['excludes'], ctx.stack)
+                    raise E.DisallowedField(key, excluded_field, ctx.stack)
     return new_dict
 
 def _get_default(key, key_schema, doc, ctx):

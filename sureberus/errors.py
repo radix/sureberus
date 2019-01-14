@@ -18,7 +18,7 @@ class DictFieldNotFound(SureError):
 
 @attr.s
 class BadType(SureError):
-    fmt = 'Wanted type {type_}, got {value!r}'
+    fmt = '{value!r} must be of {type_} type'
     value = attr.ib()
     type_ = attr.ib()
     stack = attr.ib()

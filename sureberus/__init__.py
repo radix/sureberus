@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from copy import deepcopy
+from inspect import getmembers
 import re
 
 import attr
@@ -82,49 +83,89 @@ TYPES = {
     'boolean': bool,
 }
 
-def _normalize_schema(schema, value, ctx):
-    if 'allow_unknown' in schema:
-        ctx = ctx.set_allow_unknown(schema['allow_unknown'])
+_directive_count = 0
 
-    if value is None and schema.get('nullable', False):
-        return value
+def directive(directive_name, short_circuit=False):
+    def decorator(method):
+        global _directive_count
+        method.sureberus_directive = {'directive': directive_name, 'short_circuit': short_circuit, 'order': _directive_count, 'method': method}
+        _directive_count += 1
+        return method
+    return decorator
 
-    if 'oneof' in schema:
-        return _normalize_multi(schema, value, 'oneof', ctx)
 
-    if 'anyof' in schema:
-        return _normalize_multi(schema, value, 'anyof', ctx)
+@attr.s
+class Normalizer(object):
+    schema = attr.ib()
 
-    if 'coerce' in schema:
+    @directive('allow_unknown')
+    def handle_allow_unknown(self, value, directive_value, ctx):
+        return (value, ctx.set_allow_unknown(directive_value))
+
+    @directive('nullable', short_circuit=True)
+    def handle_nullable(self, value, directive_value, ctx):
+        if value is None and directive_value:
+            return (value, ctx)
+
+    @directive('oneof', short_circuit=True)
+    def handle_oneof(self, value, directive_value, ctx):
+        return (_normalize_multi(self.schema, value, 'oneof', ctx), ctx)
+
+    @directive('anyof', short_circuit=True)
+    def handle_anyof(self, value, _directive_value, ctx):
+        return (_normalize_multi(self.schema, value, 'anyof', ctx), ctx)
+
+    @directive('coerce')
+    def handle_coerce(self, value, directive_value, ctx):
         try:
-            value = schema['coerce'](value)
+            return (directive_value(value), ctx)
         except E.SureError:
             raise
         except Exception as e:
             raise E.CoerceUnexpectedError(value, e, ctx.stack)
 
-    if 'allowed' in schema:
-        if value not in schema['allowed']:
-            raise E.DisallowedValue(value, schema['allowed'], ctx.stack)
+    @directive('allowed')
+    def handle_allowed(self, value, directive_value, ctx):
+        if value not in directive_value:
+            raise E.DisallowedValue(value, directive_value, ctx.stack)
+        return (value, ctx)
 
-    if 'type' in schema:
-        _check_type(schema, value, ctx.stack)
+    @directive('type')
+    def handle_type(self, value, directive_value, ctx):
+        types = TYPES[directive_value]
+        if not isinstance(value, types):
+            raise E.BadType(value, directive_value, ctx.stack)
+        return (value, ctx)
 
-    if 'maxlength' in schema:
-        if len(value) > schema['maxlength']:
-            raise E.MaxLengthExceeded(value, schema['maxlength'], ctx.stack)
+    @directive('maxlength')
+    def handle_maxlength(self, value, directive_value, ctx):
+        if len(value) > directive_value:
+            raise E.MaxLengthExceeded(value, directive_value, ctx.stack)
+        return (value, ctx)
 
-    if 'min' in schema:
-        if value < schema['min']:
-            raise E.OutOfBounds(value, schema['min'], schema.get('max'), ctx.stack)
-    if 'max' in schema:
-        if value > schema['max']:
-            raise E.OutOfBounds(value, schema.get('min'), schema['max'], ctx.stack)
+    @directive('min')
+    def handle_min(self, value, directive_value, ctx):
+        if value < directive_value:
+            raise E.OutOfBounds(value, directive_value, self.schema.get('max'), ctx.stack)
+        return (value, ctx)
 
-    if 'regex' in schema:
-        _check_regex(schema['regex'], value, ctx.stack)
+    @directive('max')
+    def handle_max(self, value, directive_value, ctx):
+        if value > directive_value:
+            raise E.OutOfBounds(value, self.schema.get('min'), directive_value, ctx.stack)
+        return (value, ctx)
 
-    if 'schema' in schema:
+    @directive('regex')
+    def handle_regex(self, value, directive_value, ctx):
+        # apparently you can put `regex` even when `type` isn't `string`, and it
+        # only actually gets run if the runtime value is a string.
+        if isinstance(value, str):
+            if not re.match(directive_value, value):
+                raise E.RegexMismatch(value, directive_value, ctx.stack)
+        return (value, ctx)
+
+    @directive('schema')
+    def handle_schema(self, value, directive_value, ctx):
         # The meaning of a `schema` key inside a schema changes based on the
         # type of the *value*. e.g., it is possible to define a schema like
         # `{'schema': {'type': 'integer'}}` note that there is no `type`
@@ -137,24 +178,46 @@ def _normalize_schema(schema, value, ctx):
             result = []
             for idx, element in enumerate(value):
                 result.append(
-                    _normalize_schema(schema['schema'], element, ctx.push_stack(idx))
+                    _normalize_schema(directive_value, element, ctx.push_stack(idx))
                 )
-            value = result
+            return (result, ctx)
         elif isinstance(value, dict):
-            value = _normalize_dict(schema['schema'], value, ctx)
+            return (_normalize_dict(directive_value, value, ctx), ctx)
 
-    if 'validator' in schema:
+    @directive('validator')
+    def handle_validator(self, value, directive_value, ctx):
         field = ctx.stack[-1] if len(ctx.stack) else None
+
         def error(f, m):
             raise E.CustomValidatorError(f, m, stack=ctx.stack)
+
         try:
-            schema['validator'](field, value, error)
+            directive_value(field, value, error)
         except E.SureError:
             raise
         except Exception as e:
             raise E.ValidatorUnexpectedError(field, value, e, ctx.stack)
+        return (value, ctx)
 
+def _normalize_schema(schema, value, ctx):
+    normalizer = Normalizer(schema)
+    directives = _get_directives(normalizer)
+    for directive in directives:
+        if directive['directive'] in schema:
+            directive_value = schema[directive['directive']]
+            value, ctx = directive['method'](normalizer, value, directive_value, ctx)
+            if directive['short_circuit']:
+                return value
     return value
+
+def _get_directives(normalizer):
+    directives = []
+    for (name, value) in getmembers(normalizer):
+        directive = getattr(value, 'sureberus_directive', None)
+        if directive:
+            directives.append(directive)
+    directives.sort(key=lambda d: d['order'])
+    return directives
 
 def _normalize_multi(schema, value, key, ctx):
     clone = deepcopy(value)
@@ -182,16 +245,3 @@ def _normalize_multi(schema, value, key, ctx):
         raise E.MoreThanOneMatched(clone, matched_schemas, ctx.stack)
     else:
         return results[0]
-
-def _check_type(schema, value, stack):
-    type_ = schema['type']
-    types = TYPES[type_]
-    if not isinstance(value, types):
-        raise E.BadType(value, type_, stack)
-
-def _check_regex(regex, value, stack):
-    # apparently you can put `regex` even when `type` isn't `string`, and it
-    # only actually gets run if the runtime value is a string.
-    if isinstance(value, str):
-        if not re.match(regex, value):
-            raise E.RegexMismatch(value, regex, stack)

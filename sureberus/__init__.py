@@ -158,6 +158,7 @@ def _normalize_schema(schema, value, ctx):
 def _normalize_multi(schema, value, key, ctx):
     clone = deepcopy(value)
     results = []
+    errors = []
     matched_schemas = []
     for subrule in schema[key]:
         cloned_schema = deepcopy(schema)
@@ -167,7 +168,7 @@ def _normalize_multi(schema, value, key, ctx):
         try:
             subresult = _normalize_schema(subrule, clone, ctx)
         except E.SureError as e:
-            pass
+            errors.append(e)
         else:
             if key == 'oneof':
                 results.append(subresult)
@@ -175,7 +176,7 @@ def _normalize_multi(schema, value, key, ctx):
             elif key == 'anyof':
                 return subresult
     if not results:
-        raise E.NoneMatched(clone, schema[key], ctx.stack)
+        raise E.NoneMatched(clone, schema[key], errors, ctx.stack)
     elif key == 'oneof' and len(results) > 1:
         raise E.MoreThanOneMatched(clone, matched_schemas, ctx.stack)
     else:

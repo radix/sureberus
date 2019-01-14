@@ -81,7 +81,7 @@ class MaxLengthExceeded(SureError):
 
 @attr.s
 class DisallowedField(SureError):
-    fmt = 'Because {field} is defined, {excluded} must not be present'
+    fmt = 'Because {field!r} is defined, {excluded!r} must not be present'
     field = attr.ib()
     excluded = attr.ib()
     stack = attr.ib()

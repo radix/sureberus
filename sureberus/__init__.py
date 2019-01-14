@@ -60,7 +60,6 @@ def _get_default(key, key_schema, doc, ctx):
     else:
         default_setter = key_schema.get('default_setter', None)
         if default_setter is not None:
-            print("default setter")
             try:
                 return default_setter(doc)
             except Exception as e:
@@ -158,11 +157,9 @@ def _normalize_schema(schema, value, ctx):
 
 def _normalize_multi(schema, value, key, ctx):
     clone = deepcopy(value)
-    #errors = []
     results = []
     matched_schemas = []
     for subrule in schema[key]:
-        print("[RADIX]", subrule)
         cloned_schema = deepcopy(schema)
         del cloned_schema[key] # This is not very principled...?
         cloned_schema.update(subrule)
@@ -170,9 +167,7 @@ def _normalize_multi(schema, value, key, ctx):
         try:
             subresult = _normalize_schema(subrule, clone, ctx)
         except E.SureError as e:
-            print("[RADIX] ERROR", e)
             pass
-            #errors.append(e)
         else:
             if key == 'oneof':
                 results.append(subresult)

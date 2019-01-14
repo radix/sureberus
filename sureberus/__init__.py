@@ -66,7 +66,7 @@ def _get_default(key, key_schema, doc, ctx):
             try:
                 return default_setter(doc)
             except Exception as e:
-                raise E.DefaultSetterUnexpectedError(key, key_schema, doc, e, ctx.stack)
+                raise E.DefaultSetterUnexpectedError(key, doc, e, ctx.stack)
     return _marker
 
 _marker = object()
@@ -101,7 +101,7 @@ def _normalize_schema(schema, value, ctx):
         except E.SureError:
             raise
         except Exception as e:
-            raise E.CoerceUnexpectedError(schema, value, e, ctx.stack)
+            raise E.CoerceUnexpectedError(value, e, ctx.stack)
 
     if 'allowed' in schema:
         if value not in schema['allowed']:
@@ -152,7 +152,7 @@ def _normalize_schema(schema, value, ctx):
         except E.SureError:
             raise
         except Exception as e:
-            raise E.ValidatorUnexpectedError(field, schema, value, e, ctx.stack)
+            raise E.ValidatorUnexpectedError(field, value, e, ctx.stack)
 
     return value
 
@@ -177,7 +177,7 @@ def _normalize_multi(schema, value, key, ctx):
             elif key == 'anyof':
                 return subresult
     if not results:
-        raise E.NoneMatched(clone, schema[key], errors, ctx.stack)
+        raise E.NoneMatched(clone, errors, ctx.stack)
     elif key == 'oneof' and len(results) > 1:
         raise E.MoreThanOneMatched(clone, matched_schemas, ctx.stack)
     else:

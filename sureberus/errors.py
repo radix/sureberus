@@ -28,16 +28,13 @@ class BadType(SureError):
 
 @attr.s
 class NoneMatched(SureError):
-    fmt = 'None of the following schemas matched {value!r}:\n{errors}'
+    fmt = 'None of the schemas matched {value!r}:\n{errors}'
     value = attr.ib()
-    schemas = attr.ib()
     errors = attr.ib()
     stack = attr.ib()
 
     def format_fields(self):
         errors = []
-        # We don't include the schemas in the error message because the
-        # sub-errors usually show them.
         for error in self.errors:
             errors.append('  * Error: {}'.format(error))
         fields = self.__dict__.copy()
@@ -103,9 +100,8 @@ class OutOfBounds(SureError):
 
 @attr.s
 class DefaultSetterUnexpectedError(SureError):
-    fmt = "default setter raised an exception for key {key!r} in schema {schema!r} and value {value!r}. Exception: {exception}"
+    fmt = "default setter raised an exception for key {key!r} and value {value!r}. Exception: {exception}"
     key = attr.ib()
-    schema = attr.ib()
     value = attr.ib()
     exception = attr.ib()
     stack = attr.ib()
@@ -117,9 +113,8 @@ class DefaultSetterUnexpectedError(SureError):
 
 @attr.s
 class ValidatorUnexpectedError(SureError):
-    fmt = "validator for field {field!r} in schema {schema!r} failed with value {value!r}. Exception: {exception}"
+    fmt = "validator for field {field!r} failed with value {value!r}. Exception: {exception}"
     field = attr.ib()
-    schema = attr.ib()
     value = attr.ib()
     exception = attr.ib()
     stack = attr.ib()
@@ -131,8 +126,7 @@ class ValidatorUnexpectedError(SureError):
 
 @attr.s
 class CoerceUnexpectedError(SureError):
-    fmt = "coerce with schema {schema!r} failed with value {value!r}. Exception: {exception}"
-    schema = attr.ib()
+    fmt = "coerce failed with value {value!r}. Exception: {exception}"
     value = attr.ib()
     exception = attr.ib()
     stack = attr.ib()

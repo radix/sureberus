@@ -41,14 +41,18 @@ def _normalize_dict(dict_schema, value, ctx):
         else:
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.items():
-        if key not in value:
-            replacement = _get_default(key, key_schema, value, ctx)
+        original_key = key
+        if 'rename' in key_schema:
+            key = key_schema.get('rename')
+        if original_key not in value:
+            replacement = _get_default(original_key, key_schema, value, ctx)
             if replacement is not _marker:
                 new_dict[key] = replacement
             elif key_schema.get('required', False) == True:
                 raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
-        if key in value:
-            new_dict[key] = _normalize_schema(key_schema, value[key], ctx.push_stack(key))
+        if original_key in value:
+            new_dict[key] = _normalize_schema(key_schema,
+                value[original_key], ctx.push_stack(original_key))
             excludes = key_schema.get('excludes', [])
             if not isinstance(excludes, list):
                 excludes = [excludes]
@@ -220,7 +224,8 @@ def _normalize_schema(schema, value, ctx):
     directives = _get_directives(normalizer)
     known_directives = set(directive['directive'] for directive in directives)
     # These are handled outside of the directive machinery
-    known_directives.update({'excludes', 'required', 'default', 'default_setter'})
+    known_directives.update({'excludes', 'required', 'default',
+                             'default_setter', 'rename'})
     unknown_directives = set(schema.keys()) - known_directives
     if unknown_directives:
         raise E.UnknownSchemaDirectives(unknown_directives)

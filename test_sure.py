@@ -204,6 +204,53 @@ def test_maxlength():
     with pytest.raises(E.MaxLengthExceeded):
         normalize_schema({'maxlength': 3}, [0,1,2,3])
 
+def test_rename():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo'},
+    })
+    val = {'foo': 2}
+    assert normalize_schema(schema, val) == {'moo': 2}
+
+def test_rename_with_coerce():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'coerce': str},
+    })
+    val = {'foo': 2}
+    assert normalize_schema(schema, val) == {'moo': '2'}
+
+def test_rename_with_default():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'type': 'boolean', 'default': True},
+    })
+    val = {}
+    assert normalize_schema(schema, val) == {'moo': True}
+
+    val = {'foo': False}
+    assert normalize_schema(schema, val) == {'moo': False}
+
+def test_rename_with_both_attributes_present():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'coerce': str},
+    }, allow_unknown=True)
+    val = {'foo': 1, 'moo': 2}
+    assert normalize_schema(schema, val) == {'moo': '1'}
+
+    # Yes, we can swap attributes
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'coerce': str},
+        'moo': {'rename': 'foo', 'coerce': str},
+    }, allow_unknown=True)
+    val = {'foo': 1, 'moo': 2}
+    assert normalize_schema(schema, val) == {'moo': '1', 'foo': '2'}
+
+def test_rename_with_maxlength():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'maxlength': 3},
+    })
+    val = {'foo': 'fooob'}
+    with pytest.raises(E.MaxLengthExceeded):
+        assert normalize_schema(schema, val)
+
 def test_list():
     schema = S.List()
     val = [1, 'two', object()]

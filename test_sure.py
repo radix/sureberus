@@ -204,6 +204,28 @@ def test_maxlength():
     with pytest.raises(E.MaxLengthExceeded):
         normalize_schema({'maxlength': 3}, [0,1,2,3])
 
+def test_rename():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo'},
+    })
+    val = {'foo': 2}
+    assert normalize_schema(schema, val) == {'moo': 2}
+
+def test_rename_with_coerce():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'coerce': str},
+    })
+    val = {'foo': 2}
+    assert normalize_schema(schema, val) == {'moo': '2'}
+
+def test_rename_with_maxlength():
+    schema = S.Dict(schema={
+        'foo': {'rename': 'moo', 'maxlength': 3},
+    })
+    val = {'foo': 'fooob'}
+    with pytest.raises(E.MaxLengthExceeded):
+        assert normalize_schema(schema, val)
+
 def test_list():
     schema = S.List()
     val = [1, 'two', object()]

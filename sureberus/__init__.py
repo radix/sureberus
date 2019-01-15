@@ -41,18 +41,15 @@ def _normalize_dict(dict_schema, value, ctx):
         else:
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.items():
-        original_key = key
-        if 'rename' in key_schema:
-            key = key_schema.get('rename')
-        if original_key not in value:
-            replacement = _get_default(original_key, key_schema, value, ctx)
+        new_key = key_schema.get('rename', key)
+        if key not in value:
+            replacement = _get_default(key, key_schema, value, ctx)
             if replacement is not _marker:
-                new_dict[key] = replacement
+                new_dict[new_key] = replacement
             elif key_schema.get('required', False) == True:
                 raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
-        if original_key in value:
-            new_dict[key] = _normalize_schema(key_schema,
-                value[original_key], ctx.push_stack(original_key))
+        if key in value:
+            new_dict[new_key] = _normalize_schema(key_schema, value[key], ctx.push_stack(key))
             excludes = key_schema.get('excludes', [])
             if not isinstance(excludes, list):
                 excludes = [excludes]

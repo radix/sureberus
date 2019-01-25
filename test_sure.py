@@ -310,6 +310,29 @@ def test_coerce():
     schema = {'coerce': _to_list}
     assert normalize_schema(schema, 33) == [33]
 
+def test_coerce_post_basic():
+    def _to_list(item):
+        if isinstance(item, list):
+            return item
+        else:
+            return [item]
+    schema = {'coerce_post': _to_list}
+    assert normalize_schema(schema, 33) == [33]
+
+def test_coerce_post_after_children():
+    def relies_on_child_norm(doc):
+        doc['FOO'] = doc['child']
+        return doc
+
+    schema = {
+        'type': 'dict',
+        'schema': {
+            'child': {'default': 'cool-default'},
+        },
+        'coerce_post': relies_on_child_norm,
+    }
+    assert normalize_schema(schema, {}) == {'FOO': 'cool-default', 'child': 'cool-default'}
+
 def test_validator():
     called = []
     def val(field, value, error):

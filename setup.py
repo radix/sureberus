@@ -2,12 +2,14 @@
 import setuptools
 
 setuptools.setup(
-    name="sureberus",
-    description="Cerberus alternative",
+    name='sureberus',
+    version='0.2',
+    description='Cerberus alternative',
     long_description=open('README.md').read(),
-    url="http://github.com/radix/sureberus/",
-    author="Christopher Armstrong",
-    license="MIT",
+    long_description_content_type='text/markdown',
+    url='http://github.com/radix/sureberus/',
+    author='Christopher Armstrong',
+    license='MIT',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',

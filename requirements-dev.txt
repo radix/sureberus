@@ -1,1 +1,3 @@
 pytest==4.1
+twine
+readme_renderer[md] # so "twine check" can parse our long_description

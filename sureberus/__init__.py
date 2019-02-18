@@ -122,8 +122,8 @@ class Normalizer(object):
             return _ShortCircuit(value)
         return (value, ctx)
 
-    @directive('schema_choice')
-    def handle_schema_choice(self, value, directive_value, ctx):
+    @directive('when_key_is')
+    def handle_when_key_is(self, value, directive_value, ctx):
         choice_key = directive_value['key']
         chosen_type = value[choice_key]
         new_schema = self.schema.copy()
@@ -131,7 +131,7 @@ class Normalizer(object):
             new_schema['schema'] = {}
         # Putting the "choice key" into the dict schema is not required,
         # since we can figure out exactly which values it should allow based
-        # on what's in the `schema_choice`.
+        # on what's in the `when_key_is`.
         allowed_choices = list(directive_value['choices'].keys())
         if choice_key not in new_schema['schema']:
             new_schema['schema'][choice_key] = {'allowed': allowed_choices}
@@ -139,7 +139,25 @@ class Normalizer(object):
             raise E.DisallowedValue(chosen_type, allowed_choices, ctx.push_stack(choice_key).stack)
         subschema = directive_value['choices'][chosen_type]
         new_schema['schema'].update(subschema)
-        del new_schema['schema_choice']
+        del new_schema['when_key_is']
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
+
+    @directive('when_key_exists')
+    def handle_when_key_exists(self, value, directive_value, ctx):
+        chosen_type = None
+        for key in directive_value.keys():
+            if key in value:
+                if chosen_type is not None:
+                    raise E.DisallowedField(chosen_type, key, ctx.stack)
+                chosen_type = key
+
+        new_schema = self.schema.copy()
+        if 'schema' not in new_schema:
+            new_schema['schema'] = {}
+
+        subschema = directive_value[chosen_type]
+        new_schema['schema'].update(subschema)
+        del new_schema['when_key_exists']
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive('oneof')

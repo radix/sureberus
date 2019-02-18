@@ -397,22 +397,22 @@ def test_coerce_raises():
     assert type(ei.value.exception) == ZeroDivisionError
 
 choice_schema = {
-        'type': 'dict',
-        'schema_choice': {
-            'key': 'type',
-            'choices': {
-                'foo': {
-                    'foo_sibling': S.String(),
-                },
-                'bar': {
-                    'bar_sibling': S.Integer(),
-                }
+    'type': 'dict',
+    'when_key_is': {
+        'key': 'type',
+        'choices': {
+            'foo': {
+                'foo_sibling': S.String(),
+            },
+            'bar': {
+                'bar_sibling': S.Integer(),
             }
         }
     }
+}
 
-def test_nicer_syntax_for_schema_choice():
-    assert choice_schema == S.DictChoice(
+def test_nicer_syntax_for_when_key_is():
+    assert choice_schema == S.DictWhenKeyIs(
         key='type',
         choices={
             'foo': {'foo_sibling': S.String()},
@@ -420,19 +420,49 @@ def test_nicer_syntax_for_schema_choice():
         }
     )
 
-def test_schema_choice():
+def test_when_key_is():
     v = {'type': 'foo', 'foo_sibling': 'bar'}
     assert normalize_schema(choice_schema, v) == v
     v2 = {'type': 'bar', 'bar_sibling': 37}
     assert normalize_schema(choice_schema, v2) == v2
 
-def test_schema_choice_unknown_type():
+def test_when_key_is_unknown():
     with pytest.raises(E.DisallowedValue) as ei:
         normalize_schema(choice_schema, {'type': 'baz'})
-
     assert ei.value.stack == ('type',)
 
-def test_schema_choice_wrong_choice():
+def test_when_key_is_wrong_choice():
     v = {'type': 'foo', 'bar_sibling': 37}
-    with pytest.raises(E.UnknownFields):
+    with pytest.raises(E.UnknownFields):  # this could as well be E.DictFieldNotFound...
         normalize_schema(choice_schema, v)
+
+choice_existence_schema = {
+    'type': 'dict',
+    'when_key_exists': {
+        'image': {'image': S.String(), 'width': S.Integer()},
+        'pattern': {'pattern': S.Dict(), 'color': S.String()}
+    }
+}
+
+def test_nicer_syntax_for_when_key_exists():
+    assert choice_existence_schema == S.DictWhenKeyExists({
+        'image': {'image': S.String(), 'width': S.Integer()},
+        'pattern': {'pattern': S.Dict(), 'color': S.String()},
+    })
+
+def test_when_key_exists():
+    v = {'image': 'foo', 'width': 3}
+    assert normalize_schema(choice_existence_schema, v) == v
+    v = {'pattern': {}, 'color': 'red'}
+    assert normalize_schema(choice_existence_schema, v) == v
+
+def test_when_key_exists_wrong_choice():
+    v = {'image': 'foo', 'color': 'red'}
+    with pytest.raises(E.UnknownFields): # this could as well be E.DictFieldNotFound...
+        normalize_schema(choice_existence_schema, v)
+
+def test_when_key_exists_error_multiple_keys_exist():
+    v = {'image': 'foo', 'width': 3, 'pattern': {}, 'color': 'red'}
+    with pytest.raises(E.DisallowedField) as ei:
+        normalize_schema(choice_existence_schema, v)
+    assert {ei.value.field, ei.value.excluded} == {'image', 'pattern'}

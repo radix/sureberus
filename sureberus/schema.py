@@ -16,8 +16,11 @@ def Dict(required=True, anyof=None, schema={}, **kwargs):
         kwargs['anyof'] = anyof
     return mk(None, kwargs, type='dict', schema=schema, required=required)
 
-def DictChoice(choices, key=None):
-    return {'type': 'dict', 'schema_choice': {'key': key, 'choices': choices}}
+def DictWhenKeyIs(key, choices):
+    return {'type': 'dict', 'when_key_is': {'key': key, 'choices': choices}}
+
+def DictWhenKeyExists(choices):
+    return {'type': 'dict', 'when_key_exists': choices}
 
 def SubSchema(_d=None, **kwargs):
     return {'schema': mk(_d, kwargs)}

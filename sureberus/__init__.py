@@ -126,37 +126,38 @@ class Normalizer(object):
     def handle_when_key_is(self, value, directive_value, ctx):
         choice_key = directive_value['key']
         chosen_type = value[choice_key]
-        new_schema = self.schema.copy()
-        if 'schema' not in new_schema:
-            new_schema['schema'] = {}
+        new_schema = deepcopy(self.schema)
         # Putting the "choice key" into the dict schema is not required,
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
         allowed_choices = list(directive_value['choices'].keys())
-        if choice_key not in new_schema['schema']:
+        if choice_key not in new_schema.setdefault('schema', {}):
             new_schema['schema'][choice_key] = {'allowed': allowed_choices}
         if chosen_type not in directive_value['choices']:
             raise E.DisallowedValue(chosen_type, allowed_choices, ctx.push_stack(choice_key).stack)
-        subschema = directive_value['choices'][chosen_type]
-        new_schema['schema'].update(subschema)
+        subschema = directive_value['choices'][chosen_type].copy()
+        new_schema['schema'].update(subschema.pop('schema'))
+        new_schema.update(subschema)
         del new_schema['when_key_is']
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive('when_key_exists')
     def handle_when_key_exists(self, value, directive_value, ctx):
         chosen_type = None
-        for key in directive_value.keys():
+        possible_keys = list(directive_value.keys())
+        for key in possible_keys:
             if key in value:
                 if chosen_type is not None:
                     raise E.DisallowedField(chosen_type, key, ctx.stack)
                 chosen_type = key
+        if chosen_type is None:
+            raise E.ExpectedOneField(possible_keys, value, ctx.stack)
 
-        new_schema = self.schema.copy()
-        if 'schema' not in new_schema:
-            new_schema['schema'] = {}
+        new_schema = deepcopy(self.schema)
 
-        subschema = directive_value[chosen_type]
-        new_schema['schema'].update(subschema)
+        subschema = directive_value[chosen_type].copy()
+        new_schema.setdefault('schema', {}).update(subschema.pop('schema'))
+        new_schema.update(subschema)
         del new_schema['when_key_exists']
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 

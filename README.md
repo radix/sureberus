@@ -6,7 +6,72 @@ where it does implement a feature it doesn't always implement it in the exact
 same way.
 
 The main reason it exists is to support some of the things that Cerberus doesn't
-do
+do.
+
+## Schema selection based on dict keys
+
+Often types when `anyof` (or similar rules) are used, what we really want to do
+is *select* a schema based on dict keys.
+
+There are two options for this:
+
+### when_key_is
+
+Use this when you have dictionaries that have a fixed key, such as `"type"`,
+which specifies some specific format to use. For example, if you have data that
+can look like this:
+
+```json
+{"type": "elephant", "trunk_length": 60}
+{"type": "eagle", "wingspan": 50}
+```
+
+Then you would use `when_key_is`, like this:
+
+```json
+{
+    "type": "dict",
+    "when_key_is": {
+        "key": "type",
+        "choices": {
+            "elephant": {
+                "schema": {"trunk_length": {"type": "integer"}}
+            },
+            "eagle": {
+                "schema": {"wingspan": {"type": "integer"}}
+            },
+        }
+    }
+}
+```
+
+### when_key_exists
+
+Use this when you have dictionaries where you must choose the schema based on
+keys that exist in the data exclusively for their type of data. For example, if
+you have data that can look like this:
+
+```json
+{"image_url": "foo.jpg", "width": 30}
+{"color": "red"}
+```
+
+Then you would use `when_key_exists`, like this:
+
+```json
+{
+    "type": "dict",
+    "when_key_exists": {
+        "image_url": {
+            "schema": {"image_url": {"type": "string"}, "width": {"type": "integer"}}
+        },
+        "color": {
+            "schema": {"color": {"type": "string"}}
+        },
+    }
+}
+```
+
 
 ## normalization inside of *of-rules
 

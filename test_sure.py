@@ -398,29 +398,14 @@ def test_coerce_raises():
     assert ei.value.value == 'hello'
     assert type(ei.value.exception) == ZeroDivisionError
 
-choice_schema = {
-    'type': 'dict',
-    'when_key_is': {
-        'key': 'type',
-        'choices': {
-            'foo': {
-                'schema': {'foo_sibling': S.String()},
-            },
-            'bar': {
-                'schema': {'bar_sibling': S.Integer()},
-            }
-        }
+choice_schema = S.DictWhenKeyIs(
+    'type',
+    {
+        'foo': {'schema': {'foo_sibling': S.String()}},
+        'bar': {'schema': {'bar_sibling': S.Integer()}},
     }
-}
+)
 
-def test_nicer_syntax_for_when_key_is():
-    assert choice_schema == S.DictWhenKeyIs(
-        key='type',
-        choices={
-            'foo': {'schema': {'foo_sibling': S.String()}},
-            'bar': {'schema': {'bar_sibling': S.Integer()}},
-        }
-    )
 
 def test_when_key_is():
     v = {'type': 'foo', 'foo_sibling': 'bar'}
@@ -468,19 +453,10 @@ def test_when_key_is_common_schema():
     v = {'type': 'bar', 'bar_sibling': 3, 'common!': 'yup'}
     assert normalize_schema(schema, v) == v
 
-choice_existence_schema = {
-    'type': 'dict',
-    'when_key_exists': {
-        'image': {'schema': {'image': S.String(), 'width': S.Integer()}},
-        'pattern': {'schema': {'pattern': S.Dict(), 'color': S.String()}},
-    }
-}
-
-def test_nicer_syntax_for_when_key_exists():
-    assert choice_existence_schema == S.DictWhenKeyExists({
-        'image': {'schema': {'image': S.String(), 'width': S.Integer()}},
-        'pattern': {'schema': {'pattern': S.Dict(), 'color': S.String()}},
-    })
+choice_existence_schema = S.DictWhenKeyExists({
+    'image': {'schema': {'image': S.String(), 'width': S.Integer()}},
+    'pattern': {'schema': {'pattern': S.Dict(), 'color': S.String()}},
+})
 
 def test_when_key_exists():
     v = {'image': 'foo', 'width': 3}

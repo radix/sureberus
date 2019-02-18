@@ -122,6 +122,26 @@ class Normalizer(object):
             return _ShortCircuit(value)
         return (value, ctx)
 
+    @directive('schema_choice')
+    def handle_schema_choice(self, value, directive_value, ctx):
+        choice_key = directive_value['key']
+        chosen_type = value[choice_key]
+        new_schema = self.schema.copy()
+        if 'schema' not in new_schema:
+            new_schema['schema'] = {}
+        # Putting the "choice key" into the dict schema is not required,
+        # since we can figure out exactly which values it should allow based
+        # on what's in the `schema_choice`.
+        allowed_choices = list(directive_value['choices'].keys())
+        if choice_key not in new_schema['schema']:
+            new_schema['schema'][choice_key] = {'allowed': allowed_choices}
+        if chosen_type not in directive_value['choices']:
+            raise E.DisallowedValue(chosen_type, allowed_choices, ctx.push_stack(choice_key).stack)
+        subschema = directive_value['choices'][chosen_type]
+        new_schema['schema'].update(subschema)
+        del new_schema['schema_choice']
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
+
     @directive('oneof')
     def handle_oneof(self, value, directive_value, ctx):
         return _ShortCircuit(_normalize_multi(self.schema, value, 'oneof', ctx))

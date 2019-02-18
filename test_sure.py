@@ -395,3 +395,44 @@ def test_coerce_raises():
         normalize_schema(schema, {'key': 'hello'})
     assert ei.value.value == 'hello'
     assert type(ei.value.exception) == ZeroDivisionError
+
+choice_schema = {
+        'type': 'dict',
+        'schema_choice': {
+            'key': 'type',
+            'choices': {
+                'foo': {
+                    'foo_sibling': S.String(),
+                },
+                'bar': {
+                    'bar_sibling': S.Integer(),
+                }
+            }
+        }
+    }
+
+def test_nicer_syntax_for_schema_choice():
+    assert choice_schema == S.DictChoice(
+        key='type',
+        choices={
+            'foo': {'foo_sibling': S.String()},
+            'bar': {'bar_sibling': S.Integer()},
+        }
+    )
+
+def test_schema_choice():
+    v = {'type': 'foo', 'foo_sibling': 'bar'}
+    assert normalize_schema(choice_schema, v) == v
+    v2 = {'type': 'bar', 'bar_sibling': 37}
+    assert normalize_schema(choice_schema, v2) == v2
+
+def test_schema_choice_unknown_type():
+    with pytest.raises(E.DisallowedValue) as ei:
+        normalize_schema(choice_schema, {'type': 'baz'})
+
+    assert ei.value.stack == ('type',)
+
+def test_schema_choice_wrong_choice():
+    v = {'type': 'foo', 'bar_sibling': 37}
+    with pytest.raises(E.UnknownFields):
+        normalize_schema(choice_schema, v)

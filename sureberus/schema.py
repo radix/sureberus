@@ -21,8 +21,8 @@ def Dict(required=True, anyof=None, schema=None, **kwargs):
 def DictWhenKeyIs(key, choices, **kwargs):
     return Dict(when_key_is={'key': key, 'choices': choices}, **kwargs)
 
-def DictWhenKeyExists(choices):
-    return Dict(when_key_exists=choices)
+def DictWhenKeyExists(choices, **kwargs):
+    return Dict(when_key_exists=choices, **kwargs)
 
 def SubSchema(_d=None, **kwargs):
     return {'schema': mk(_d, kwargs)}

@@ -10,8 +10,8 @@ do.
 
 ## Schema selection based on dict keys
 
-Often types when `anyof` (or similar rules) are used, what we really want to do
-is *select* a schema based on dict keys.
+Often times when `anyof` or `oneof` are used, what we really want to do is
+*select* a schema based on dict keys.
 
 There are two options for this:
 

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from sureberus import normalize_dict, normalize_schema
@@ -395,3 +397,117 @@ def test_coerce_raises():
         normalize_schema(schema, {'key': 'hello'})
     assert ei.value.value == 'hello'
     assert type(ei.value.exception) == ZeroDivisionError
+
+choice_schema = S.DictWhenKeyIs(
+    'type',
+    {
+        'foo': {'schema': {'foo_sibling': S.String()}},
+        'bar': {'schema': {'bar_sibling': S.Integer()}},
+    }
+)
+
+
+def test_when_key_is():
+    v = {'type': 'foo', 'foo_sibling': 'bar'}
+    assert normalize_schema(choice_schema, v) == v
+    v2 = {'type': 'bar', 'bar_sibling': 37}
+    assert normalize_schema(choice_schema, v2) == v2
+
+def test_when_key_is_unknown():
+    with pytest.raises(E.DisallowedValue) as ei:
+        normalize_schema(choice_schema, {'type': 'baz'})
+    assert ei.value.stack == ('type',)
+
+def test_when_key_is_wrong_choice():
+    v = {'type': 'foo', 'bar_sibling': 37}
+    with pytest.raises(E.UnknownFields):  # this could as well be E.DictFieldNotFound...
+        normalize_schema(choice_schema, v)
+
+def test_when_key_is_other_schema_directives():
+    schema = deepcopy(choice_schema)
+
+    def coerce(x):
+        x['bar_sibling'] += 1
+        return x
+
+    schema['when_key_is']['choices']['bar']['coerce'] = coerce
+    v = {'type': 'foo', 'foo_sibling': 'hi'}
+    assert normalize_schema(schema, v) == v
+    v2 = {'type': 'bar', 'bar_sibling': 32}
+    assert normalize_schema(schema, v2) == {'type': 'bar', 'bar_sibling': 33}
+
+def test_when_key_is_common_schema():
+    schema = deepcopy(choice_schema)
+    schema['schema'] = {'common!': S.String()}
+    # with pytest.raises(E.DictFieldNotFound) as ei:
+    #     v = {'type': 'foo', 'foo_sibling': 'hi'}
+    #     normalize_schema(schema, v)
+    # assert ei.value.key == 'common!'
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        v = {'type': 'bar', 'bar_sibling': 3}
+        normalize_schema(schema, v)
+    assert ei.value.key == 'common!'
+
+    v = {'type': 'foo', 'foo_sibling': 'hi', 'common!': 'yup'}
+    assert normalize_schema(schema, v) == v
+    v = {'type': 'bar', 'bar_sibling': 3, 'common!': 'yup'}
+    assert normalize_schema(schema, v) == v
+
+choice_existence_schema = S.DictWhenKeyExists({
+    'image': {'schema': {'image': S.String(), 'width': S.Integer()}},
+    'pattern': {'schema': {'pattern': S.Dict(), 'color': S.String()}},
+})
+
+def test_when_key_exists():
+    v = {'image': 'foo', 'width': 3}
+    assert normalize_schema(choice_existence_schema, v) == v
+    v = {'pattern': {}, 'color': 'red'}
+    assert normalize_schema(choice_existence_schema, v) == v
+
+def test_when_key_exists_wrong_choice():
+    v = {'image': 'foo', 'color': 'red'}
+    with pytest.raises(E.UnknownFields): # this could as well be E.DictFieldNotFound...
+        normalize_schema(choice_existence_schema, v)
+
+def test_when_key_exists_error_multiple_keys_exist():
+    v = {'image': 'foo', 'width': 3, 'pattern': {}, 'color': 'red'}
+    with pytest.raises(E.DisallowedField) as ei:
+        normalize_schema(choice_existence_schema, v)
+    assert {ei.value.field, ei.value.excluded} == {'image', 'pattern'}
+
+def test_when_key_exists_NO_keys_exist():
+    v = {'width': 30}
+    with pytest.raises(E.ExpectedOneField) as ei:
+        normalize_schema(choice_existence_schema, v)
+    assert set(ei.value.expected) == {'pattern', 'image'}
+
+def test_when_key_exists_other_schema_directives():
+    schema = deepcopy(choice_existence_schema)
+
+    def coerce(x):
+        x['width'] += 1
+        return x
+
+    schema['when_key_exists']['image']['coerce'] = coerce
+
+    v = {'pattern': {}, 'color': 'red'}
+    assert normalize_schema(schema, v) == v
+    v = {'image': 'foo', 'width': 3}
+    assert normalize_schema(schema, v) == {'image': 'foo', 'width': 4}
+
+def test_when_key_exists_common_schema():
+    schema = deepcopy(choice_existence_schema)
+    schema['schema'] = {'common!': S.String()}
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        v = {'image': 'foo', 'width': 3}
+        normalize_schema(schema, v)
+    assert ei.value.key == 'common!'
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        v = {'pattern': {}, 'color': 'red'}
+        normalize_schema(schema, v)
+    assert ei.value.key == 'common!'
+
+    v = {'image': 'foo', 'width': 3, 'common!': 'yup'}
+    assert normalize_schema(schema, v) == v
+    v = {'pattern': {}, 'color': 'red', 'common!': 'yup'}
+    assert normalize_schema(schema, v) == v

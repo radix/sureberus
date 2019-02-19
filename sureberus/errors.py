@@ -29,6 +29,13 @@ class DictFieldNotFound(SureError):
     stack = attr.ib()
 
 @attr.s
+class ExpectedOneField(SureError):
+    fmt = 'One of the following fields must be defined: {expected} in {value!r}'
+    expected = attr.ib()
+    value = attr.ib()
+    stack = attr.ib()
+
+@attr.s
 class BadType(SureError):
     fmt = '{value!r} must be of {type_} type'
     value = attr.ib()

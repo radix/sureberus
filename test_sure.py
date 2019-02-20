@@ -548,16 +548,18 @@ def test_when_key_is_coercions():
         "foo_sibling": "hello!",
     }
 
+
 def test_when_key_is_type_check():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(choice_schema, "foo")
-    assert ei.value.type_ == 'dict'
-    assert ei.value.value == 'foo'
+    assert ei.value.type_ == "dict"
+    assert ei.value.value == "foo"
+
 
 def test_when_key_is_not_found():
     with pytest.raises(E.DictFieldNotFound) as ei:
-        normalize_schema(choice_schema, {'foo_sibling': 'hello'})
-    assert ei.value.key == 'type'
+        normalize_schema(choice_schema, {"foo_sibling": "hello"})
+    assert ei.value.key == "type"
 
 
 choice_existence_schema = S.DictWhenKeyExists(
@@ -642,8 +644,10 @@ def test_when_key_exists_coercions():
     schema["coerce"] = coerce
     assert normalize_schema(schema, "red") == {"pattern": {}, "color": "red"}
 
+
 def test_when_key_exists_type_check():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(choice_existence_schema, "foo")
-    assert ei.value.type_ == 'dict'
-    assert ei.value.value == 'foo'
+    assert ei.value.type_ == "dict"
+    assert ei.value.value == "foo"
+

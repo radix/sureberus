@@ -147,7 +147,7 @@ class Normalizer(object):
     def handle_when_key_is(self, value, directive_value, ctx):
         # At this point, we *need* this thing to be a dict, so we can look up
         # keys. So let's make sure it's a dict.
-        self.handle_type(value, 'dict', ctx)
+        self.handle_type(value, "dict", ctx)
         choice_key = directive_value["key"]
         new_schema = deepcopy(self.schema)
         # Putting the "choice key" into the dict schema is not required,
@@ -171,7 +171,7 @@ class Normalizer(object):
 
     @directive("when_key_exists")
     def handle_when_key_exists(self, value, directive_value, ctx):
-        self.handle_type(value, 'dict', ctx)
+        self.handle_type(value, "dict", ctx)
         chosen_type = None
         possible_keys = list(directive_value.keys())
         for key in possible_keys:

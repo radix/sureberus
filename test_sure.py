@@ -517,9 +517,9 @@ def test_when_key_is_common_schema():
     schema = deepcopy(choice_schema)
     schema["schema"] = {"common!": S.String()}
     with pytest.raises(E.DictFieldNotFound) as ei:
-        v = {'type': 'foo', 'foo_sibling': 'hi'}
+        v = {"type": "foo", "foo_sibling": "hi"}
         normalize_schema(schema, v)
-    assert ei.value.key == 'common!'
+    assert ei.value.key == "common!"
     with pytest.raises(E.DictFieldNotFound) as ei:
         v = {"type": "bar", "bar_sibling": 3}
         normalize_schema(schema, v)
@@ -529,6 +529,35 @@ def test_when_key_is_common_schema():
     assert normalize_schema(schema, v) == v
     v = {"type": "bar", "bar_sibling": 3, "common!": "yup"}
     assert normalize_schema(schema, v) == v
+
+
+def test_when_key_is_coercions():
+    """Coercions happen *before* when_key_is, so they can e.g.
+    convert from a non-dict to a dict.
+    """
+    schema = deepcopy(choice_schema)
+
+    def coerce(value):
+        if isinstance(value, str):
+            return {"type": "foo", "foo_sibling": value}
+        return value
+
+    schema["coerce"] = coerce
+    assert normalize_schema(schema, "hello!") == {
+        "type": "foo",
+        "foo_sibling": "hello!",
+    }
+
+def test_when_key_is_type_check():
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(choice_schema, "foo")
+    assert ei.value.type_ == 'dict'
+    assert ei.value.value == 'foo'
+
+def test_when_key_is_not_found():
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        normalize_schema(choice_schema, {'foo_sibling': 'hello'})
+    assert ei.value.key == 'type'
 
 
 choice_existence_schema = S.DictWhenKeyExists(
@@ -597,3 +626,24 @@ def test_when_key_exists_common_schema():
     assert normalize_schema(schema, v) == v
     v = {"pattern": {}, "color": "red", "common!": "yup"}
     assert normalize_schema(schema, v) == v
+
+
+def test_when_key_exists_coercions():
+    """Coercions happen *before* when_key_exists, so they can e.g.
+    convert from a non-dict to a dict.
+    """
+    schema = deepcopy(choice_existence_schema)
+
+    def coerce(value):
+        if value in ["red", "green", "blue"]:
+            return {"pattern": {}, "color": value}
+        return value
+
+    schema["coerce"] = coerce
+    assert normalize_schema(schema, "red") == {"pattern": {}, "color": "red"}
+
+def test_when_key_exists_type_check():
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(choice_existence_schema, "foo")
+    assert ei.value.type_ == 'dict'
+    assert ei.value.value == 'foo'

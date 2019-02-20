@@ -128,6 +128,15 @@ class Normalizer(object):
     def handle_allow_unknown(self, value, directive_value, ctx):
         return (value, ctx.set_allow_unknown(directive_value))
 
+    @directive("coerce")
+    def handle_coerce(self, value, directive_value, ctx):
+        try:
+            return (directive_value(value), ctx)
+        except E.SureError:
+            raise
+        except Exception as e:
+            raise E.CoerceUnexpectedError(value, e, ctx.stack)
+
     @directive("nullable")
     def handle_nullable(self, value, directive_value, ctx):
         if value is None and directive_value:
@@ -136,8 +145,10 @@ class Normalizer(object):
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):
+        # At this point, we *need* this thing to be a dict, so we can look up
+        # keys. So let's make sure it's a dict.
+        self.handle_type(value, 'dict', ctx)
         choice_key = directive_value["key"]
-        chosen_type = value[choice_key]
         new_schema = deepcopy(self.schema)
         # Putting the "choice key" into the dict schema is not required,
         # since we can figure out exactly which values it should allow based
@@ -145,6 +156,9 @@ class Normalizer(object):
         allowed_choices = list(directive_value["choices"].keys())
         if choice_key not in new_schema.setdefault("schema", {}):
             new_schema["schema"][choice_key] = {"allowed": allowed_choices}
+        if choice_key not in value:
+            raise E.DictFieldNotFound(choice_key, value, ctx.stack)
+        chosen_type = value[choice_key]
         if chosen_type not in directive_value["choices"]:
             raise E.DisallowedValue(
                 chosen_type, allowed_choices, ctx.push_stack(choice_key).stack
@@ -157,6 +171,7 @@ class Normalizer(object):
 
     @directive("when_key_exists")
     def handle_when_key_exists(self, value, directive_value, ctx):
+        self.handle_type(value, 'dict', ctx)
         chosen_type = None
         possible_keys = list(directive_value.keys())
         for key in possible_keys:
@@ -182,15 +197,6 @@ class Normalizer(object):
     @directive("anyof")
     def handle_anyof(self, value, _directive_value, ctx):
         return _ShortCircuit(_normalize_multi(self.schema, value, "anyof", ctx))
-
-    @directive("coerce")
-    def handle_coerce(self, value, directive_value, ctx):
-        try:
-            return (directive_value(value), ctx)
-        except E.SureError:
-            raise
-        except Exception as e:
-            raise E.CoerceUnexpectedError(value, e, ctx.stack)
 
     @directive("allowed")
     def handle_allowed(self, value, directive_value, ctx):

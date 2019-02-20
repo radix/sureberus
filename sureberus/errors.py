@@ -23,7 +23,7 @@ class SureError(Exception):
 
 @attr.s
 class DictFieldNotFound(SureError):
-    fmt = "required field {key} in dict {value}"
+    fmt = "Can't find required field {key} in dict {value}"
     key = attr.ib()
     value = attr.ib()
     stack = attr.ib()

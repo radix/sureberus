@@ -516,10 +516,10 @@ def test_when_key_is_other_schema_directives():
 def test_when_key_is_common_schema():
     schema = deepcopy(choice_schema)
     schema["schema"] = {"common!": S.String()}
-    # with pytest.raises(E.DictFieldNotFound) as ei:
-    #     v = {'type': 'foo', 'foo_sibling': 'hi'}
-    #     normalize_schema(schema, v)
-    # assert ei.value.key == 'common!'
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        v = {'type': 'foo', 'foo_sibling': 'hi'}
+        normalize_schema(schema, v)
+    assert ei.value.key == 'common!'
     with pytest.raises(E.DictFieldNotFound) as ei:
         v = {"type": "bar", "bar_sibling": 3}
         normalize_schema(schema, v)

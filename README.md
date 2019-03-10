@@ -13,7 +13,8 @@ do.
 Often times when `anyof` or `oneof` are used, what we really want to do is
 *select* a schema based on dict keys.
 
-There are two options for this:
+There are two options for this, which should be used in preference to `anyof` or
+`oneof`, when possible, as they provide much better error messages.
 
 ### when_key_is
 
@@ -78,6 +79,58 @@ Then you would use `when_key_exists`, like this:
 The primary important difference is that you can use sureberus if you want to
 use `default` or `coerce` inside of a
 [*of-rule](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules).
+
+
+## In-line schema registries
+
+Small, reusable "chunks" of schema can be defined in-line in the schema
+specification, instead of requiring Python code to be written which sets up
+registries. This allows for easy use of recursive schemas at any point in your
+schema, or just a way to conveniently reuse some subschema in multiple places.
+For example, here is a schema that validates any nested list of strings:
+
+```json
+{
+    "registry": {
+        "nested_list": {
+            # A nested list of strings
+            "type": "list",
+            "schema": {
+                "anyof": [
+                    S.String(),
+                    "nested_list", # This is a recursive reference
+                ],
+            }
+        }
+    },
+    "type": "dict",
+    "schema": {"things": "nested_list"},
+}
+```
+
+This will validate data like `{"things": ["one", ["two", ["three"]]]}`.
+
+Typically any place you can specify a schema, you can instead specify a string
+which will be used to find a previously registered schema (references to
+registered schemas are resolved lexically).
+
+When you need to "merge in" a registered schema, you can use the `schema_ref`
+directive. This can be useful if you want to register a schema and use it at
+exactly the same level, for example:
+
+```json
+{
+    "registry": {
+        "nested_list": S.List(
+            schema={"anyof": [S.Integer(), "nested_list"]}
+        )
+    },
+    "schema_ref": "nested_list",
+}
+```
+
+This will validate data like `["one", ["two", ["three"]]]`.
+
 
 ## Nullable in the face of *of-rules
 

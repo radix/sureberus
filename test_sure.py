@@ -651,3 +651,73 @@ def test_when_key_exists_type_check():
     assert ei.value.type_ == "dict"
     assert ei.value.value == "foo"
 
+
+def test_registry():
+    """Schemas can have inline reusable schemas"""
+    schema = {
+        "registry": {"my cool schema": {"type": "integer"}},
+        "type": "dict",
+        "schema": {"x": "my cool schema"},
+    }
+    assert normalize_schema(schema, {"x": 3}) == {"x": 3}
+
+
+def test_registry_ref_in_list():
+    schema = {"registry": {"inty": S.Integer()}, "type": "list", "schema": "inty"}
+    assert normalize_schema(schema, [3, 4, 5]) == [3, 4, 5]
+
+
+def test_recursive_schemas():
+    """Schema registries allow for recursive schemas"""
+    schema = {
+        "registry": {
+            "nested list of ints": S.List(
+                schema={"anyof": [S.Integer(), "nested list of ints"]}
+            )
+        },
+        "schema_ref": "nested list of ints",
+    }
+    for v in [[3, 4, 5], [], [[3]], [[3, 4], 5, [6, 7, [8, 9, [10]]]]]:
+        assert normalize_schema(schema, v) == v
+
+
+def test_recursive_schemas_inside_when_key_exists():
+    schema = S.Dict(
+        registry={
+            "recursive": S.List(
+                schema=S.DictWhenKeyExists(
+                    {
+                        "g": {"schema": {"g": S.String(), "sts": "recursive"}},
+                        "ot": {"schema": {"ot": S.String()}},
+                    }
+                )
+            )
+        },
+        schema={"ts": "recursive"},
+    )
+    for v in [
+        {"ts": []},
+        {"ts": [{"ot": "the thing"}]},
+        {"ts": [{"g": "groupname", "sts": []}]},
+        {"ts": [{"g": "g1", "sts": [{"ot": "t1"}]}]},
+        {
+            "ts": [
+                {"g": "g1", "sts": [{"ot": "t1"}, {"g": "g2", "sts": [{"ot": "t3"}]}]}
+            ]
+        },
+    ]:
+        assert normalize_schema(schema, v) == v
+
+
+def test_when_key_exists_direct_reference():
+    schema = S.DictWhenKeyExists(
+        {"key": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
+    )
+    assert normalize_schema(schema, {"key": "foo"})
+
+
+def test_when_key_is_direct_reference():
+    schema = S.DictWhenKeyIs(
+        "type", {"foo": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
+    )
+    assert normalize_schema(schema, {"type": "foo", "key": "a string"})

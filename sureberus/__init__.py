@@ -14,14 +14,35 @@ __all__ = ["normalize_dict", "normalize_schema"]
 
 @attr.s
 class Context(object):
-    stack = attr.ib()
     allow_unknown = attr.ib()
+    stack = attr.ib(factory=tuple)
+    schema_registry = attr.ib(factory=dict)
 
     def push_stack(self, x):
-        return Context(stack=self.stack + (x,), allow_unknown=self.allow_unknown)
+        return Context(
+            stack=self.stack + (x,),
+            allow_unknown=self.allow_unknown,
+            schema_registry=self.schema_registry,
+        )
 
     def set_allow_unknown(self, x):
-        return Context(stack=self.stack, allow_unknown=x)
+        return Context(
+            stack=self.stack,
+            allow_unknown=x,
+            schema_registry=self.schema_registry,
+            )
+
+    def register_schemas(self, registry):
+        reg = self.schema_registry.copy()
+        reg.update(registry)
+        return Context(
+            stack=self.stack,
+            allow_unknown=self.allow_unknown,
+            schema_registry=reg,
+        )
+
+    def find_schema(self, name):
+        return self.schema_registry[name]
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
@@ -44,6 +65,8 @@ def _normalize_dict(dict_schema, value, ctx):
         else:
             raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
     for key, key_schema in dict_schema.items():
+        if isinstance(key_schema, str):
+            key_schema = ctx.find_schema(key_schema)
         new_key = key_schema.get("rename", key)
         if key not in value:
             replacement = _get_default(key, key_schema, value, ctx)
@@ -124,6 +147,19 @@ class _ShortCircuit(object):
 class Normalizer(object):
     schema = attr.ib()
 
+    @directive("registry")
+    def handle_registry(self, value, directive_value, ctx):
+        ctx = ctx.register_schemas(directive_value)
+        return (value, ctx)
+
+    @directive("schema_ref")
+    def handle_registered_schema(self, value, directive_value, ctx):
+        schema = self.schema.copy()
+        new_schema = ctx.find_schema(directive_value)
+        schema.update(new_schema)
+        del schema['schema_ref']
+        return _ShortCircuit(_normalize_schema(schema, value, ctx))
+
     @directive("allow_unknown")
     def handle_allow_unknown(self, value, directive_value, ctx):
         return (value, ctx.set_allow_unknown(directive_value))
@@ -163,7 +199,10 @@ class Normalizer(object):
             raise E.DisallowedValue(
                 chosen_type, allowed_choices, ctx.push_stack(choice_key).stack
             )
-        subschema = directive_value["choices"][chosen_type].copy()
+        subschema = directive_value["choices"][chosen_type]
+        if isinstance(subschema, str):
+            subschema = ctx.find_schema(subschema)
+        subschema = subschema.copy()
         new_schema["schema"].update(subschema.pop("schema"))
         new_schema.update(subschema)
         del new_schema["when_key_is"]
@@ -184,7 +223,10 @@ class Normalizer(object):
 
         new_schema = deepcopy(self.schema)
 
-        subschema = directive_value[chosen_type].copy()
+        subschema = directive_value[chosen_type]
+        if isinstance(subschema, str):
+            subschema = ctx.find_schema(subschema)
+        subschema = subschema.copy()
         new_schema.setdefault("schema", {}).update(subschema.pop("schema"))
         new_schema.update(subschema)
         del new_schema["when_key_exists"]
@@ -294,6 +336,8 @@ class Normalizer(object):
 
 
 def _normalize_schema(schema, value, ctx):
+    if isinstance(schema, str):
+        schema = ctx.find_schema(schema)
     normalizer = Normalizer(schema)
     directives = _get_directives(normalizer)
     known_directives = set(directive["directive"] for directive in directives)
@@ -331,8 +375,10 @@ def _normalize_multi(schema, value, key, ctx):
     errors = []
     matched_schemas = []
     for subrule in schema[key]:
+        if isinstance(subrule, str):
+            subrule = ctx.find_schema(subrule)
         cloned_schema = deepcopy(schema)
-        del cloned_schema[key]  # This is not very principled...?
+        del cloned_schema[key]
         cloned_schema.update(subrule)
         subrule = cloned_schema
         try:

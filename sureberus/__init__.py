@@ -12,30 +12,22 @@ from . import errors as E
 __all__ = ["normalize_dict", "normalize_schema"]
 
 
-@attr.s
+@attr.s(frozen=True)
 class Context(object):
     allow_unknown = attr.ib()
     stack = attr.ib(factory=tuple)
     schema_registry = attr.ib(factory=dict)
 
     def push_stack(self, x):
-        return Context(
-            stack=self.stack + (x,),
-            allow_unknown=self.allow_unknown,
-            schema_registry=self.schema_registry,
-        )
+        return attr.evolve(self, stack=self.stack + (x,))
 
     def set_allow_unknown(self, x):
-        return Context(
-            stack=self.stack, allow_unknown=x, schema_registry=self.schema_registry
-        )
+        return attr.evolve(self, allow_unknown=x)
 
     def register_schemas(self, registry):
         reg = self.schema_registry.copy()
         reg.update(registry)
-        return Context(
-            stack=self.stack, allow_unknown=self.allow_unknown, schema_registry=reg
-        )
+        return attr.evolve(self, schema_registry=reg)
 
     def find_schema(self, name):
         return self.schema_registry[name]

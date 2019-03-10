@@ -27,18 +27,14 @@ class Context(object):
 
     def set_allow_unknown(self, x):
         return Context(
-            stack=self.stack,
-            allow_unknown=x,
-            schema_registry=self.schema_registry,
-            )
+            stack=self.stack, allow_unknown=x, schema_registry=self.schema_registry
+        )
 
     def register_schemas(self, registry):
         reg = self.schema_registry.copy()
         reg.update(registry)
         return Context(
-            stack=self.stack,
-            allow_unknown=self.allow_unknown,
-            schema_registry=reg,
+            stack=self.stack, allow_unknown=self.allow_unknown, schema_registry=reg
         )
 
     def find_schema(self, name):
@@ -157,7 +153,7 @@ class Normalizer(object):
         schema = self.schema.copy()
         new_schema = ctx.find_schema(directive_value)
         schema.update(new_schema)
-        del schema['schema_ref']
+        del schema["schema_ref"]
         return _ShortCircuit(_normalize_schema(schema, value, ctx))
 
     @directive("allow_unknown")

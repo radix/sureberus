@@ -93,12 +93,11 @@ For example, here is a schema that validates any nested list of strings:
 {
     "registry": {
         "nested_list": {
-            # A nested list of strings
             "type": "list",
             "schema": {
                 "anyof": [
-                    S.String(),
-                    "nested_list", # This is a recursive reference
+                    {"type": "string"},
+                    "nested_list",
                 ],
             }
         }
@@ -121,9 +120,10 @@ exactly the same level, for example:
 ```json
 {
     "registry": {
-        "nested_list": S.List(
-            schema={"anyof": [S.Integer(), "nested_list"]}
-        )
+        "nested_list": {
+            "type": "list",
+            "schema": {"anyof": [{"type": "integer"}, "nested_list"]}
+        }
     },
     "schema_ref": "nested_list",
 }

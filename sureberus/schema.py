@@ -14,7 +14,7 @@ def mk(d, kw, **morekw):
 
 def Dict(required=True, anyof=None, schema=None, **kwargs):
     if schema is not None:
-        kwargs['schema'] = schema
+        kwargs["schema"] = schema
     if anyof is not None:
         kwargs["anyof"] = anyof
     return mk(None, kwargs, type="dict", required=required)

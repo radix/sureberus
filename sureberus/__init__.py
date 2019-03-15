@@ -272,6 +272,19 @@ class Normalizer(object):
                 raise E.RegexMismatch(value, directive_value, ctx.stack)
         return (value, ctx)
 
+    @directive("keyschema")
+    def handle_keyschema(self, value, directive_value, ctx):
+        for k in list(value.keys()):
+            new_key = _normalize_schema(directive_value, k, ctx)
+            value[new_key] = value.pop(k)
+        return (value, ctx)
+
+    @directive("valueschema")
+    def handle_valueschema(self, value, directive_value, ctx):
+        for k, v in value.items():
+            value[k] = _normalize_schema(directive_value, v, ctx)
+        return (value, ctx)
+
     @directive("schema")
     def handle_schema(self, value, directive_value, ctx):
         # The meaning of a `schema` key inside a schema changes based on the

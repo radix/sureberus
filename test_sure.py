@@ -24,7 +24,8 @@ def test_valueschema():
 
 def test_valueschema_normalizes_values():
     schema = S.Dict(allow_unknown=True, valueschema=S.Integer(coerce=int))
-    assert normalize_schema(schema, {"foo": 3, 52: '52'}) == {"foo": 3, 52: 52}
+    assert normalize_schema(schema, {"foo": 3, 52: "52"}) == {"foo": 3, 52: 52}
+
 
 def test_keyschema():
     schema = S.Dict(allow_unknown=True, keyschema=S.String())

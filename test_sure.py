@@ -18,8 +18,9 @@ def test_dict_of_int():
 def test_valueschema():
     schema = S.Dict(allow_unknown=True, valueschema=S.Integer())
     assert normalize_schema(schema, {"foo": 3, 52: 52}) == {"foo": 3, 52: 52}
-    with pytest.raises(E.BadType):
+    with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": "3"})
+    assert ei.value.stack == ('foo',)
 
 
 def test_valueschema_normalizes_values():
@@ -30,8 +31,9 @@ def test_valueschema_normalizes_values():
 def test_keyschema():
     schema = S.Dict(allow_unknown=True, keyschema=S.String())
     assert normalize_schema(schema, {"foo": 3, "bar": None}) == {"foo": 3, "bar": None}
-    with pytest.raises(E.BadType):
+    with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": 3, 52: "bar"})
+    assert ei.value.stack == (52,)
 
 
 def test_keyschema_normalizes_keys():

@@ -275,14 +275,14 @@ class Normalizer(object):
     @directive("keyschema")
     def handle_keyschema(self, value, directive_value, ctx):
         for k in list(value.keys()):
-            new_key = _normalize_schema(directive_value, k, ctx)
+            new_key = _normalize_schema(directive_value, k, ctx.push_stack(k))
             value[new_key] = value.pop(k)
         return (value, ctx)
 
     @directive("valueschema")
     def handle_valueschema(self, value, directive_value, ctx):
         for k, v in value.items():
-            value[k] = _normalize_schema(directive_value, v, ctx)
+            value[k] = _normalize_schema(directive_value, v, ctx.push_stack(k))
         return (value, ctx)
 
     @directive("schema")

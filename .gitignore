@@ -3,3 +3,4 @@ __pycache__
 /sureberus.egg-info
 /build
 /dist
+/.pytest_cache

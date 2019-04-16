@@ -20,8 +20,15 @@ def Dict(required=True, anyof=None, schema=None, **kwargs):
     return mk(None, kwargs, type="dict", required=required)
 
 
-def DictWhenKeyIs(key, choices, **kwargs):
-    return Dict(when_key_is={"key": key, "choices": choices}, **kwargs)
+class _MISSING(object):
+    pass
+
+
+def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
+    when_key_is = {"key": key, "choices": choices}
+    if default_choice is not _MISSING:
+        when_key_is['default_choice'] = default_choice
+    return Dict(when_key_is=when_key_is, **kwargs)
 
 
 def DictWhenKeyExists(choices, **kwargs):

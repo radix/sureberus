@@ -181,8 +181,12 @@ class Normalizer(object):
         if choice_key not in new_schema.setdefault("schema", {}):
             new_schema["schema"][choice_key] = {"allowed": allowed_choices}
         if choice_key not in value:
-            raise E.DictFieldNotFound(choice_key, value, ctx.stack)
-        chosen_type = value[choice_key]
+            if 'default_choice' in directive_value:
+                chosen_type = directive_value['default_choice']
+            else:
+                raise E.DictFieldNotFound(choice_key, value, ctx.stack)
+        else:
+            chosen_type = value[choice_key]
         if chosen_type not in directive_value["choices"]:
             raise E.DisallowedValue(
                 chosen_type, allowed_choices, ctx.push_stack(choice_key).stack

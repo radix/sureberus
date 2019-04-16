@@ -588,6 +588,14 @@ def test_when_key_is_not_found():
     assert ei.value.key == "type"
 
 
+def test_when_key_is_default():
+    schema = deepcopy(choice_schema)
+    schema["when_key_is"]["default_choice"] = "foo"
+    assert normalize_schema(schema, {"foo_sibling": "hello"}) == {
+        "foo_sibling": "hello",
+    }
+
+
 choice_existence_schema = S.DictWhenKeyExists(
     {
         "image": {"schema": {"image": S.String(), "width": S.Integer()}},

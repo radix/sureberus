@@ -87,7 +87,7 @@ class UnknownFields(SureError):
 
 @attr.s
 class DisallowedValue(SureError):
-    fmt = "Value {value!r} is not allowed. Must be on of {values!r}"
+    fmt = "Value {value!r} is not allowed. Must be one of {values!r}"
     value = attr.ib()
     values = attr.ib()
     stack = attr.ib()

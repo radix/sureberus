@@ -20,7 +20,7 @@ def test_valueschema():
     assert normalize_schema(schema, {"foo": 3, 52: 52}) == {"foo": 3, 52: 52}
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": "3"})
-    assert ei.value.stack == ('foo',)
+    assert ei.value.stack == ("foo",)
 
 
 def test_valueschema_normalizes_values():
@@ -586,6 +586,14 @@ def test_when_key_is_not_found():
     with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_schema(choice_schema, {"foo_sibling": "hello"})
     assert ei.value.key == "type"
+
+
+def test_when_key_is_default():
+    schema = deepcopy(choice_schema)
+    schema["when_key_is"]["default_choice"] = "foo"
+    assert normalize_schema(schema, {"foo_sibling": "hello"}) == {
+        "foo_sibling": "hello"
+    }
 
 
 choice_existence_schema = S.DictWhenKeyExists(

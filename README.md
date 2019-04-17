@@ -8,6 +8,14 @@ same way.
 The main reason it exists is to support some of the things that Cerberus doesn't
 do.
 
+## normalization inside of *of-rules
+
+The primary important difference is that you can use sureberus if you want to
+use transforming directives, such as `default` or `coerce`, while also
+validating the document. Cerberus only allows you to do one or the other. Most
+often, this limitation becomes a problem when you want to use an
+[*of-rule](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules).
+
 ## Schema selection based on dict keys
 
 Often times when `anyof` or `oneof` are used, what we really want to do is
@@ -46,6 +54,10 @@ Then you would use `when_key_is`, like this:
 }
 ```
 
+You can also specify a `default_choice` inside of the `when_key_is` directive,
+to specify which choice to use if the (e.g.) `type` key is elided from the
+value being validated.
+
 ### when_key_exists
 
 Use this when you have dictionaries where you must choose the schema based on
@@ -72,13 +84,6 @@ Then you would use `when_key_exists`, like this:
     }
 }
 ```
-
-
-## normalization inside of *of-rules
-
-The primary important difference is that you can use sureberus if you want to
-use `default` or `coerce` inside of a
-[*of-rule](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules).
 
 
 ## In-line schema registries

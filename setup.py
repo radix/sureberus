@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="sureberus",
-    version="0.6.1",
+    version="0.7.0",
     description="Cerberus alternative",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

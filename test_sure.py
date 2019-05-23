@@ -715,6 +715,28 @@ def test_recursive_schemas():
         assert normalize_schema(schema, v) == v
 
 
+def test_circular_registry():
+    """Schema registries allow for schemas that refer to each other"""
+    schema = {
+        "registry": {
+            "a": S.Dict(schema={
+                "a": "b"
+            }),
+            "b": S.Dict(schema={
+                "b": {"anyof": [S.Integer(), "a"]}
+            })
+        },
+        "schema_ref": "a",
+    }
+
+    for v in [{ "a": {"b": 2}}, { "a": {"b": { "a": {"b": 2}}}}]:
+        assert normalize_schema(schema, v) == v
+
+    for v in [{ "a": {"b": []}}, { "a": {"a": { "a": {"b": 2}}}}]:
+        with pytest.raises(Exception):
+            normalize_schema(schema, v)
+
+
 def test_recursive_schemas_inside_when_key_exists():
     schema = S.Dict(
         registry={

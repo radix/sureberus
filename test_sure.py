@@ -719,22 +719,37 @@ def test_circular_registry():
     """Schema registries allow for schemas that refer to each other"""
     schema = {
         "registry": {
-            "a": S.Dict(schema={
-                "a": "b"
-            }),
-            "b": S.Dict(schema={
-                "b": {"anyof": [S.Integer(), "a"]}
-            })
+            "a": S.Dict(schema={"a": "b"}),
+            "b": S.Dict(schema={"b": {"anyof": [S.Integer(), "a"]}}),
         },
         "schema_ref": "a",
     }
 
-    for v in [{ "a": {"b": 2}}, { "a": {"b": { "a": {"b": 2}}}}]:
+    for v in [{"a": {"b": 2}}, {"a": {"b": {"a": {"b": 2}}}}]:
         assert normalize_schema(schema, v) == v
 
-    for v in [{ "a": {"b": []}}, { "a": {"a": { "a": {"b": 2}}}}]:
+    for v in [{"a": {"b": []}}, {"a": {"a": {"a": {"b": 2}}}}]:
         with pytest.raises(Exception):
             normalize_schema(schema, v)
+
+
+def test_schema_ref_with_differing_requirement():
+    """schema_ref allows overriding the required-ness of a field."""
+    schema = {
+        "registry": {"requiredfield": S.String(required=True)},
+        "type": "dict",
+        "schema": {
+            "non_required": {"schema_ref": "requiredfield", "required": False},
+            "required": "requiredfield",
+        },
+    }
+    assert normalize_schema(schema, {"required": "xx"}) == {"required": "xx"}
+    assert normalize_schema(schema, {"required": "xx", "non_required": "yy"}) == {
+        "required": "xx",
+        "non_required": "yy",
+    }
+    with pytest.raises(E.DictFieldNotFound):
+        normalize_schema(schema, {"non_required": "yy"})
 
 
 def test_recursive_schemas_inside_when_key_exists():

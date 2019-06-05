@@ -752,6 +752,22 @@ def test_schema_ref_with_differing_requirement():
         normalize_schema(schema, {"non_required": "yy"})
 
 
+def test_schema_ref_with_defaults_and_nullables():
+    """schema_ref allows overriding the default and nullable-ness of a field."""
+    schema = {
+        "registry": {"requiredfield": S.String(required=True)},
+        "type": "dict",
+        "schema": {
+            "non_required": {
+                "schema_ref": "requiredfield",
+                "default": None,
+                "nullable": True,
+            }
+        },
+    }
+    assert normalize_schema(schema, {}) == {"non_required": None}
+
+
 def test_recursive_schemas_inside_when_key_exists():
     schema = S.Dict(
         registry={

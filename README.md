@@ -1,30 +1,26 @@
 # Sureberus
 
-This is an implementation of the [Cerberus](https://github.com/pyeve/cerberus/)
-schema format. It doesn't implement all of the features of that library, and
-where it does implement a feature it doesn't always implement it in the exact
-same way.
+Sureberus is a data validation and transformation tool that is useful for validating and normalizing "documents" (nested data structures of basic Python data-types). You provide a schema which describes the expected structure of an object (and optionally, various directives that modify that structure), along with a document to validate and transform, and it returns the new version.
 
-The main reason it exists is to support some of the things that Cerberus doesn't
-do.
+Sureberus's schema format is based on [Cerberus](https://github.com/pyeve/cerberus/). It doesn't implement all of the features of that library, and where it does implement a feature it doesn't always implement it in the exact same way.
 
-## normalization inside of *of-rules
+Sureberus exists because Cerberus wasn't flexible enough for my use. Most importantly, Cerberus strictly separates transformation ("coersion") from validation; if you want to transform a document, you can't also make sure it's valid at the same time. This can lead to some surprising limitations, some of which are documented below.
 
-The primary important difference is that you can use sureberus if you want to
-use transforming directives, such as `default` or `coerce`, while also
-validating the document. Cerberus only allows you to do one or the other. Most
-often, this limitation becomes a problem when you want to use an
-[*of-rule](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules).
+## Unique features in Sureberus
 
-## Schema selection based on dict keys
+These are the features that exist in Sureberus but not in Cerberus.
 
-Often times when `anyof` or `oneof` are used, what we really want to do is
-*select* a schema based on dict keys.
+### transformation inside of *of-rules
 
-There are two options for this, which should be used in preference to `anyof` or
-`oneof`, when possible, as they provide much better error messages.
+Sureberus allows you to use so-called *transformation* directives, such as `default` and `coerce`, while also validating the document. Most critically, Cerberus considers the [*of-rule](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules) to be a *validation*-only directive. This means that in Cerberus, it's impossible to say: "this thing can either be a dict with an `x` key that defaults to None, or a string". This is probably one of the biggest limitations of Cerberus.
 
-### when_key_is
+### Schema selection based on dict keys
+
+Often times when [`anyof` or `oneof`](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules) are used, what we really want to do is *select* a schema based on dict keys.
+
+There are two options for this, which should be used in preference to `anyof` or `oneof`, when possible, as they provide much better error messages.
+
+#### when_key_is
 
 Use this when you have dictionaries that have a fixed key, such as `"type"`,
 which specifies some specific format to use. For example, if you have data that
@@ -58,7 +54,7 @@ You can also specify a `default_choice` inside of the `when_key_is` directive,
 to specify which choice to use if the (e.g.) `type` key is elided from the
 value being validated.
 
-### when_key_exists
+#### when_key_exists
 
 Use this when you have dictionaries where you must choose the schema based on
 keys that exist in the data exclusively for their type of data. For example, if
@@ -86,7 +82,7 @@ Then you would use `when_key_exists`, like this:
 ```
 
 
-## In-line schema registries
+### In-line schema registries
 
 Small, reusable "chunks" of schema can be defined in-line in the schema
 specification, instead of requiring Python code to be written which sets up
@@ -137,12 +133,12 @@ exactly the same level, for example:
 This will validate data like `["one", ["two", ["three"]]]`.
 
 
-## Nullable in the face of *of-rules
+### Nullable in the face of *of-rules
 
 Sureberus allows you to use `nullable` even if you have `*of-rules` that have
 `type` constraints. A nullable schema always allows `None`.
 
-## A slightly nicer schema syntax
+### A slightly nicer schema syntax
 
 If you want to construct a schema from Python code instead of storing it as
 JSON, sureberus provides a more terse syntax for it:

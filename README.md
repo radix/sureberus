@@ -4,7 +4,7 @@ Sureberus is a data validation and transformation tool that is useful for valida
 
 Sureberus's schema format is based on [Cerberus](https://github.com/pyeve/cerberus/). It doesn't implement all of the features of that library, and where it does implement a feature it doesn't always implement it in the exact same way.
 
-Sureberus exists because Cerberus wasn't flexible enough for my use. Most importantly, Cerberus strictly separates transformation ("coersion") from validation; if you want to transform a document, you can't also make sure it's valid at the same time. This can lead to some surprising limitations, some of which are documented below.
+Sureberus exists because Cerberus wasn't flexible enough for my use. Most importantly, Cerberus strictly separates transformation (what the Cerberus documentation calls "Normalization") from validation; if you want to transform a document, you can't also make sure it's valid at the same time. This can lead to some surprising limitations, some of which are documented below.
 
 ## Unique features in Sureberus
 

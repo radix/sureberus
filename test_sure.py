@@ -811,10 +811,9 @@ def test_when_key_is_direct_reference():
 
 
 def test_contextual_schemas():
-    schema = {
-        "type": "dict",
-        "hook_context": lambda v, c: c.set_tag("my_tag", v["type"]),
-        "schema": {
+    schema = S.Dict(
+        hook_context=lambda v, c: c.set_tag("my_tag", v["type"]),
+        schema={
             "type": S.String(),
             "otherthing": {
                 "choose_schema": lambda v, c: S.Boolean()
@@ -822,8 +821,7 @@ def test_contextual_schemas():
                 else S.String()
             },
         },
-    }
-
+    )
     v = {"type": "bool", "otherthing": True}
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
@@ -833,3 +831,29 @@ def test_contextual_schemas():
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "nope", "otherthing": True})
+
+
+def test_data_driven_context():
+    schema = S.Dict(
+        set_tag={"tag_name": "my_tag", "key": "type"},
+        schema={
+            "type": S.String(),
+            "otherthing": {
+                "when_tag_is": {
+                    "tag": "my_tag",
+                    "choices": {"B": S.Boolean(), "S": S.String()},
+                }
+            },
+        },
+    )
+
+    v = {"type": "B", "otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "B", "otherthing": "foo"})
+
+    v = {"type": "S", "otherthing": "fyoo"}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "S", "otherthing": True})
+

@@ -178,10 +178,33 @@ class Normalizer(object):
         ctx = directive_value(value, ctx)
         return (value, ctx)
 
+    @directive("set_tag")
+    def handle_set_tag(self, value, directive_value, ctx):
+        if not isinstance(directive_value, list):
+            directive_value = [directive_value]
+        for dv in directive_value:
+            ctx = ctx.set_tag(dv["tag_name"], value[dv["key"]])
+        return (value, ctx)
+
     @directive("choose_schema")
     def handle_choose_schema(self, value, directive_value, ctx):
         schema = directive_value(value, ctx)
         return _ShortCircuit(_normalize_schema(schema, value, ctx))
+
+    @directive("when_tag_is")
+    def handle_when_tag_is(self, value, directive_value, ctx):
+        # This is a lot more simple and flexible than when_key_is
+        # 1. it doesn't require this value to be a dict
+        choice_key = directive_value["tag"]
+        chosen = ctx.tags[choice_key]
+        if chosen not in directive_value["choices"]:
+            raise E.DisallowedValue(
+                chosen, directive_value["choices"].keys(), ctx.stack
+            )
+        subschema = directive_value["choices"][chosen]
+        if isinstance(subschema, str):
+            subschema = ctx.find_schema(subschema)
+        return _ShortCircuit(_normalize_schema(subschema, value, ctx))
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):

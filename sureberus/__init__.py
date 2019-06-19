@@ -38,6 +38,11 @@ class Context(object):
         tags[tag] = value
         return attr.evolve(self, tags=tags)
 
+    def get_tag(self, tag):
+        if tag not in self.tags:
+            raise E.TagNotFound(tag, self.tags.keys(), self.stack)
+        return self.tags[tag]
+
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
     ctx = Context(stack=(), allow_unknown=allow_unknown)
@@ -199,9 +204,7 @@ class Normalizer(object):
         # This is a lot more simple and flexible than when_key_is
         # 1. it doesn't require this value to be a dict
         choice_key = directive_value["tag"]
-        if choice_key not in ctx.tags:
-            raise E.TagNotFound(choice_key, ctx.tags.keys(), ctx.stack)
-        chosen = ctx.tags[choice_key]
+        chosen = ctx.get_tag(choice_key)
         if chosen not in directive_value["choices"]:
             raise E.DisallowedValue(
                 chosen, directive_value["choices"].keys(), ctx.stack

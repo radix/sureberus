@@ -817,7 +817,7 @@ def test_contextual_schemas():
             "type": S.String(),
             "otherthing": {
                 "choose_schema": lambda v, c: S.Boolean()
-                if c.tags["my_tag"] == "bool"
+                if c.get_tag("my_tag") == "bool"
                 else S.String()
             },
         },

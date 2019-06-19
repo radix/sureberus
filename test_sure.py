@@ -808,3 +808,28 @@ def test_when_key_is_direct_reference():
         "type", {"foo": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
     )
     assert normalize_schema(schema, {"type": "foo", "key": "a string"})
+
+
+def test_contextual_schemas():
+    schema = {
+        "type": "dict",
+        "hook_context": lambda v, c: c.set_tag("my_tag", v["type"]),
+        "schema": {
+            "type": S.String(),
+            "otherthing": {
+                "choose_schema": lambda v, c: S.Boolean()
+                if c.tags["my_tag"] == "bool"
+                else S.String()
+            },
+        },
+    }
+
+    v = {"type": "bool", "otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "bool", "otherthing": "foo"})
+
+    v = {"type": "nope", "otherthing": "fyoo"}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "nope", "otherthing": True})

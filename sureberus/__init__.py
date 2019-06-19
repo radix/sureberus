@@ -17,6 +17,7 @@ class Context(object):
     allow_unknown = attr.ib()
     stack = attr.ib(factory=tuple)
     schema_registry = attr.ib(factory=dict)
+    tags = attr.ib(factory=dict)
 
     def push_stack(self, x):
         return attr.evolve(self, stack=self.stack + (x,))
@@ -31,6 +32,11 @@ class Context(object):
 
     def find_schema(self, name):
         return self.schema_registry[name]
+
+    def set_tag(self, tag, value):
+        tags = self.tags.copy()
+        tags[tag] = value
+        return attr.evolve(self, tags=tags)
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
@@ -166,6 +172,16 @@ class Normalizer(object):
         if value is None and directive_value:
             return _ShortCircuit(value)
         return (value, ctx)
+
+    @directive("hook_context")
+    def handle_hook_context(self, value, directive_value, ctx):
+        ctx = directive_value(value, ctx)
+        return (value, ctx)
+
+    @directive("choose_schema")
+    def handle_choose_schema(self, value, directive_value, ctx):
+        schema = directive_value(value, ctx)
+        return _ShortCircuit(_normalize_schema(schema, value, ctx))
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):

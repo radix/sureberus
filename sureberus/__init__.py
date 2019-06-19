@@ -183,7 +183,10 @@ class Normalizer(object):
         if not isinstance(directive_value, list):
             directive_value = [directive_value]
         for dv in directive_value:
-            ctx = ctx.set_tag(dv["tag_name"], value[dv["key"]])
+            if isinstance(dv, six.string_types):
+                ctx = ctx.set_tag(dv, value[dv])
+            else:
+                ctx = ctx.set_tag(dv["tag_name"], value[dv["key"]])
         return (value, ctx)
 
     @directive("choose_schema")

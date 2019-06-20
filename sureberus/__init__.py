@@ -191,7 +191,13 @@ class Normalizer(object):
             if isinstance(dv, six.string_types):
                 ctx = ctx.set_tag(dv, value[dv])
             else:
-                ctx = ctx.set_tag(dv["tag_name"], value[dv["key"]])
+                if "key" in dv:
+                    val = value[dv["key"]]
+                elif "value" in dv:
+                    val = dv["value"]
+                else:
+                    raise E.SimpleSchemaError(msg="`set_tag` must have `key` or `value`")
+                ctx = ctx.set_tag(dv["tag_name"], val)
         return (value, ctx)
 
     @directive("choose_schema")

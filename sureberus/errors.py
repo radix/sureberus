@@ -9,6 +9,10 @@ class SchemaError(Exception):
         return self.__dict__
 
 
+class SimpleSchemaError(SchemaError):
+    msg = attr.ib()
+
+
 class SureError(Exception):
     def __str__(self):
         stack = "root"

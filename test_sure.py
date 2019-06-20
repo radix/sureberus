@@ -857,6 +857,7 @@ def test_data_driven_context():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "S", "otherthing": True})
 
+
 def test_set_tag_with_string():
     schema = S.Dict(
         set_tag="type",
@@ -886,10 +887,13 @@ def test_set_tag_fixed_value():
     schema = S.Dict(
         set_tag={"tag_name": "type", "value": 33},
         schema={
-            "foo": {"when_tag_is": {
-                "tag": "type", "choices": {32: S.String(), 33: S.Boolean()},
-            }}
-        }
+            "foo": {
+                "when_tag_is": {
+                    "tag": "type",
+                    "choices": {32: S.String(), 33: S.Boolean()},
+                }
+            }
+        },
     )
     v = {"foo": True}
     assert normalize_schema(schema, v) == v

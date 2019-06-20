@@ -196,7 +196,9 @@ class Normalizer(object):
                 elif "value" in dv:
                     val = dv["value"]
                 else:
-                    raise E.SimpleSchemaError(msg="`set_tag` must have `key` or `value`")
+                    raise E.SimpleSchemaError(
+                        msg="`set_tag` must have `key` or `value`"
+                    )
                 ctx = ctx.set_tag(dv["tag_name"], val)
         return (value, ctx)
 

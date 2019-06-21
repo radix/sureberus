@@ -1,5 +1,8 @@
 # Directives
 
+This chapter provides a reference of all Sureberus schema directives.
+
+
 ## allow_unknown
 
 **Validation Directive**<br>

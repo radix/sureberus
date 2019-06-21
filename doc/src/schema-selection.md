@@ -1,10 +1,14 @@
 # Dynamically selecting schemas
 
+Sureberus has useful directives for *selecting* schemas to apply based on various aspects of the input value.
+These directives should always be preferred over the [`anyof` or `oneof`](./directives.md#of-anyof-oneof) directives, since they provide much nicer error messages and represent the schema in a more principled way.
+
 ## Schema selection based on dict keys: when_key_is, when_key_exists
 
-Often times when [`anyof` or `oneof`](http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules) are used, what we really want to do is *select* a schema based on dict keys.
+There are two options for selecting a schema based on dict keys.
 
-There are two options for this, which should be used in preference to `anyof` or `oneof`, when possible, as they provide much better error messages.
+* `when_key_is` is for when you have a dictionary that contains something like a `"type"` key, whose value lets you identify a specific schema to apply.
+* `when_key_exists` is for when you have a dictionary where different keys appear, and the existence of specific keys allows you to choose a schema to apply.
 
 ### when_key_is
 
@@ -68,7 +72,6 @@ Then you would use `when_key_exists`, like this:
 ```
 
 
-
 ## Schema selection based on context
 
 While `when_key_is` can work when you need to vary the way an object is validated or transformed
@@ -89,10 +92,10 @@ For example, let's take a look at the following data:
 }
 ```
 
-Let's assume that largely, this structure is defined by a fixed schema. We have a `type` key in
+Let's assume that this structure is mostly fixed. We have a `type` key in
 the top-level dict, but the only part of the schema that we want to vary is inside the
 `renderers` list. If all we have is `when_key_is`, then we need to end up duplicating the whole
-`data_services` and `renderers` inside the `choices` directive of the `when_key_is` construct.
+`data_services` and `renderers` schemas inside the `choices` directive of the `when_key_is` construct.
 
 Sureberus provides a mechanism that allows you to define schemas that vary based on context, even
 if that context comes from much higher up in the object. We basically have a way to "remember" the

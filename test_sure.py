@@ -891,10 +891,10 @@ def test_when_tag_is_default():
                 "when_tag_is": {
                     "tag": "type",
                     "choices": {"B": S.Boolean(), "S": S.String()},
-                    "default_choice": "B"
+                    "default_choice": "B",
                 }
             },
-        },
+        }
     )
 
     v = {"otherthing": True}

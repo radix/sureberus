@@ -138,6 +138,8 @@ If the value is None, no other directives are applied.
 
 Registers named Sureberus schemas that can be referred to anywhere inside this schema.
 This can be useful simply for factoring and schema reuse, but also enables recursive schemas.
+To *use* a registered schema, simply put its name (as a string) any place where you would otherwise have a Sureberus schema.
+`schema_ref` can also be useful for invoking registered schemas in certain situations.
 
 See [Schema registries](./schema-registries.md) for more information.
 
@@ -175,6 +177,25 @@ While originally Sureberus tried to match Cerberus bug-for-bug, this behavior is
 Sureberus will be introducing more specific directives to indicate element-schemas and field-schemas in the future.
 
 </div>
+
+### schema (for lists)
+
+The `schema` directive, when applied to a list, is very straightforward. It simply applies the schema to each element in the list.
+
+### schema (for dicts)
+
+The `schema` directive on dicts is more complicated.
+
+Each key matches a key that can potentially be found in the dictionary.
+
+Each value is a Sureberus schema that can have a few **extra** directives, specific to dict fields.
+
+* `rename`: (string) If this is specified, then the dict key will be renamed to the specified key in the result.
+* `required`: (`bool`) Indicates whether the field must be present.
+* `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
+* `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
+* `default_setter`: (Python callable of `(dict) -> value`) A Python function to call if the key was not present in the input.
+  It is passed the dictionary, and its return value will be used as the default.
 
 
 ## set_tag

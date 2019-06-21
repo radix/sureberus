@@ -12,6 +12,9 @@ from . import errors as E
 __all__ = ["normalize_dict", "normalize_schema"]
 
 
+_NOT_SPECIFIED = object()
+
+
 @attr.s(frozen=True)
 class Context(object):
     allow_unknown = attr.ib()
@@ -38,10 +41,10 @@ class Context(object):
         tags[tag] = value
         return attr.evolve(self, tags=tags)
 
-    def get_tag(self, tag):
-        if tag not in self.tags:
+    def get_tag(self, tag, default=_NOT_SPECIFIED):
+        if default is _NOT_SPECIFIED and tag not in self.tags:
             raise E.TagNotFound(tag, self.tags.keys(), self.stack)
-        return self.tags[tag]
+        return self.tags.get(tag, default)
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
@@ -212,7 +215,7 @@ class Normalizer(object):
         # This is a lot more simple and flexible than when_key_is
         # 1. it doesn't require this value to be a dict
         choice_key = directive_value["tag"]
-        chosen = ctx.get_tag(choice_key)
+        chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _NOT_SPECIFIED))
         if chosen not in directive_value["choices"]:
             raise E.DisallowedValue(
                 chosen, directive_value["choices"].keys(), ctx.stack

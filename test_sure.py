@@ -883,6 +883,26 @@ def test_set_tag_with_string():
         normalize_schema(schema, {"type": "S", "otherthing": True})
 
 
+def test_when_tag_is_default():
+    schema = S.Dict(
+        schema={
+            "type": S.String(required=False),
+            "otherthing": {
+                "when_tag_is": {
+                    "tag": "type",
+                    "choices": {"B": S.Boolean(), "S": S.String()},
+                    "default_choice": "B"
+                }
+            },
+        },
+    )
+
+    v = {"otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"otherthing": "foo"})
+
+
 def test_set_tag_fixed_value():
     schema = S.Dict(
         set_tag={"tag_name": "type", "value": 33},

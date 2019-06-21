@@ -812,7 +812,7 @@ def test_when_key_is_direct_reference():
 
 def test_contextual_schemas():
     schema = S.Dict(
-        hook_context=lambda v, c: c.set_tag("my_tag", v["type"]),
+        modify_context=lambda v, c: c.set_tag("my_tag", v["type"]),
         schema={
             "type": S.String(),
             "otherthing": {

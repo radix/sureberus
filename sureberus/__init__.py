@@ -178,8 +178,8 @@ class Normalizer(object):
             return _ShortCircuit(value)
         return (value, ctx)
 
-    @directive("hook_context")
-    def handle_hook_context(self, value, directive_value, ctx):
+    @directive("modify_context")
+    def handle_modify_context(self, value, directive_value, ctx):
         ctx = directive_value(value, ctx)
         return (value, ctx)
 

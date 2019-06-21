@@ -148,9 +148,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#dynamically-selecting-schemas" id="dynamically-selecting-schemas">Dynamically selecting schemas</a></h1>
+<p>Sureberus has useful directives for <em>selecting</em> schemas to apply based on various aspects of the input value.
+These directives should always be preferred over the <a href="./directives.html#of-anyof-oneof"><code>anyof</code> or <code>oneof</code></a> directives, since they provide much nicer error messages and represent the schema in a more principled way.</p>
 <h2><a class="header" href="#schema-selection-based-on-dict-keys-when_key_is-when_key_exists" id="schema-selection-based-on-dict-keys-when_key_is-when_key_exists">Schema selection based on dict keys: when_key_is, when_key_exists</a></h2>
-<p>Often times when <a href="http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules"><code>anyof</code> or <code>oneof</code></a> are used, what we really want to do is <em>select</em> a schema based on dict keys.</p>
-<p>There are two options for this, which should be used in preference to <code>anyof</code> or <code>oneof</code>, when possible, as they provide much better error messages.</p>
+<p>There are two options for selecting a schema based on dict keys.</p>
+<ul>
+<li><code>when_key_is</code> is for when you have a dictionary that contains something like a <code>&quot;type&quot;</code> key, whose value lets you identify a specific schema to apply.</li>
+<li><code>when_key_exists</code> is for when you have a dictionary where different keys appear, and the existence of specific keys allows you to choose a schema to apply.</li>
+</ul>
 <h3><a class="header" href="#when_key_is" id="when_key_is">when_key_is</a></h3>
 <p>Use this when you have dictionaries that have a fixed key, such as <code>&quot;type&quot;</code>,
 which specifies some specific format to use. For example, if you have data that
@@ -212,10 +217,10 @@ and the content to be varied is not so tightly bound.</p>
     }
 }
 </code></pre>
-<p>Let's assume that largely, this structure is defined by a fixed schema. We have a <code>type</code> key in
+<p>Let's assume that this structure is mostly fixed. We have a <code>type</code> key in
 the top-level dict, but the only part of the schema that we want to vary is inside the
 <code>renderers</code> list. If all we have is <code>when_key_is</code>, then we need to end up duplicating the whole
-<code>data_services</code> and <code>renderers</code> inside the <code>choices</code> directive of the <code>when_key_is</code> construct.</p>
+<code>data_services</code> and <code>renderers</code> schemas inside the <code>choices</code> directive of the <code>when_key_is</code> construct.</p>
 <p>Sureberus provides a mechanism that allows you to define schemas that vary based on context, even
 if that context comes from much higher up in the object. We basically have a way to &quot;remember&quot; the
 value of <code>type</code>, so that it can be used later when applying schemas to values nested arbitrarily

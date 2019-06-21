@@ -3,3 +3,6 @@ authors = ["Christopher Armstrong"]
 multilingual = false
 src = "src"
 title = "Sureberus"
+
+[output.html]
+additional-css = ["src/custom.css"]

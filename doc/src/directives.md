@@ -151,6 +151,8 @@ To *use* a registered schema, simply put its name (as a string) any place where 
 
 See [Schema registries](./schema-registries.md) for more information.
 
+See also the [schema_ref](#schema_ref) directive.
+
 ## schema_ref
 
 **Meta Directive**<br>

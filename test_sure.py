@@ -989,3 +989,27 @@ def test_set_tag_fixed_value():
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": "hey"})
+
+
+def test_cerberus():
+    schema = {
+        "x": {
+            "anyof": [
+                {"type": "dict", "schema": {"y": {"type": "integer", "default": 0}}},
+                {"type": "integer"},
+            ]
+        }
+    }
+
+    assert normalize_dict(schema, {"x": {}}) == {"x": {"y": 0}}
+    assert normalize_dict(schema, {"x": 5}) == {"x": 5}
+    with pytest.raises(E.NoneMatched):
+        normalize_dict(schema, {"x": "foo"})
+
+    import cerberus
+
+    v = cerberus.Validator(schema)
+    assert v.normalized({"x": "foo"}) == {"x": "foo"}
+
+    assert v.normalized({"x": {}}) == {"x": {"y": 0}}
+    assert v.normalized({"x": 5}) == {"x": 5}

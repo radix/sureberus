@@ -406,20 +406,12 @@ class Normalizer(object):
         # And if you pass something that's not a list or a dict, cerberus just allows it
         return (value, ctx)
 
-    @directive("coerce_post")
-    def handle_coerce_post(self, value, directive_value, ctx):
-        """
-        A coerce function that is explicitly done *after* other coercions are
-        done (most importantly, after any normalization done in child dict
-        values or list elements).
-        """
-        return self.handle_coerce(value, directive_value, ctx)
-
     @directive("validator")
     def handle_validator(self, value, directive_value, ctx):
         """
         Run a custom validator. This is intentionally the last step; it will
         validate only after all other normalization has been done.
+        The only exception is `coerce_post`.
         """
         field = ctx.stack[-1] if len(ctx.stack) else None
 
@@ -433,6 +425,15 @@ class Normalizer(object):
         except Exception as e:
             raise E.ValidatorUnexpectedError(field, value, e, ctx.stack)
         return (value, ctx)
+
+    @directive("coerce_post")
+    def handle_coerce_post(self, value, directive_value, ctx):
+        """
+        A coerce function that is explicitly done *after* other coercions are
+        done (most importantly, after any normalization done in child dict
+        values or list elements).
+        """
+        return self.handle_coerce(value, directive_value, ctx)
 
 
 def _normalize_schema(schema, value, ctx):

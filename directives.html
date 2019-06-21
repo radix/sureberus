@@ -221,7 +221,10 @@ to later be used with directives such as <code>choose_schema</code> and <code>wh
 <strong>type</strong> <code>bool</code></p>
 <p>Specifically allows None, even if it would conflict with other validation directives.
 If the value is None, no other directives are applied.</p>
-<p><strong>Note</strong> that this is behavior differs from Cerberus. See <a href="https://github.com/pyeve/cerberus/issues/373">cerberus#373</a>.</p>
+<div class="sureberus-info">
+<p>This directive slightly differs Cerberus's implementation, which doesn't honor <code>nullable</code> when a <code>*of</code> directive is present.
+See <a href="https://github.com/pyeve/cerberus/issues/373">cerberus#373</a>.</p>
+</div>
 <h2><a class="header" href="#regex" id="regex">regex</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> string (a regex)</p>

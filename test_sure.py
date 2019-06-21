@@ -816,9 +816,11 @@ def test_contextual_schemas():
         schema={
             "type": S.String(),
             "otherthing": {
-                "choose_schema": lambda v, c: S.Boolean()
-                if c.get_tag("my_tag") == "bool"
-                else S.String()
+                "choose_schema": {
+                    "function": lambda v, c: (
+                        S.Boolean() if c.get_tag("my_tag") == "bool" else S.String()
+                    )
+                }
             },
         },
     )
@@ -839,10 +841,9 @@ def test_data_driven_context():
         schema={
             "type": S.String(),
             "otherthing": {
-                "when_tag_is": {
-                    "tag": "my_tag",
-                    "choices": {"B": S.Boolean(), "S": S.String()},
-                }
+                "choose_schema": S.when_tag_is(
+                    "my_tag", {"B": S.Boolean(), "S": S.String()}
+                )
             },
         },
     )
@@ -864,10 +865,9 @@ def test_set_tag_with_string():
         schema={
             "type": S.String(),
             "otherthing": {
-                "when_tag_is": {
-                    "tag": "type",
-                    "choices": {"B": S.Boolean(), "S": S.String()},
-                }
+                "choose_schema": S.when_tag_is(
+                    "type", {"B": S.Boolean(), "S": S.String()}
+                )
             },
         },
     )
@@ -888,11 +888,9 @@ def test_when_tag_is_default():
         schema={
             "type": S.String(required=False),
             "otherthing": {
-                "when_tag_is": {
-                    "tag": "type",
-                    "choices": {"B": S.Boolean(), "S": S.String()},
-                    "default_choice": "B",
-                }
+                "choose_schema": S.when_tag_is(
+                    "type", {"B": S.Boolean(), "S": S.String()}, default_choice="B"
+                )
             },
         }
     )
@@ -908,10 +906,9 @@ def test_set_tag_fixed_value():
         set_tag={"tag_name": "type", "value": 33},
         schema={
             "foo": {
-                "when_tag_is": {
-                    "tag": "type",
-                    "choices": {32: S.String(), 33: S.Boolean()},
-                }
+                "choose_schema": S.when_tag_is(
+                    "type", {32: S.String(), 33: S.Boolean()}
+                )
             }
         },
     )

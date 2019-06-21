@@ -8,11 +8,9 @@ import attr
 import six
 
 from . import errors as E
+from .constants import _marker
 
 __all__ = ["normalize_dict", "normalize_schema"]
-
-
-_marker = object()
 
 
 @attr.s(frozen=True)
@@ -205,11 +203,21 @@ class Normalizer(object):
 
     @directive("choose_schema")
     def handle_choose_schema(self, value, directive_value, ctx):
-        schema = directive_value(value, ctx)
-        return _ShortCircuit(_normalize_schema(schema, value, ctx))
+        """
+        A directive that allows dynamically choosing a schema based on all SORTS of stuff.
+        """
+        # TODO: validate w/ a when_key_exists schema. Only one should be allowed.
+        if "when_tag_is" in directive_value:
+            return self._handle_when_tag_is(value, directive_value["when_tag_is"], ctx)
+        elif "function" in directive_value:
+            schema = directive_value["function"](value, ctx)
+            return _ShortCircuit(_normalize_schema(schema, value, ctx))
+        else:
+            raise E.SimpleSchemaError(
+                msg="`choose_schema` must have `when_tag_is` or `function`."
+            )
 
-    @directive("when_tag_is")
-    def handle_when_tag_is(self, value, directive_value, ctx):
+    def _handle_when_tag_is(self, value, directive_value, ctx):
         # This is a lot more simple and flexible than when_key_is
         # 1. it doesn't require this value to be a dict
         choice_key = directive_value["tag"]

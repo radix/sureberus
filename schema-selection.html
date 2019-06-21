@@ -1,0 +1,314 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Dynamically selecting schemas - Sureberus</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="src/custom.css">
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html" class="active"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Sureberus</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#dynamically-selecting-schemas" id="dynamically-selecting-schemas">Dynamically selecting schemas</a></h1>
+<h2><a class="header" href="#schema-selection-based-on-dict-keys-when_key_is-when_key_exists" id="schema-selection-based-on-dict-keys-when_key_is-when_key_exists">Schema selection based on dict keys: when_key_is, when_key_exists</a></h2>
+<p>Often times when <a href="http://docs.python-cerberus.org/en/stable/validation-rules.html#of-rules"><code>anyof</code> or <code>oneof</code></a> are used, what we really want to do is <em>select</em> a schema based on dict keys.</p>
+<p>There are two options for this, which should be used in preference to <code>anyof</code> or <code>oneof</code>, when possible, as they provide much better error messages.</p>
+<h3><a class="header" href="#when_key_is" id="when_key_is">when_key_is</a></h3>
+<p>Use this when you have dictionaries that have a fixed key, such as <code>&quot;type&quot;</code>,
+which specifies some specific format to use. For example, if you have data that
+can look like this:</p>
+<pre><code class="language-json">{&quot;type&quot;: &quot;elephant&quot;, &quot;trunk_length&quot;: 60}
+{&quot;type&quot;: &quot;eagle&quot;, &quot;wingspan&quot;: 50}
+</code></pre>
+<p>Then you would use <code>when_key_is</code>, like this:</p>
+<pre><code class="language-json">{
+    &quot;type&quot;: &quot;dict&quot;,
+    &quot;when_key_is&quot;: {
+        &quot;key&quot;: &quot;type&quot;,
+        &quot;choices&quot;: {
+            &quot;elephant&quot;: {
+                &quot;schema&quot;: {&quot;trunk_length&quot;: {&quot;type&quot;: &quot;integer&quot;}}
+            },
+            &quot;eagle&quot;: {
+                &quot;schema&quot;: {&quot;wingspan&quot;: {&quot;type&quot;: &quot;integer&quot;}}
+            },
+        }
+    }
+}
+</code></pre>
+<p>You can also specify a <code>default_choice</code> inside of the <code>when_key_is</code> directive,
+to specify which choice to use if the (e.g.) <code>type</code> key is elided from the
+value being validated.</p>
+<h3><a class="header" href="#when_key_exists" id="when_key_exists">when_key_exists</a></h3>
+<p>Use this when you have dictionaries where you must choose the schema based on
+keys that exist in the data exclusively for their type of data. For example, if
+you have data that can look like this:</p>
+<pre><code class="language-json">{&quot;image_url&quot;: &quot;foo.jpg&quot;, &quot;width&quot;: 30}
+{&quot;color&quot;: &quot;red&quot;}
+</code></pre>
+<p>Then you would use <code>when_key_exists</code>, like this:</p>
+<pre><code class="language-json">{
+    &quot;type&quot;: &quot;dict&quot;,
+    &quot;when_key_exists&quot;: {
+        &quot;image_url&quot;: {
+            &quot;schema&quot;: {&quot;image_url&quot;: {&quot;type&quot;: &quot;string&quot;}, &quot;width&quot;: {&quot;type&quot;: &quot;integer&quot;}}
+        },
+        &quot;color&quot;: {
+            &quot;schema&quot;: {&quot;color&quot;: {&quot;type&quot;: &quot;string&quot;}}
+        },
+    }
+}
+</code></pre>
+<h2><a class="header" href="#schema-selection-based-on-context" id="schema-selection-based-on-context">Schema selection based on context</a></h2>
+<p>While <code>when_key_is</code> can work when you need to vary the way an object is validated or transformed
+based on a key <em>existing in that same object</em>, sometimes the relationship of the schema specifier
+and the content to be varied is not so tightly bound.</p>
+<p>For example, let's take a look at the following data:</p>
+<pre><code class="language-json">{
+    &quot;type&quot;: &quot;foo&quot;,
+    &quot;common&quot;: {},
+    &quot;data_service&quot;: {
+        &quot;renderers&quot;: [
+            {&quot;foo_specific&quot;: &quot;bar&quot;}
+        ]
+    }
+}
+</code></pre>
+<p>Let's assume that largely, this structure is defined by a fixed schema. We have a <code>type</code> key in
+the top-level dict, but the only part of the schema that we want to vary is inside the
+<code>renderers</code> list. If all we have is <code>when_key_is</code>, then we need to end up duplicating the whole
+<code>data_services</code> and <code>renderers</code> inside the <code>choices</code> directive of the <code>when_key_is</code> construct.</p>
+<p>Sureberus provides a mechanism that allows you to define schemas that vary based on context, even
+if that context comes from much higher up in the object. We basically have a way to &quot;remember&quot; the
+value of <code>type</code>, so that it can be used later when applying schemas to values nested arbitrarily
+deeply in the object.</p>
+<p>There are four directives that provide these mechanisms. For most cases, you only need to care
+about the first two of them:</p>
+<ul>
+<li><code>set_tag</code> - save a tag (a key/value pair) in the Context,</li>
+<li><code>when_tag_is</code> - select a schema based on a saved tag found in the Context,</li>
+<li><code>hook_context</code> - run an arbitrary Python function that can manipulate the Context (including
+the tags),</li>
+<li><code>choose_schema</code> - run an arbitrary Python function that can select a schema based on the
+Context.</li>
+</ul>
+<p>The latter two, <code>hook_context</code> and <code>choose_schema</code> are generalizations of the first, and they
+don't often need to be used.</p>
+<p>Here's an example of a schema that can parse our sample data, encoded as YAML:</p>
+<pre><code class="language-yaml">type: dict
+set_tag: &quot;type&quot;
+schema:
+  type: foo
+  common: {type: dict}
+  data_service:
+    type: dict
+    schema:
+      renderers:
+        type: list
+        schema:
+          type: dict
+          when_tag_is:
+            tag: type
+            choices:
+              foo: {&quot;type&quot;: dict, &quot;schema&quot;: {foo_specific: {type: string}}
+              bar: {&quot;type&quot;: dict, &quot;schema&quot;: {bar_specific: {type: integer}}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="schema-registries.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="python-schema.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="schema-registries.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="python-schema.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

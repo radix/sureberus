@@ -1,0 +1,406 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Directives - Sureberus</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+        <link rel="stylesheet" href="src/custom.css">
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html" class="active"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Sureberus</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#directives" id="directives">Directives</a></h1>
+<p>This chapter provides a reference of all Sureberus schema directives.</p>
+<h2><a class="header" href="#allow_unknown" id="allow_unknown">allow_unknown</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong>: <code>bool</code></p>
+<p>When <strong>True</strong>, extra keys in a dictionary are passed through silently.</p>
+<p>When <strong>False</strong>, keys that are found in a dictionary but which aren't specified in a fields schema will cause an error to be raised.</p>
+<h2><a class="header" href="#allowed" id="allowed">allowed</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong>: <code>list</code> of arbitrary Python objects</p>
+<p>The object being validated must be equal to one of the objects in the list in order to pass validation.</p>
+<h2><a class="header" href="#of-anyof-oneof" id="of-anyof-oneof">*of (anyof, oneof)</a></h2>
+<p><strong>Validation &amp; Transformation Directive</strong><br>
+<strong>type</strong> <code>list</code> of Sureberus schemas</p>
+<p>Try applying schemas in sequence to the current value.</p>
+<div class="sureberus-alert">
+<p>These directives should be avoided, and <a href="./schema-selection.html">dynamic schema selection</a> should be strongly preferred.
+These directives are generally inefficient and result in hard-to-read error messages.</p>
+</div>
+<p>When <code>anyof</code> is used, then as soon as any schema applies successfully, its result is returned.</p>
+<p>When <code>oneof</code> is used, ALL schemas are checked, and if more than one can be applied successfully, an exception is raised
+(this is very unlikely to be useful, you should probably just use <code>anyof</code>).</p>
+<p>In either case, if none of the schemas can be applied without error, then a validation error will be raised.</p>
+<div class="sureberus-info">
+<p>Unlike Cerberus, these directives allow Transformation Directives to do their work as well.
+If a schema can be applied successfully, the transformations it applies will be returned.</p>
+</div>
+<h2><a class="header" href="#choose_schema" id="choose_schema">choose_schema</a></h2>
+<p><strong>Validation &amp; Transformation Directive</strong><br>
+<strong>type</strong> Python callable <code>(value, context)</code> -&gt; Sureberus schema</p>
+<p>Dynamically choose a schema to use based on the current value and the Context object.
+The schema returned by the Python function will be applied to the value.</p>
+<p>See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
+<h2><a class="header" href="#coerce" id="coerce">coerce</a></h2>
+<p><strong>Transformation Directive</strong><br>
+<strong>type</strong> Python callable <code>(value) -&gt; new value</code></p>
+<p>Call a Python function with the value to get a new one to use.
+It's important to note that this function is called <em>before</em> all other directives that might reject a value.
+This is a good directive to use if you want to normalize invalid documents to a form that can be considered valid.</p>
+<h2><a class="header" href="#coerce_post" id="coerce_post">coerce_post</a></h2>
+<p><strong>Transformation Directive</strong><br>
+<strong>type</strong> Python callable <code>(value) -&gt; new value</code></p>
+<p>Call a Python function with the value to get a new one to use.
+Unlike <code>coerce</code>, this function is applied <em>after</em> all other directives,
+so it's allowed to return values that wouldn't validate according to other directives in your schema.</p>
+<h2><a class="header" href="#hook_context" id="hook_context">hook_context</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> Python callable <code>(value, Context) -&gt; Context</code></p>
+<p>Run a Python function when this schema is applied.
+The Python function will be passed the value and the current Context, and must return a new Context.
+This is most often used to call <code>context.set_tag(key, value)</code> to add a new tag to the Context,
+to later be used with directives such as <code>choose_schema</code> and <code>when_tag_is</code>.</p>
+<p>See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
+<h2><a class="header" href="#keyschema" id="keyschema">keyschema</a></h2>
+<p><strong>Validation &amp; Transformation Directive</strong><br>
+<strong>type</strong> Sureberus schema</p>
+<p>Specify a schema to be applied to all keys in a dictionary.</p>
+<h2><a class="header" href="#max" id="max">max</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> Number (or anything that supports the comparison operators)</p>
+<p>Raises an exception if the value is greater than the given number.</p>
+<h2><a class="header" href="#maxlength" id="maxlength">maxlength</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> Number</p>
+<p>Raises an exception if the length of the value is greater than the given number.</p>
+<h2><a class="header" href="#min" id="min">min</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> Number (or anything that supports the comparison operators)</p>
+<p>Raises an exception if the value is less than the given number.</p>
+<h2><a class="header" href="#nullable" id="nullable">nullable</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> <code>bool</code></p>
+<p>Specifically allows None, even if it would conflict with other validation directives.
+If the value is None, no other directives are applied.</p>
+<p><strong>Note</strong> that this is behavior differs from Cerberus. See <a href="https://github.com/pyeve/cerberus/issues/373">cerberus#373</a>.</p>
+<h2><a class="header" href="#regex" id="regex">regex</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> string (a regex)</p>
+<p><em>If</em> the value is a string, and it does not match the given regex, an exception will be raised.</p>
+<h2><a class="header" href="#registry" id="registry">registry</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> of schema names (strings) to Sureberus schemas</p>
+<p>Registers named Sureberus schemas that can be referred to anywhere inside this schema.
+This can be useful simply for factoring and schema reuse, but also enables recursive schemas.
+To <em>use</em> a registered schema, simply put its name (as a string) any place where you would otherwise have a Sureberus schema.
+<code>schema_ref</code> can also be useful for invoking registered schemas in certain situations.</p>
+<p>See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
+<h2><a class="header" href="#schema_ref" id="schema_ref">schema_ref</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> string (naming a registered schema)</p>
+<p>Applies the named schema (defined in a registry) to the current value.
+This can be useful if you want to register a schema and use it at the same &quot;level&quot;.
+Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.</p>
+<p>See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
+<h2><a class="header" href="#schema" id="schema">schema</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> Varies</p>
+<p>The meaning of a <code>schema</code> key inside a schema changes based on the type of the <em>value</em>. This is strange, but it's how Cerberus did things.</p>
+<p>When the value is a list, the directive is interpreted as a Sureberus schema to apply to each element of the list.</p>
+<p>When the value is a dict, the keys of the dict are looked up in the directive, and used to find a Sureberus schema to apply to the associated value.</p>
+<div class="sureberus-alert">
+<p>The weird thing is that, e.g., it is possible to define a schema like <code>{'schema': {'type': 'integer'}}</code>.
+Note that there is no <code>type</code> specified along with this schema, so you can try to apply it to lists or dicts.
+Since we check the value at runtime, if it is a list, it validates each element of the list with that sub-schema.
+If it is a dict, it <em>tries</em> to apply the schema directly as the field-schema, which leads to a runtime error when it tries to interpret the string <code>integer</code> as a Sureberus schema!</p>
+<p>While originally Sureberus tried to match Cerberus bug-for-bug, this behavior is just too strange.
+Sureberus will be introducing more specific directives to indicate element-schemas and field-schemas in the future.</p>
+</div>
+<h3><a class="header" href="#schema-for-lists" id="schema-for-lists">schema (for lists)</a></h3>
+<p>The <code>schema</code> directive, when applied to a list, is very straightforward. It simply applies the schema to each element in the list.</p>
+<h3><a class="header" href="#schema-for-dicts" id="schema-for-dicts">schema (for dicts)</a></h3>
+<p>The <code>schema</code> directive on dicts is more complicated.</p>
+<p>Each key matches a key that can potentially be found in the dictionary.</p>
+<p>Each value is a Sureberus schema that can have a few <strong>extra</strong> directives, specific to dict fields.</p>
+<ul>
+<li><code>rename</code>: (string) If this is specified, then the dict key will be renamed to the specified key in the result.</li>
+<li><code>required</code>: (<code>bool</code>) Indicates whether the field must be present.</li>
+<li><code>excludes</code>: (<code>list of strings</code>) Specifies a list of keys which <em>must not exist</em> on the dictionary for this schema to validate.</li>
+<li><code>default</code>: (object) A value to associate with the key in the resulting dict if the key was not present in the input.</li>
+<li><code>default_setter</code>: (Python callable of <code>(dict) -&gt; value</code>) A Python function to call if the key was not present in the input.
+It is passed the dictionary, and its return value will be used as the default.</li>
+</ul>
+<h2><a class="header" href="#set_tag" id="set_tag">set_tag</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> or string (described below)</p>
+<p>Set a tag on the context. This directive can take various forms:</p>
+<ul>
+<li>
+<p><code>&quot;set_tag&quot;: {&quot;tag_name&quot;: &quot;my-tag&quot;, &quot;key&quot;: &quot;foo&quot;}</code></p>
+<p>This sets the tag named <code>my-tag</code> with the value of <code>value[&quot;foo&quot;]</code>.
+So it assumes that the value that the schema is being applied to is a dict.</p>
+</li>
+<li>
+<p><code>&quot;set_tag&quot;: &quot;foo&quot;</code></p>
+<p>This sets the tag named <code>foo</code> with the value of <code>value[&quot;foo&quot;]</code>.
+It's a shorthand for <code>{&quot;tag_name&quot;: &quot;foo&quot;, &quot;key&quot;: &quot;foo&quot;}</code>.</p>
+</li>
+<li>
+<p><code>&quot;set_tag&quot;: {&quot;tag_name&quot;: &quot;my-tag&quot;, &quot;value&quot;: &quot;bar&quot;}</code></p>
+<p>This sets the tag named <code>my-tag</code> with a value of <code>&quot;bar&quot;</code> -- that is, a hardcoded value specified in the schema.
+This is very rarely useful, but is a convenient shorthand if you are referring to a schema that relies on a tag,
+in a context where the tag doesn't vary based on anything.</p>
+</li>
+</ul>
+<h2><a class="header" href="#type" id="type">type</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> string</p>
+<p>Raises an exception if the type of the value does not match the directive.</p>
+<p>These are the types available:</p>
+<pre><code class="language-python">{
+    &quot;none&quot;: type(None),
+    &quot;integer&quot;: six.integer_types,
+    &quot;float&quot;: (float,) + six.integer_types,
+    &quot;number&quot;: (float,) + six.integer_types,
+    &quot;dict&quot;: dict,
+    &quot;list&quot;: list,
+    &quot;string&quot;: six.string_types,
+    &quot;boolean&quot;: bool,
+}
+</code></pre>
+<h2><a class="header" href="#validator" id="validator">validator</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> Python callable <code>(field, value, error_func) -&gt; None</code></p>
+<p>Invokes a Python function to validate the value.
+The function should return None if the value is valid, otherwise it should call
+<code>error_func(field, &quot;error message&quot;)</code>.</p>
+<h2><a class="header" href="#valueschema" id="valueschema">valueschema</a></h2>
+<p><strong>Validation &amp; Transformation Directive</strong><br>
+<strong>type</strong> Sureberus schema</p>
+<p>Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).</p>
+<h2><a class="header" href="#when_key_exists" id="when_key_exists">when_key_exists</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> (described below)</p>
+<p>Dynamically selects a schema based on whether certain dict key exists.</p>
+<p>The directive should be provided a dictionary, where each <strong>key</strong> can potentially match a key in the value dictionary.
+Each <strong>value</strong> in the directive dictionary should be a Sureberus schema to apply to the dictionary <strong>if</strong> the key exists in the dictionary.</p>
+<p>See <a href="./schema-selection.html">Schema selection</a> for more information.</p>
+<h2><a class="header" href="#when_key_is" id="when_key_is">when_key_is</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> containing <code>key</code>, <code>choices</code>, and potentially <code>default_choice</code></p>
+<p>Dynamically selects a schema based on the value of a specific key, specified by the <code>key</code> sub-directive.
+For example, if you have a value like <code>{&quot;type&quot;: &quot;foo&quot;, &quot;foo_specific&quot;: &quot;bar&quot;}</code>,
+where the <code>foo</code> part determines which other keys might exist in the dict (like <code>foo_specific</code>),
+then this directive can help you choose a specific schema to validate with.</p>
+<p>When this directive is applied, it determines a schema to apply by accessing the key named by the <code>key</code> sub-directive in the value (which we'll call the &quot;choice&quot;).
+If it's not found, then <code>default_choice</code> is used.
+It then looks up the schema to use by looking for that &quot;choice&quot; in the <code>choices</code> sub-directive.</p>
+<p>See <a href="./schema-selection.html">Schema selection</a> for more information.</p>
+<h2><a class="header" href="#when_tag_is" id="when_tag_is">when_tag_is</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> containing <code>tag</code> and <code>choices</code>.</p>
+<p>This is very similar to <code>when_key_is</code>, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
+It goes hand-in-hand with the <code>set_tag</code> or <code>hook_context</code> directives.</p>
+<p>When this directive is applied, it determines the schema to apply by looking up a tag named by the <code>tag</code> sub-directive (which we'll call the &quot;choice&quot;).
+It then looks up the schema to use by looking for that &quot;choice&quot; in the <code>choices</code> sub-directive.</p>
+<p>See <a href="./schema-selection.html">Schema selection</a> for more information.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="sureberus.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="schema-registries.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="sureberus.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="schema-registries.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>

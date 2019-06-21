@@ -125,7 +125,12 @@ Raises an exception if the value is less than the given number.
 Specifically allows None, even if it would conflict with other validation directives.
 If the value is None, no other directives are applied.
 
-**Note** that this is behavior differs from Cerberus. See [cerberus#373](https://github.com/pyeve/cerberus/issues/373).
+<div class="sureberus-info">
+
+This directive slightly differs Cerberus's implementation, which doesn't honor `nullable` when a `*of` directive is present.
+See [cerberus#373](https://github.com/pyeve/cerberus/issues/373).
+
+</div>
 
 ## regex
 

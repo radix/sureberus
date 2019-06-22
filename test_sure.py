@@ -505,8 +505,20 @@ choice_schema = S.DictWhenKeyIs(
     },
 )
 
+choice_schema_nested = S.Dict(
+    choose_schema=S.when_key_is(
+        "type",
+        {
+            "foo": {"schema": {"foo_sibling": S.String()}},
+            "bar": {"schema": {"bar_sibling": S.Integer()}},
+        },
+    )
+)
 
-def test_when_key_is():
+equivalent_choice_schemas = [choice_schema, choice_schema_nested]
+
+@pytest.mark.parametrize('choice_schema', equivalent_choice_schemas)
+def test_when_key_is(choice_schema):
     v = {"type": "foo", "foo_sibling": "bar"}
     assert normalize_schema(choice_schema, v) == v
     v2 = {"type": "bar", "bar_sibling": 37}

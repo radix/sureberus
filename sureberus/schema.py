@@ -12,6 +12,13 @@ def when_tag_is(tag, choices, default_choice=_marker):
     return {"when_tag_is": wti}
 
 
+def when_key_is(key, choices, default_choice=_marker):
+    wki = {"key": key, "choices": choices, "default_choice": default_choice}
+    if default_choice is not _marker:
+        wki["default_choice"] = default_choice
+    return {"when_key_is": wki}
+
+
 def mk(d, kw, **morekw):
     schema = {}
     if d is not None:

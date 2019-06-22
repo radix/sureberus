@@ -227,8 +227,6 @@ class Normalizer(object):
             )
 
     def _handle_when_tag_is(self, value, directive_value, ctx):
-        # This is a lot more simple and flexible than when_key_is
-        # 1. it doesn't require this value to be a dict
         choice_key = directive_value["tag"]
         chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _marker))
         if chosen not in directive_value["choices"]:
@@ -238,7 +236,11 @@ class Normalizer(object):
         subschema = directive_value["choices"][chosen]
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
-        return _ShortCircuit(_normalize_schema(subschema, value, ctx))
+        new_schema = deepcopy(self.schema)
+        subschema = subschema.copy()
+        new_schema.update(subschema)
+        del new_schema["choose_schema"]
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):

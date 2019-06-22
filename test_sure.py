@@ -958,6 +958,22 @@ def test_when_tag_is_default():
         normalize_schema(schema, {"otherthing": "foo"})
 
 
+def test_when_tag_is_type_check():
+    with pytest.raises(E.BadType) as ei:
+        v = normalize_schema(
+            S.Dict(
+                set_tag={"tag_name": "mytag", "value": "hey"},
+                choose_schema=S.when_tag_is(
+                    "mytag", {"hey": {"schema": {"field": {"type": "string"}}}}
+                ),
+            ),
+            "foo",
+        )
+        print(v)
+    assert ei.value.type_ == "dict"
+    assert ei.value.value == "foo"
+
+
 def test_set_tag_fixed_value():
     schema = S.Dict(
         set_tag={"tag_name": "type", "value": 33},

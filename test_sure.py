@@ -517,7 +517,8 @@ choice_schema_nested = S.Dict(
 
 equivalent_choice_schemas = [choice_schema, choice_schema_nested]
 
-@pytest.mark.parametrize('choice_schema', equivalent_choice_schemas)
+
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
 def test_when_key_is(choice_schema):
     v = {"type": "foo", "foo_sibling": "bar"}
     assert normalize_schema(choice_schema, v) == v
@@ -525,13 +526,15 @@ def test_when_key_is(choice_schema):
     assert normalize_schema(choice_schema, v2) == v2
 
 
-def test_when_key_is_unknown():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_unknown(choice_schema):
     with pytest.raises(E.DisallowedValue) as ei:
         normalize_schema(choice_schema, {"type": "baz"})
     assert ei.value.stack == ("type",)
 
 
-def test_when_key_is_wrong_choice():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_wrong_choice(choice_schema):
     v = {"type": "foo", "bar_sibling": 37}
     with pytest.raises(E.UnknownFields):  # this could as well be E.DictFieldNotFound...
         normalize_schema(choice_schema, v)
@@ -551,7 +554,8 @@ def test_when_key_is_other_schema_directives():
     assert normalize_schema(schema, v2) == {"type": "bar", "bar_sibling": 33}
 
 
-def test_when_key_is_common_schema():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_common_schema(choice_schema):
     schema = deepcopy(choice_schema)
     schema["schema"] = {"common!": S.String()}
     with pytest.raises(E.DictFieldNotFound) as ei:

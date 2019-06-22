@@ -3,11 +3,14 @@ import setuptools
 
 setuptools.setup(
     name="sureberus",
-    version="0.7.0",
-    description="Cerberus alternative",
+    version="0.8.0",
+    description="Validation & transformation.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="http://github.com/radix/sureberus/",
+    project_urls={
+        "Source Code": "https://github.com/radix/sureberus/",
+        "Documentation": "https://radix.github.io/sureberus/",
+    },
     author="Christopher Armstrong",
     license="MIT",
     classifiers=[

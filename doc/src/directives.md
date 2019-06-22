@@ -28,7 +28,7 @@ Try applying schemas in sequence to the current value.
 
 <div class="sureberus-alert">
 
-These directives should be avoided, and [dynamic schema selection](./schema-selection.md) should be strongly preferred.
+These directives should be avoided, and [`choose_schema`](#choose_schema) should be strongly preferred, if possible.
 These directives are generally inefficient and result in hard-to-read error messages.
 
 </div>
@@ -49,14 +49,77 @@ If a schema can be applied successfully, the transformations it applies will be 
 
 ## choose_schema
 
-**Validation & Transformation Directive**<br>
-**type** Python callable `(value, context)` -> Sureberus schema
+**Meta Directive**<br>
+**type** `dict` described below
 
-Dynamically choose a schema to use based on the current value and the Context object.
-The schema returned by the Python function will be applied to the value.
-
+Choose a schema based on different factors of the input document and the current Context.
 See [Dynamically selecting schemas](./schema-selection.md) for more information.
 
+The directive value is a dictionary which must contain one of the following keys.
+
+* **when_key_is**
+
+  **type** `dict` containing `key`, `choices`, and optionally `default_choice`<br>
+  **example**<br>
+  ```yaml
+  choose_schema:
+    when_key_is:
+      key: "type"
+      choices:
+        "type1": ...
+        "type2": ...
+  ```
+
+  Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
+  For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
+  where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
+  then this directive can help you choose a specific schema to validate with.
+
+  When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
+  If it's not found, then `default_choice` is used.
+  It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+
+* **when_key_exists**
+
+  **type** `dict` (described below)<br>
+  **example**
+  ```yaml
+  choose_schema:
+    when_key_exists:
+      "keyA": ...
+      "keyB": ...
+  ```
+
+  Dynamically selects a schema based on whether a certain dict key exists.
+
+  The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
+  Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
+
+* **when_tag_is**
+
+  **type** `dict` containing `tag`, `choices`, and optionally `default_choice`<br>
+  **example**
+  ```yaml
+  choose_schema:
+    when_tag_is:
+      tag: mytag
+      choices:
+        "choiceA": ...
+        "choiceB": ...
+  ```
+
+  This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
+  It goes hand-in-hand with the `set_tag` or `hook_context` directives.
+
+  When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
+  It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+
+* **function**
+
+  **type** Python callable `(value, context) -> Sureberus schema
+
+  Dynamically choose a schema to use based on the current value and the Context object.
+  The schema returned by the Python function will be applied to the value.
 
 ## coerce
 
@@ -270,43 +333,3 @@ The function should return None if the value is valid, otherwise it should call
 
 Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).
 
-## when_key_exists
-
-**Meta Directive**<br>
-**type** `dict` (described below)
-
-Dynamically selects a schema based on whether certain dict key exists.
-
-The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
-Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
-
-See [Schema selection](./schema-selection.md) for more information.
-
-## when_key_is
-
-**Meta Directive**<br>
-**type** `dict` containing `key`, `choices`, and potentially `default_choice`
-
-Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
-For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
-where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
-then this directive can help you choose a specific schema to validate with.
-
-When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
-If it's not found, then `default_choice` is used.
-It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
-
-See [Schema selection](./schema-selection.md) for more information.
-
-## when_tag_is
-
-**Meta Directive**<br>
-**type** `dict` containing `tag` and `choices`.
-
-This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
-It goes hand-in-hand with the `set_tag` or `hook_context` directives.
-
-When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
-It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
-
-See [Schema selection](./schema-selection.md) for more information.

@@ -52,16 +52,25 @@ assert v.normalized({"x": 5}) == {"x": 5}
 
 The first assertion fails, since Cerberus is returning `{'x': {}}` -- it seems to be completely disregarding our `default` directive. Why is this?
 
-It's actually deeper than that, still. Let's see what happens when we pass something that obviously shouldn't even validate:
+It's actually deeper than that, still.
+Let's see what happens when we pass something that obviously shouldn't even validate:
 
 ```python
 
 # Sureberus:
-with pytest.raises(E.NoneMatched):
+from sureberus.errors import NoneMatched
+with pytest.raises(NoneMatched):
     normalize_dict(schema, {"x": "foo"})
 
 # Cerberus:
+with pytest.raises(Exception): # This fails!
+    v.normalized({"x": "foo"})
 ```
+
+Cerberus returns the original document without throwing any sort of exception, even though our schema indicates that the `x` key must have a value that's either an integer or a dict.
+This is expected as per Cerberus's documentation: you have to validate separately from normalization, by using either the `validate` method or the `normalized` method.
+But because it separates these concepts so strictly, and because some directives like `anyof` are considered *only* validation rules and not normalization rules,
+it's impossible to express the transformation we want.
 
 ## Schema Selection
 
@@ -82,6 +91,6 @@ The `choose_schema` facility is documented more thoroughly in [Schema selection]
 
 In Cerberus, you have to invoke Python code to register schemas.
 This means you can't describe a recursive schema without writing custom Python code (as far as I have been able to figure out, anyway).
-With Sureberus, you can take advanteg of the [`registry`](./directives.md#registry) directive which allows you to declare named schemas.
+With Sureberus, you can take advantage of the [`registry`](./directives.md#registry) directive which allows you to declare named schemas.
 This means that recursive schemas are easy to define in Sureberus.
 See [Schema registries](./schema-registries.md) for more information.

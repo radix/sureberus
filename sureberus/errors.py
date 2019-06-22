@@ -9,6 +9,10 @@ class SchemaError(Exception):
         return self.__dict__
 
 
+class SimpleSchemaError(SchemaError):
+    msg = attr.ib()
+
+
 class SureError(Exception):
     def __str__(self):
         stack = "root"
@@ -177,3 +181,11 @@ class CoerceUnexpectedError(SureError):
 class UnknownSchemaDirectives(SchemaError):
     fmt = "Unknown schema directives {directives!r}"
     directives = attr.ib()
+
+
+@attr.s
+class TagNotFound(SureError):
+    fmt = "Tag {tag!r} not found (current tags: {tags!r}). Tags are set with `modify_context` or `set_tag` directives."
+    tag = attr.ib()
+    tags = attr.ib()
+    stack = attr.ib()

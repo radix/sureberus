@@ -2,6 +2,15 @@
 Utility functions that allow declaring schemas in nicer ways.
 """
 
+from .constants import _marker
+
+
+def when_tag_is(tag, choices, default_choice=_marker):
+    wti = {"tag": tag, "choices": choices, "default_choice": default_choice}
+    if default_choice is not _marker:
+        wti["default_choice"] = default_choice
+    return {"when_tag_is": wti}
+
 
 def mk(d, kw, **morekw):
     schema = {}
@@ -27,7 +36,7 @@ class _MISSING(object):
 def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
     when_key_is = {"key": key, "choices": choices}
     if default_choice is not _MISSING:
-        when_key_is['default_choice'] = default_choice
+        when_key_is["default_choice"] = default_choice
     return Dict(when_key_is=when_key_is, **kwargs)
 
 

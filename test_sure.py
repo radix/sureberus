@@ -808,3 +808,111 @@ def test_when_key_is_direct_reference():
         "type", {"foo": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
     )
     assert normalize_schema(schema, {"type": "foo", "key": "a string"})
+
+
+def test_contextual_schemas():
+    schema = S.Dict(
+        modify_context=lambda v, c: c.set_tag("my_tag", v["type"]),
+        schema={
+            "type": S.String(),
+            "otherthing": {
+                "choose_schema": {
+                    "function": lambda v, c: (
+                        S.Boolean() if c.get_tag("my_tag") == "bool" else S.String()
+                    )
+                }
+            },
+        },
+    )
+    v = {"type": "bool", "otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "bool", "otherthing": "foo"})
+
+    v = {"type": "nope", "otherthing": "fyoo"}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "nope", "otherthing": True})
+
+
+def test_data_driven_context():
+    schema = S.Dict(
+        set_tag={"tag_name": "my_tag", "key": "type"},
+        schema={
+            "type": S.String(),
+            "otherthing": {
+                "choose_schema": S.when_tag_is(
+                    "my_tag", {"B": S.Boolean(), "S": S.String()}
+                )
+            },
+        },
+    )
+
+    v = {"type": "B", "otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "B", "otherthing": "foo"})
+
+    v = {"type": "S", "otherthing": "fyoo"}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "S", "otherthing": True})
+
+
+def test_set_tag_with_string():
+    schema = S.Dict(
+        set_tag="type",
+        schema={
+            "type": S.String(),
+            "otherthing": {
+                "choose_schema": S.when_tag_is(
+                    "type", {"B": S.Boolean(), "S": S.String()}
+                )
+            },
+        },
+    )
+
+    v = {"type": "B", "otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "B", "otherthing": "foo"})
+
+    v = {"type": "S", "otherthing": "fyoo"}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"type": "S", "otherthing": True})
+
+
+def test_when_tag_is_default():
+    schema = S.Dict(
+        schema={
+            "type": S.String(required=False),
+            "otherthing": {
+                "choose_schema": S.when_tag_is(
+                    "type", {"B": S.Boolean(), "S": S.String()}, default_choice="B"
+                )
+            },
+        }
+    )
+
+    v = {"otherthing": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"otherthing": "foo"})
+
+
+def test_set_tag_fixed_value():
+    schema = S.Dict(
+        set_tag={"tag_name": "type", "value": 33},
+        schema={
+            "foo": {
+                "choose_schema": S.when_tag_is(
+                    "type", {32: S.String(), 33: S.Boolean()}
+                )
+            }
+        },
+    )
+    v = {"foo": True}
+    assert normalize_schema(schema, v) == v
+    with pytest.raises(E.BadType) as ei:
+        normalize_schema(schema, {"foo": "hey"})

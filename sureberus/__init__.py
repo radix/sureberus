@@ -8,6 +8,7 @@ import attr
 import six
 
 from . import errors as E
+from .constants import _marker
 
 __all__ = ["normalize_dict", "normalize_schema"]
 
@@ -17,6 +18,7 @@ class Context(object):
     allow_unknown = attr.ib()
     stack = attr.ib(factory=tuple)
     schema_registry = attr.ib(factory=dict)
+    tags = attr.ib(factory=dict)
 
     def push_stack(self, x):
         return attr.evolve(self, stack=self.stack + (x,))
@@ -31,6 +33,16 @@ class Context(object):
 
     def find_schema(self, name):
         return self.schema_registry[name]
+
+    def set_tag(self, tag, value):
+        tags = self.tags.copy()
+        tags[tag] = value
+        return attr.evolve(self, tags=tags)
+
+    def get_tag(self, tag, default=_marker):
+        if default is _marker and tag not in self.tags:
+            raise E.TagNotFound(tag, self.tags.keys(), self.stack)
+        return self.tags.get(tag, default)
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
@@ -88,8 +100,6 @@ def _get_default(key, key_schema, doc, ctx):
                 raise E.DefaultSetterUnexpectedError(key, doc, e, ctx.stack)
     return _marker
 
-
-_marker = object()
 
 TYPES = {
     "none": type(None),
@@ -166,6 +176,60 @@ class Normalizer(object):
         if value is None and directive_value:
             return _ShortCircuit(value)
         return (value, ctx)
+
+    @directive("modify_context")
+    def handle_modify_context(self, value, directive_value, ctx):
+        ctx = directive_value(value, ctx)
+        return (value, ctx)
+
+    @directive("set_tag")
+    def handle_set_tag(self, value, directive_value, ctx):
+        if not isinstance(directive_value, list):
+            directive_value = [directive_value]
+        for dv in directive_value:
+            if isinstance(dv, six.string_types):
+                ctx = ctx.set_tag(dv, value[dv])
+            else:
+                if "key" in dv:
+                    val = value[dv["key"]]
+                elif "value" in dv:
+                    val = dv["value"]
+                else:
+                    raise E.SimpleSchemaError(
+                        msg="`set_tag` must have `key` or `value`"
+                    )
+                ctx = ctx.set_tag(dv["tag_name"], val)
+        return (value, ctx)
+
+    @directive("choose_schema")
+    def handle_choose_schema(self, value, directive_value, ctx):
+        """
+        A directive that allows dynamically choosing a schema based on all SORTS of stuff.
+        """
+        # TODO: validate w/ a when_key_exists schema. Only one should be allowed.
+        if "when_tag_is" in directive_value:
+            return self._handle_when_tag_is(value, directive_value["when_tag_is"], ctx)
+        elif "function" in directive_value:
+            schema = directive_value["function"](value, ctx)
+            return _ShortCircuit(_normalize_schema(schema, value, ctx))
+        else:
+            raise E.SimpleSchemaError(
+                msg="`choose_schema` must have `when_tag_is` or `function`."
+            )
+
+    def _handle_when_tag_is(self, value, directive_value, ctx):
+        # This is a lot more simple and flexible than when_key_is
+        # 1. it doesn't require this value to be a dict
+        choice_key = directive_value["tag"]
+        chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _marker))
+        if chosen not in directive_value["choices"]:
+            raise E.DisallowedValue(
+                chosen, directive_value["choices"].keys(), ctx.stack
+            )
+        subschema = directive_value["choices"][chosen]
+        if isinstance(subschema, str):
+            subschema = ctx.find_schema(subschema)
+        return _ShortCircuit(_normalize_schema(subschema, value, ctx))
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):

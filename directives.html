@@ -159,7 +159,7 @@
 <strong>type</strong>: <code>list</code> of arbitrary Python objects</p>
 <p>The object being validated must be equal to one of the objects in the list in order to pass validation.</p>
 <h2><a class="header" href="#of-anyof-oneof" id="of-anyof-oneof">*of (anyof, oneof)</a></h2>
-<p><strong>Validation &amp; Transformation Directive</strong><br>
+<p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>list</code> of Sureberus schemas</p>
 <p>Try applying schemas in sequence to the current value.</p>
 <div class="sureberus-alert">
@@ -257,7 +257,7 @@ This is most often used to call <code>context.set_tag(key, value)</code> to add 
 to later be used with <a href="#choose_schema"><code>choose_schema</code></a>.</p>
 <p>See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
 <h2><a class="header" href="#keyschema" id="keyschema">keyschema</a></h2>
-<p><strong>Validation &amp; Transformation Directive</strong><br>
+<p><strong>Meta Directive</strong><br>
 <strong>type</strong> Sureberus schema</p>
 <p>Specify a schema to be applied to all keys in a dictionary.</p>
 <h2><a class="header" href="#max" id="max">max</a></h2>
@@ -374,7 +374,7 @@ in a context where the tag doesn't vary based on anything.</p>
 The function should return None if the value is valid, otherwise it should call
 <code>error_func(field, &quot;error message&quot;)</code>.</p>
 <h2><a class="header" href="#valueschema" id="valueschema">valueschema</a></h2>
-<p><strong>Validation &amp; Transformation Directive</strong><br>
+<p><strong>Meta Directive</strong><br>
 <strong>type</strong> Sureberus schema</p>
 <p>Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).</p>
 

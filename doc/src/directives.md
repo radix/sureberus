@@ -109,7 +109,7 @@ The directive value is a dictionary which must contain one of the following keys
   ```
 
   This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
-  It goes hand-in-hand with the `set_tag` or `hook_context` directives.
+  It goes hand-in-hand with the [`set_tag`](#set_tag) or [`modify_context`](#modify_context) directives.
 
   When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
   It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
@@ -139,15 +139,15 @@ Call a Python function with the value to get a new one to use.
 Unlike `coerce`, this function is applied *after* all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.
 
-## hook_context
+## modify_context
 
 **Meta Directive**<br>
 **type** Python callable `(value, Context) -> Context`
 
-Run a Python function when this schema is applied.
+Run a Python function to allow it to modify the current Context.
 The Python function will be passed the value and the current Context, and must return a new Context.
 This is most often used to call `context.set_tag(key, value)` to add a new tag to the Context,
-to later be used with directives such as `choose_schema` and `when_tag_is`.
+to later be used with [`choose_schema`](#choose_schema).
 
 See [Dynamically selecting schemas](./schema-selection.md) for more information.
 

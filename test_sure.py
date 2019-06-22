@@ -505,7 +505,7 @@ choice_schema = S.DictWhenKeyIs(
     },
 )
 
-choice_schema_nested = S.Dict(
+wki_schema = S.Dict(
     choose_schema=S.when_key_is(
         "type",
         {
@@ -515,7 +515,15 @@ choice_schema_nested = S.Dict(
     )
 )
 
-equivalent_choice_schemas = [choice_schema, choice_schema_nested]
+
+ignore_wki_deprecation = pytest.mark.filterwarnings(
+    "ignore:.*when_key_is.*:DeprecationWarning"
+)
+
+equivalent_choice_schemas = [
+    pytest.param(choice_schema, marks=ignore_wki_deprecation),
+    wki_schema,
+]
 
 
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
@@ -541,13 +549,13 @@ def test_when_key_is_wrong_choice(choice_schema):
 
 
 def test_when_key_is_other_schema_directives():
-    schema = deepcopy(choice_schema)
+    schema = deepcopy(wki_schema)
 
     def coerce(x):
         x["bar_sibling"] += 1
         return x
 
-    schema["when_key_is"]["choices"]["bar"]["coerce"] = coerce
+    schema["choose_schema"]["when_key_is"]["choices"]["bar"]["coerce"] = coerce
     v = {"type": "foo", "foo_sibling": "hi"}
     assert normalize_schema(schema, v) == v
     v2 = {"type": "bar", "bar_sibling": 32}
@@ -573,7 +581,8 @@ def test_when_key_is_common_schema(choice_schema):
     assert normalize_schema(schema, v) == v
 
 
-def test_when_key_is_coercions():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_coercions(choice_schema):
     """Coercions happen *before* when_key_is, so they can e.g.
     convert from a non-dict to a dict.
     """
@@ -591,22 +600,25 @@ def test_when_key_is_coercions():
     }
 
 
-def test_when_key_is_type_check():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_type_check(choice_schema):
     with pytest.raises(E.BadType) as ei:
         normalize_schema(choice_schema, "foo")
     assert ei.value.type_ == "dict"
     assert ei.value.value == "foo"
 
 
-def test_when_key_is_not_found():
+@pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
+def test_when_key_is_not_found(choice_schema):
+    print("but what IS choice schema", choice_schema)
     with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_schema(choice_schema, {"foo_sibling": "hello"})
     assert ei.value.key == "type"
 
 
 def test_when_key_is_default():
-    schema = deepcopy(choice_schema)
-    schema["when_key_is"]["default_choice"] = "foo"
+    schema = deepcopy(wki_schema)
+    schema["choose_schema"]["when_key_is"]["default_choice"] = "foo"
     assert normalize_schema(schema, {"foo_sibling": "hello"}) == {
         "foo_sibling": "hello"
     }
@@ -619,28 +631,50 @@ choice_existence_schema = S.DictWhenKeyExists(
     }
 )
 
+wke_schema = S.Dict(
+    choose_schema=S.when_key_exists(
+        {
+            "image": {"schema": {"image": S.String(), "width": S.Integer()}},
+            "pattern": {"schema": {"pattern": S.Dict(), "color": S.String()}},
+        }
+    )
+)
 
-def test_when_key_exists():
+ignore_wke_deprecation = pytest.mark.filterwarnings(
+    "ignore:.*when_key_exists.*:DeprecationWarning"
+)
+
+equivalent_exists_schemas = [
+    pytest.param(choice_existence_schema, marks=ignore_wke_deprecation),
+    wke_schema,
+]
+
+
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists(choice_existence_schema):
     v = {"image": "foo", "width": 3}
     assert normalize_schema(choice_existence_schema, v) == v
     v = {"pattern": {}, "color": "red"}
     assert normalize_schema(choice_existence_schema, v) == v
 
 
-def test_when_key_exists_wrong_choice():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_wrong_choice(choice_existence_schema):
     v = {"image": "foo", "color": "red"}
     with pytest.raises(E.UnknownFields):  # this could as well be E.DictFieldNotFound...
         normalize_schema(choice_existence_schema, v)
 
 
-def test_when_key_exists_error_multiple_keys_exist():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_error_multiple_keys_exist(choice_existence_schema):
     v = {"image": "foo", "width": 3, "pattern": {}, "color": "red"}
     with pytest.raises(E.DisallowedField) as ei:
         normalize_schema(choice_existence_schema, v)
     assert {ei.value.field, ei.value.excluded} == {"image", "pattern"}
 
 
-def test_when_key_exists_NO_keys_exist():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_NO_keys_exist(choice_existence_schema):
     v = {"width": 30}
     with pytest.raises(E.ExpectedOneField) as ei:
         normalize_schema(choice_existence_schema, v)
@@ -648,13 +682,13 @@ def test_when_key_exists_NO_keys_exist():
 
 
 def test_when_key_exists_other_schema_directives():
-    schema = deepcopy(choice_existence_schema)
+    schema = deepcopy(wke_schema)
 
     def coerce(x):
         x["width"] += 1
         return x
 
-    schema["when_key_exists"]["image"]["coerce"] = coerce
+    schema["choose_schema"]["when_key_exists"]["image"]["coerce"] = coerce
 
     v = {"pattern": {}, "color": "red"}
     assert normalize_schema(schema, v) == v
@@ -662,7 +696,8 @@ def test_when_key_exists_other_schema_directives():
     assert normalize_schema(schema, v) == {"image": "foo", "width": 4}
 
 
-def test_when_key_exists_common_schema():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_common_schema(choice_existence_schema):
     schema = deepcopy(choice_existence_schema)
     schema["schema"] = {"common!": S.String()}
     with pytest.raises(E.DictFieldNotFound) as ei:
@@ -680,7 +715,8 @@ def test_when_key_exists_common_schema():
     assert normalize_schema(schema, v) == v
 
 
-def test_when_key_exists_coercions():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_coercions(choice_existence_schema):
     """Coercions happen *before* when_key_exists, so they can e.g.
     convert from a non-dict to a dict.
     """
@@ -695,7 +731,8 @@ def test_when_key_exists_coercions():
     assert normalize_schema(schema, "red") == {"pattern": {}, "color": "red"}
 
 
-def test_when_key_exists_type_check():
+@pytest.mark.parametrize("choice_existence_schema", equivalent_exists_schemas)
+def test_when_key_exists_type_check(choice_existence_schema):
     with pytest.raises(E.BadType) as ei:
         normalize_schema(choice_existence_schema, "foo")
     assert ei.value.type_ == "dict"
@@ -788,11 +825,13 @@ def test_recursive_schemas_inside_when_key_exists():
     schema = S.Dict(
         registry={
             "recursive": S.List(
-                schema=S.DictWhenKeyExists(
-                    {
-                        "g": {"schema": {"g": S.String(), "sts": "recursive"}},
-                        "ot": {"schema": {"ot": S.String()}},
-                    }
+                schema=S.Dict(
+                    choose_schema=S.when_key_exists(
+                        {
+                            "g": {"schema": {"g": S.String(), "sts": "recursive"}},
+                            "ot": {"schema": {"ot": S.String()}},
+                        }
+                    )
                 )
             )
         },
@@ -813,15 +852,17 @@ def test_recursive_schemas_inside_when_key_exists():
 
 
 def test_when_key_exists_direct_reference():
-    schema = S.DictWhenKeyExists(
-        {"key": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
+    schema = S.Dict(
+        registry={"ref": S.Dict(schema={"key": S.String()})},
+        choose_schema=S.when_key_exists({"key": "ref"}),
     )
     assert normalize_schema(schema, {"key": "foo"})
 
 
 def test_when_key_is_direct_reference():
-    schema = S.DictWhenKeyIs(
-        "type", {"foo": "ref"}, registry={"ref": S.Dict(schema={"key": S.String()})}
+    schema = S.Dict(
+        registry={"ref": S.Dict(schema={"key": S.String()})},
+        choose_schema=S.when_key_is("type", {"foo": "ref"}),
     )
     assert normalize_schema(schema, {"type": "foo", "key": "a string"})
 

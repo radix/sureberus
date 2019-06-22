@@ -217,6 +217,10 @@ class Normalizer(object):
             return self._handle_when_key_is(
                 value, directive_value["when_key_is"], ctx, "choose_schema"
             )
+        elif "when_key_exists" in directive_value:
+            return self._handle_when_key_exists(
+                value, directive_value["when_key_exists"], ctx, "choose_schema"
+            )
         else:
             raise E.SimpleSchemaError(
                 msg="`choose_schema` must have `when_tag_is` or `function`."
@@ -280,6 +284,13 @@ class Normalizer(object):
 
     @directive("when_key_exists")
     def handle_when_key_exists(self, value, directive_value, ctx):
+        warnings.warn(
+            "The top-level `when_key_exists` directive is deprecated. Please use `choose_schema`.",
+            DeprecationWarning,
+        )
+        return self._handle_when_key_exists(value, directive_value, ctx, "when_key_exists")
+
+    def _handle_when_key_exists(self, value, directive_value, ctx, directive_name):
         self.handle_type(value, "dict", ctx)
         chosen_type = None
         possible_keys = list(directive_value.keys())
@@ -299,7 +310,9 @@ class Normalizer(object):
         subschema = subschema.copy()
         new_schema.setdefault("schema", {}).update(subschema.pop("schema"))
         new_schema.update(subschema)
-        del new_schema["when_key_exists"]
+        # Make sure that the new schema does not include the same `choose_schema`
+        # or `when_key_is` directive, to avoid infinite recursion
+        del new_schema[directive_name]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("oneof")

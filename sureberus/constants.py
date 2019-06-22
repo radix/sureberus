@@ -1,1 +1,1 @@
-_marker = object()
+class _marker(object): pass

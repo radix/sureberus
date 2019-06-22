@@ -45,6 +45,9 @@ class _MISSING(object):
 
 
 def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
+    """
+    Deprecated. Pass `chooose_schema=when_key_is(...)` to `Dict`.
+    """
     when_key_is = {"key": key, "choices": choices}
     if default_choice is not _MISSING:
         when_key_is["default_choice"] = default_choice
@@ -52,6 +55,9 @@ def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
 
 
 def DictWhenKeyExists(choices, **kwargs):
+    """
+    Deprecated. Pass `chooose_schema=when_key_exists(...)` to `Dict`.
+    """
     return Dict(when_key_exists=choices, **kwargs)
 
 

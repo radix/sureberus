@@ -185,7 +185,7 @@ class UnknownSchemaDirectives(SchemaError):
 
 @attr.s
 class TagNotFound(SureError):
-    fmt = "Tag {tag!r} not found (current tags: {tags!r}). Tags are set with `hook_context` or `set_tag` directives."
+    fmt = "Tag {tag!r} not found (current tags: {tags!r}). Tags are set with `modify_context` or `set_tag` directives."
     tag = attr.ib()
     tags = attr.ib()
     stack = attr.ib()

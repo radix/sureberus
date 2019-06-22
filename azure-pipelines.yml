@@ -25,12 +25,18 @@ steps:
     versionSpec: '$(python.version)'
   displayName: 'Use Python $(python.version)'
 
-- script: |
+- displayName: 'Install dependencies'
+  script: |
     python -m pip install --upgrade pip
     pip install -r requirements.txt -r requirements-dev.txt
-  displayName: 'Install dependencies'
+    wget https://github.com/rust-lang-nursery/mdBook/releases/download/v0.3.0/mdbook-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
+    tar xf mdbook-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
 
-- script: |
-    pip install pytest pytest-azurepipelines
+- displayName: 'pytest'
+  script: |
+    pip install pytest-azurepipelines
     pytest
-  displayName: 'pytest'
+
+- displayName: mdbook
+  script: |
+    ./mdbook build doc

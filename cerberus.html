@@ -194,14 +194,22 @@ assert v.normalized({&quot;x&quot;: {}}) == {&quot;x&quot;: {&quot;y&quot;: 0}} 
 assert v.normalized({&quot;x&quot;: 5}) == {&quot;x&quot;: 5}
 </code></pre>
 <p>The first assertion fails, since Cerberus is returning <code>{'x': {}}</code> -- it seems to be completely disregarding our <code>default</code> directive. Why is this?</p>
-<p>It's actually deeper than that, still. Let's see what happens when we pass something that obviously shouldn't even validate:</p>
+<p>It's actually deeper than that, still.
+Let's see what happens when we pass something that obviously shouldn't even validate:</p>
 <pre><code class="language-python">
 # Sureberus:
-with pytest.raises(E.NoneMatched):
+from sureberus.errors import NoneMatched
+with pytest.raises(NoneMatched):
     normalize_dict(schema, {&quot;x&quot;: &quot;foo&quot;})
 
 # Cerberus:
+with pytest.raises(Exception): # This fails!
+    v.normalized({&quot;x&quot;: &quot;foo&quot;})
 </code></pre>
+<p>Cerberus returns the original document without throwing any sort of exception, even though our schema indicates that the <code>x</code> key must have a value that's either an integer or a dict.
+This is expected as per Cerberus's documentation: you have to validate separately from normalization, by using either the <code>validate</code> method or the <code>normalized</code> method.
+But because it separates these concepts so strictly, and because some directives like <code>anyof</code> are considered <em>only</em> validation rules and not normalization rules,
+it's impossible to express the transformation we want.</p>
 <h2><a class="header" href="#schema-selection" id="schema-selection">Schema Selection</a></h2>
 <p>To improve upon the poor error messages that can occur when using &quot;variable schemas&quot; (the <a href="./directives.html#of-anyof-oneof"><code>oneof</code> and <code>anyof</code></a> directives) in Cerberus,
 we've implemented facilities in Sureberus that make it much more clear how to choose schemas, with the <a href="./directives.html#choose_schema"><code>choose_schema</code></a> directive.</p>
@@ -217,7 +225,7 @@ we've implemented facilities in Sureberus that make it much more clear how to ch
 <h2><a class="header" href="#in-line-schema-registries" id="in-line-schema-registries">In-line schema registries</a></h2>
 <p>In Cerberus, you have to invoke Python code to register schemas.
 This means you can't describe a recursive schema without writing custom Python code (as far as I have been able to figure out, anyway).
-With Sureberus, you can take advanteg of the <a href="./directives.html#registry"><code>registry</code></a> directive which allows you to declare named schemas.
+With Sureberus, you can take advantage of the <a href="./directives.html#registry"><code>registry</code></a> directive which allows you to declare named schemas.
 This means that recursive schemas are easy to define in Sureberus.
 See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
 

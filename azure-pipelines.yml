@@ -37,6 +37,6 @@ steps:
     pytest
   displayName: 'pytest'
 
-- displayName: mdbook
-  script: |
+- script: |
     ./mdbook build doc
+  displayName: mdbook

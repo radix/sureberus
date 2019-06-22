@@ -288,7 +288,9 @@ class Normalizer(object):
             "The top-level `when_key_exists` directive is deprecated. Please use `choose_schema`.",
             DeprecationWarning,
         )
-        return self._handle_when_key_exists(value, directive_value, ctx, "when_key_exists")
+        return self._handle_when_key_exists(
+            value, directive_value, ctx, "when_key_exists"
+        )
 
     def _handle_when_key_exists(self, value, directive_value, ctx, directive_name):
         self.handle_type(value, "dict", ctx)

@@ -6,10 +6,21 @@ from .constants import _marker
 
 
 def when_tag_is(tag, choices, default_choice=_marker):
-    wti = {"tag": tag, "choices": choices, "default_choice": default_choice}
+    wti = {"tag": tag, "choices": choices}
     if default_choice is not _marker:
         wti["default_choice"] = default_choice
     return {"when_tag_is": wti}
+
+
+def when_key_is(key, choices, default_choice=_marker):
+    wki = {"key": key, "choices": choices}
+    if default_choice is not _marker:
+        wki["default_choice"] = default_choice
+    return {"when_key_is": wki}
+
+
+def when_key_exists(choices):
+    return {"when_key_exists": choices}
 
 
 def mk(d, kw, **morekw):
@@ -34,6 +45,9 @@ class _MISSING(object):
 
 
 def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
+    """
+    Deprecated. Pass `chooose_schema=when_key_is(...)` to `Dict`.
+    """
     when_key_is = {"key": key, "choices": choices}
     if default_choice is not _MISSING:
         when_key_is["default_choice"] = default_choice
@@ -41,6 +55,9 @@ def DictWhenKeyIs(key, choices, default_choice=_MISSING, **kwargs):
 
 
 def DictWhenKeyExists(choices, **kwargs):
+    """
+    Deprecated. Pass `chooose_schema=when_key_exists(...)` to `Dict`.
+    """
     return Dict(when_key_exists=choices, **kwargs)
 
 

@@ -3,6 +3,7 @@ from __future__ import print_function
 from copy import deepcopy
 from inspect import getmembers
 import re
+import warnings
 
 import attr
 import six
@@ -212,14 +213,20 @@ class Normalizer(object):
         elif "function" in directive_value:
             schema = directive_value["function"](value, ctx)
             return _ShortCircuit(_normalize_schema(schema, value, ctx))
+        elif "when_key_is" in directive_value:
+            return self._handle_when_key_is(
+                value, directive_value["when_key_is"], ctx, "choose_schema"
+            )
+        elif "when_key_exists" in directive_value:
+            return self._handle_when_key_exists(
+                value, directive_value["when_key_exists"], ctx, "choose_schema"
+            )
         else:
             raise E.SimpleSchemaError(
                 msg="`choose_schema` must have `when_tag_is` or `function`."
             )
 
     def _handle_when_tag_is(self, value, directive_value, ctx):
-        # This is a lot more simple and flexible than when_key_is
-        # 1. it doesn't require this value to be a dict
         choice_key = directive_value["tag"]
         chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _marker))
         if chosen not in directive_value["choices"]:
@@ -229,10 +236,21 @@ class Normalizer(object):
         subschema = directive_value["choices"][chosen]
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
-        return _ShortCircuit(_normalize_schema(subschema, value, ctx))
+        new_schema = deepcopy(self.schema)
+        subschema = subschema.copy()
+        new_schema.update(subschema)
+        del new_schema["choose_schema"]
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("when_key_is")
     def handle_when_key_is(self, value, directive_value, ctx):
+        warnings.warn(
+            "The top-level `when_key_is` directive is deprecated. Please use `choose_schema`.",
+            DeprecationWarning,
+        )
+        return self._handle_when_key_is(value, directive_value, ctx, "when_key_is")
+
+    def _handle_when_key_is(self, value, directive_value, ctx, directive_name):
         # At this point, we *need* this thing to be a dict, so we can look up
         # keys. So let's make sure it's a dict.
         self.handle_type(value, "dict", ctx)
@@ -261,11 +279,22 @@ class Normalizer(object):
         subschema = subschema.copy()
         new_schema["schema"].update(subschema.pop("schema"))
         new_schema.update(subschema)
-        del new_schema["when_key_is"]
+        # Make sure that the new schema does not include the same `choose_schema`
+        # or `when_key_is` directive, to avoid infinite recursion
+        del new_schema[directive_name]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("when_key_exists")
     def handle_when_key_exists(self, value, directive_value, ctx):
+        warnings.warn(
+            "The top-level `when_key_exists` directive is deprecated. Please use `choose_schema`.",
+            DeprecationWarning,
+        )
+        return self._handle_when_key_exists(
+            value, directive_value, ctx, "when_key_exists"
+        )
+
+    def _handle_when_key_exists(self, value, directive_value, ctx, directive_name):
         self.handle_type(value, "dict", ctx)
         chosen_type = None
         possible_keys = list(directive_value.keys())
@@ -285,7 +314,9 @@ class Normalizer(object):
         subschema = subschema.copy()
         new_schema.setdefault("schema", {}).update(subschema.pop("schema"))
         new_schema.update(subschema)
-        del new_schema["when_key_exists"]
+        # Make sure that the new schema does not include the same `choose_schema`
+        # or `when_key_is` directive, to avoid infinite recursion
+        del new_schema[directive_name]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("oneof")

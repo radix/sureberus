@@ -9,7 +9,9 @@ class SchemaError(Exception):
         return self.__dict__
 
 
+@attr.s
 class SimpleSchemaError(SchemaError):
+    fmt = "{msg}"
     msg = attr.ib()
 
 

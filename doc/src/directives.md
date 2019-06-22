@@ -21,7 +21,7 @@ The object being validated must be equal to one of the objects in the list in or
 
 ## *of (anyof, oneof)
 
-**Validation & Transformation Directive**<br>
+**Meta Directive**<br>
 **type** `list` of Sureberus schemas
 
 Try applying schemas in sequence to the current value.
@@ -154,7 +154,7 @@ See [Dynamically selecting schemas](./schema-selection.md) for more information.
 
 ## keyschema
 
-**Validation & Transformation Directive**<br>
+**Meta Directive**<br>
 **type** Sureberus schema
 
 Specify a schema to be applied to all keys in a dictionary.
@@ -328,7 +328,7 @@ The function should return None if the value is valid, otherwise it should call
 
 ## valueschema
 
-**Validation & Transformation Directive**<br>
+**Meta Directive**<br>
 **type** Sureberus schema
 
 Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).

@@ -80,7 +80,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html" class="active"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li></ol>
+                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html" class="active"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li><li><a href="cerberus.html"><strong aria-hidden="true">3.</strong> Differences from Cerberus</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -148,8 +148,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#dynamically-selecting-schemas" id="dynamically-selecting-schemas">Dynamically selecting schemas</a></h1>
-<p>Sureberus has useful directives for <em>selecting</em> schemas to apply based on various aspects of the input value.
-These directives should always be preferred over the <a href="./directives.html#of-anyof-oneof"><code>anyof</code> or <code>oneof</code></a> directives, since they provide much nicer error messages and represent the schema in a more principled way.</p>
+<p>Sureberus has a directive for <em>selecting</em> schemas to apply based on various aspects of the input value, called <a href="./directives.html#choose_schema"><code>choose_schema</code></a>. This directive is meant to be passed a dict, which must include a single sub-directive.</p>
 <h2><a class="header" href="#schema-selection-based-on-dict-keys-when_key_is-when_key_exists" id="schema-selection-based-on-dict-keys-when_key_is-when_key_exists">Schema selection based on dict keys: when_key_is, when_key_exists</a></h2>
 <p>There are two options for selecting a schema based on dict keys.</p>
 <ul>
@@ -163,45 +162,40 @@ can look like this:</p>
 <pre><code class="language-json">{&quot;type&quot;: &quot;elephant&quot;, &quot;trunk_length&quot;: 60}
 {&quot;type&quot;: &quot;eagle&quot;, &quot;wingspan&quot;: 50}
 </code></pre>
-<p>Then you would use <code>when_key_is</code>, like this:</p>
-<pre><code class="language-json">{
-    &quot;type&quot;: &quot;dict&quot;,
-    &quot;when_key_is&quot;: {
-        &quot;key&quot;: &quot;type&quot;,
-        &quot;choices&quot;: {
-            &quot;elephant&quot;: {
-                &quot;schema&quot;: {&quot;trunk_length&quot;: {&quot;type&quot;: &quot;integer&quot;}}
-            },
-            &quot;eagle&quot;: {
-                &quot;schema&quot;: {&quot;wingspan&quot;: {&quot;type&quot;: &quot;integer&quot;}}
-            },
-        }
-    }
-}
+<p>Then you would use <code>when_key_is</code> in your schema like this (in YAML syntax):</p>
+<pre><code class="language-yaml">type: dict
+choose_schema:
+  when_key_is:
+    key: &quot;type&quot;
+    choices:
+      &quot;elephant&quot;:
+        schema:
+          &quot;trunk_length&quot;: {&quot;type&quot;: &quot;integer&quot;}
+      &quot;eagle&quot;:
+        schema:
+          &quot;wingspan&quot;: {&quot;type&quot;: &quot;integer&quot;}
 </code></pre>
-<p>You can also specify a <code>default_choice</code> inside of the <code>when_key_is</code> directive,
-to specify which choice to use if the (e.g.) <code>type</code> key is elided from the
-value being validated.</p>
+<p>When the value contains a <code>type</code> key of <code>elephant</code>, Sureberus will choose the schema that contains <code>trunk_length</code>.
+When the type is <code>eagle</code>, it will choose the schema containing <code>wingspan</code>.</p>
 <h3><a class="header" href="#when_key_exists" id="when_key_exists">when_key_exists</a></h3>
-<p>Use this when you have dictionaries where you must choose the schema based on
-keys that exist in the data exclusively for their type of data. For example, if
-you have data that can look like this:</p>
+<p>Use this when you have dictionaries where you must choose the schema based on keys that exist in the data exclusively for their type of data.
+For example, if you have data that can look like this:</p>
 <pre><code class="language-json">{&quot;image_url&quot;: &quot;foo.jpg&quot;, &quot;width&quot;: 30}
 {&quot;color&quot;: &quot;red&quot;}
 </code></pre>
-<p>Then you would use <code>when_key_exists</code>, like this:</p>
-<pre><code class="language-json">{
-    &quot;type&quot;: &quot;dict&quot;,
-    &quot;when_key_exists&quot;: {
-        &quot;image_url&quot;: {
-            &quot;schema&quot;: {&quot;image_url&quot;: {&quot;type&quot;: &quot;string&quot;}, &quot;width&quot;: {&quot;type&quot;: &quot;integer&quot;}}
-        },
-        &quot;color&quot;: {
-            &quot;schema&quot;: {&quot;color&quot;: {&quot;type&quot;: &quot;string&quot;}}
-        },
-    }
-}
+<p>Then you would use <code>when_key_exists</code>, like this (in YAML):</p>
+<pre><code class="language-yaml">type: dict
+choose_schema:
+  when_key_exists:
+    &quot;image_url&quot;:
+      schema:
+        &quot;image_url&quot;: {&quot;type&quot;: &quot;string&quot;}
+        &quot;width&quot;: {&quot;type&quot;: &quot;integer&quot;}
+    &quot;color&quot;:
+      schema:
+        &quot;color&quot;: {&quot;type&quot;: &quot;string&quot;}
 </code></pre>
+<p>Sureberus looks at the keys in the dictionary, and if one of the keys that are listed in <code>choices</code> are there, it will choose the corresponding schema.</p>
 <h2><a class="header" href="#schema-selection-based-on-context" id="schema-selection-based-on-context">Schema selection based on context</a></h2>
 <p>While <code>when_key_is</code> can work when you need to vary the way an object is validated or transformed
 based on a key <em>existing in that same object</em>, sometimes the relationship of the schema specifier
@@ -228,34 +222,35 @@ deeply in the object.</p>
 <p>There are four directives that provide these mechanisms. For most cases, you only need to care
 about the first two of them:</p>
 <ul>
-<li><code>set_tag</code> - save a tag (a key/value pair) in the Context,</li>
-<li><code>when_tag_is</code> - select a schema based on a saved tag found in the Context,</li>
-<li><code>hook_context</code> - run an arbitrary Python function that can manipulate the Context (including
-the tags),</li>
-<li><code>choose_schema</code> - run an arbitrary Python function that can select a schema based on the
-Context.</li>
+<li><a href="./directives.html#set_tag"><code>set_tag</code></a> - save a tag (a key/value pair) in the Context,</li>
+<li><a href="./directives.html#choose_schema"><code>choose_schema</code></a> with <code>when_tag_is</code> - select a schema based on a saved tag found in the Context,</li>
+<li><a href="./directives.html#modify_context"><code>modify_context</code></a> - run an arbitrary Python function that can manipulate the Context (including the tags),</li>
+<li><a href="./directives.html#choose_schema"><code>choose_schema</code></a> with <code>function</code> - run an arbitrary Python function that can select a schema based on the Context.</li>
 </ul>
-<p>The latter two, <code>hook_context</code> and <code>choose_schema</code> are generalizations of the first, and they
+<p>The latter two, <code>modify_context</code> and <code>choose_schema</code> are generalizations of the first, and they
 don't often need to be used.</p>
-<p>Here's an example of a schema that can parse our sample data, encoded as YAML:</p>
-<pre><code class="language-yaml">type: dict
-set_tag: &quot;type&quot;
-schema:
-  type: foo
-  common: {type: dict}
-  data_service:
-    type: dict
-    schema:
-      renderers:
-        type: list
-        schema:
-          type: dict
-          when_tag_is:
-            tag: type
-            choices:
-              foo: {&quot;type&quot;: dict, &quot;schema&quot;: {foo_specific: {type: string}}
-              bar: {&quot;type&quot;: dict, &quot;schema&quot;: {bar_specific: {type: integer}}
+<p>Here's an example of a schema that can parse our sample data, using the Python schema syntax.</p>
+<pre><code class="language-python">schema = S.Dict(
+  set_tag=&quot;type&quot;,
+  schema={
+    &quot;type&quot;: S.String(),
+    &quot;common&quot;: S.Dict(),
+    &quot;data_service&quot;: S.Dict(
+      schema={
+        &quot;renderers&quot;: S.List(
+          schema=S.Dict(
+            choose_schema=S.when_tag_is(
+              &quot;type&quot;,
+              {
+                &quot;foo&quot;: S.Dict(schema={&quot;foo_specific&quot;: S.String()}),
+                &quot;bar&quot;: S.Dict(schema={&quot;bar_specific&quot;: S.Integer()}),
+              })))})})
 </code></pre>
+<p>Here we're using the <code>set_tag</code> directive with its shorthand for specifying a tag name that will be equivalent to the name of the key to look up in the dict.
+When Sureberus applies this schema to the top-level <code>dict</code>, it looks for the key named <code>type</code>, and stores its value in the Context under a tag named <code>type</code>.
+Then, deeper inside this schema, we make use of the <code>choose_schema</code> directive with the <code>when_tag_is</code> sub-directive.
+We pass the tag name <code>type</code> here, so it looks up the value associated with the <code>type</code> tag in the Context, and uses that to select the corresponding schema defined in the choices passed to <code>when_tag_is</code>.
+Thus, when the top-level dict has <code>&quot;type&quot;: &quot;foo&quot;</code>, Sureberus will ultimately select the schema containing <code>&quot;foo_specific&quot;</code>.</p>
 
                     </main>
 

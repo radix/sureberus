@@ -80,7 +80,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li></ol>
+                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li><li><a href="cerberus.html"><strong aria-hidden="true">3.</strong> Differences from Cerberus</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -149,8 +149,8 @@
                     <main>
                         <h1><a class="header" href="#sureberus" id="sureberus">Sureberus</a></h1>
 <p>Sureberus is a data validation and transformation tool that is useful for validating and normalizing &quot;documents&quot; (nested data structures of basic Python data-types). You provide a schema which describes the expected structure of an object (and optionally, various directives that modify that structure), along with a document to validate and transform, and it returns the new version.</p>
-<p>Sureberus's schema format is based on <a href="https://github.com/pyeve/cerberus/">Cerberus</a>. It doesn't implement all of the features of that library, and where it does implement a feature it doesn't always implement it in the exact same way.</p>
-<p>Sureberus exists because Cerberus wasn't flexible enough for my use. Most importantly, Cerberus strictly separates transformation (what the Cerberus documentation calls &quot;Normalization&quot;) from validation; if you want to transform a document, you can't also make sure it's valid at the same time. This can lead to some surprising limitations, some of which are documented below.</p>
+<p>Sureberus is a spiritual descendent of <a href="https://github.com/pyeve/cerberus/">Cerberus</a>, more-or-less uses the same schema format.
+There are some differences, though, which you can read about in <a href="./cerberus.html">Differences from Cerberus</a>.</p>
 
                     </main>
 

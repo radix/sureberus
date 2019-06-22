@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Sureberus - Sureberus</title>
+        <title>Differences from Cerberus - Sureberus</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -80,7 +80,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="affix"><a href="sureberus.html" class="active">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li><li><a href="cerberus.html"><strong aria-hidden="true">3.</strong> Differences from Cerberus</a></li></ol>
+                <ol class="chapter"><li class="affix"><a href="sureberus.html">Sureberus</a></li><li><a href="directives.html"><strong aria-hidden="true">1.</strong> Directives</a></li><li><ol class="section"><li><a href="schema-registries.html"><strong aria-hidden="true">1.1.</strong> Schema registries</a></li><li><a href="schema-selection.html"><strong aria-hidden="true">1.2.</strong> Dynamically selecting schemas</a></li></ol></li><li><a href="python-schema.html"><strong aria-hidden="true">2.</strong> Python schema syntax</a></li><li><a href="cerberus.html" class="active"><strong aria-hidden="true">3.</strong> Differences from Cerberus</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -147,21 +147,90 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#sureberus" id="sureberus">Sureberus</a></h1>
-<p>Sureberus is a data validation and transformation tool that is useful for validating and normalizing &quot;documents&quot; (nested data structures of basic Python data-types). You provide a schema which describes the expected structure of an object (and optionally, various directives that modify that structure), along with a document to validate and transform, and it returns the new version.</p>
-<p>Sureberus is a spiritual descendent of <a href="https://github.com/pyeve/cerberus/">Cerberus</a>, more-or-less uses the same schema format.
-There are some differences, though, which you can read about in <a href="./cerberus.html">Differences from Cerberus</a>.</p>
+                        <h1><a class="header" href="#differences-from-cerberus" id="differences-from-cerberus">Differences from Cerberus</a></h1>
+<h2><a class="header" href="#transformation-and-validation" id="transformation-and-validation">Transformation AND validation</a></h2>
+<p>Sureberus exists because Cerberus wasn't flexible enough for our use.
+Most importantly, Cerberus strictly separates transformation (what the Cerberus documentation calls &quot;Normalization&quot;) from validation;
+if you want to transform a document with Cerberus, you can't also make sure it's valid at the same time.
+This can lead to some surprising limitations.</p>
+<p>For example,</p>
+<pre><code class="language-python">from sureberus import normalize_dict
+from cerberus import Validator
+
+schema = {
+    &quot;x&quot;: {
+        &quot;anyof&quot;: [
+            {&quot;type&quot;: &quot;dict&quot;, &quot;schema&quot;: {&quot;y&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;default&quot;: 0}}},
+            {&quot;type&quot;: &quot;integer&quot;},
+        ]
+    }
+}
+</code></pre>
+<p>Here we have a schema that says:</p>
+<ul>
+<li>this is a dict
+<ul>
+<li>whose <code>x</code> field can either be
+<ul>
+<li>an integer,</li>
+<li>or a dict,
+<ul>
+<li>containing a <code>y</code> field which defaults to 0.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Let's try using it with Sureberus.</p>
+<pre><code class="language-python">assert normalize_dict(schema, {&quot;x&quot;: {}}) == {&quot;x&quot;: {&quot;y&quot;: 0}}
+assert normalize_dict(schema, {&quot;x&quot;: 5}) == {&quot;x&quot;: 5}
+</code></pre>
+<p>These assertions run fine. Sureberus tries to normalize the value with each schema in turn, and returns the result of the first one that succeeds.</p>
+<p>Now let's try with Cerberus.</p>
+<pre><code class="language-python">v = Validator(schema)
+assert v.normalized({&quot;x&quot;: {}}) == {&quot;x&quot;: {&quot;y&quot;: 0}} # This fails!
+assert v.normalized({&quot;x&quot;: 5}) == {&quot;x&quot;: 5}
+</code></pre>
+<p>The first assertion fails, since Cerberus is returning <code>{'x': {}}</code> -- it seems to be completely disregarding our <code>default</code> directive. Why is this?</p>
+<p>It's actually deeper than that, still. Let's see what happens when we pass something that obviously shouldn't even validate:</p>
+<pre><code class="language-python">
+# Sureberus:
+with pytest.raises(E.NoneMatched):
+    normalize_dict(schema, {&quot;x&quot;: &quot;foo&quot;})
+
+# Cerberus:
+</code></pre>
+<h2><a class="header" href="#schema-selection" id="schema-selection">Schema Selection</a></h2>
+<p>To improve upon the poor error messages that can occur when using &quot;variable schemas&quot; (the <a href="./directives.html#of-anyof-oneof"><code>oneof</code> and <code>anyof</code></a> directives) in Cerberus,
+we've implemented facilities in Sureberus that make it much more clear how to choose schemas, with the <a href="./directives.html#choose_schema"><code>choose_schema</code></a> directive.</p>
+<p>Not only does this make the schema easier to reason about, it makes error messages much nicer: with <code>anyof</code>, we have to say:</p>
+<blockquote>
+<p>&quot;Sorry, your value didn't match this schema, or that schema, or that schema...&quot;</p>
+</blockquote>
+<p>But with the mechanisms available through <code>choose_schema</code>, we get to say:</p>
+<blockquote>
+<p>&quot;I know you want to use THIS schema, because you had a field in your dictionary that indicated which schema to use. This is how it doesn't match...&quot;</p>
+</blockquote>
+<p>The <code>choose_schema</code> facility is documented more thoroughly in <a href="./schema-selection.html">Schema selection</a>.</p>
+<h2><a class="header" href="#in-line-schema-registries" id="in-line-schema-registries">In-line schema registries</a></h2>
+<p>In Cerberus, you have to invoke Python code to register schemas.
+This means you can't describe a recursive schema without writing custom Python code (as far as I have been able to figure out, anyway).
+With Sureberus, you can take advanteg of the <a href="./directives.html#registry"><code>registry</code></a> directive which allows you to declare named schemas.
+This means that recursive schemas are easy to define in Sureberus.
+See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-
-                        
-                            <a rel="next" href="directives.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
+                            <a rel="prev" href="python-schema.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
                             </a>
+                        
+
                         
 
                         <div style="clear: both"></div>
@@ -171,11 +240,11 @@ There are some differences, though, which you can read about in <a href="./cerbe
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-
-                
-                    <a href="directives.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
+                    <a href="python-schema.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
                     </a>
+                
+
                 
             </nav>
 

@@ -194,7 +194,8 @@ class TagNotFound(SureError):
 
 
 @attr.s
-class SetterNotFound(SureError):
-    fmt = "There is no registered default_settert named {setter}. See the `default_registry` directive."
+class RegisteredFunctionNotFound(SureError):
+    fmt = "There is no registered {registry_name} function named {setter}. See the `{registry_name}_registry` directive."
     setter = attr.ib()
+    registry_name = attr.ib()
     stack = attr.ib()

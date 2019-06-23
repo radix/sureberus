@@ -414,6 +414,21 @@ def test_coerce():
     assert normalize_schema(schema, 33) == [33]
 
 
+def test_coerce_registry():
+    schema = {"coerce_registry": {"foo": lambda inp: inp + 3}, "coerce": "foo"}
+    assert normalize_schema(schema, 100) == 103
+
+
+def test_coerce_registered_defaults():
+    schema = {"coerce": "to_list"}
+    assert normalize_schema(schema, 100) == [100]
+    assert normalize_schema(schema, [100]) == [100]
+
+    schema = {"coerce": "to_set"}
+    assert normalize_schema(schema, 100) == {100}
+    assert normalize_schema(schema, {100}) == {100}
+
+
 def test_coerce_post_basic():
     def _to_list(item):
         if isinstance(item, list):
@@ -423,6 +438,20 @@ def test_coerce_post_basic():
 
     schema = {"coerce_post": _to_list}
     assert normalize_schema(schema, 33) == [33]
+
+def test_coerce_post_registry():
+    schema = {"coerce_registry": {"foo": lambda inp: inp + 3}, "coerce_post": "foo"}
+    assert normalize_schema(schema, 100) == 103
+
+
+def test_coerc_post_registered_defaults():
+    schema = {"coerce_post": "to_list"}
+    assert normalize_schema(schema, 100) == [100]
+    assert normalize_schema(schema, [100]) == [100]
+
+    schema = {"coerce_post": "to_set"}
+    assert normalize_schema(schema, 100) == {100}
+    assert normalize_schema(schema, {100}) == {100}
 
 
 def test_coerce_post_after_children():

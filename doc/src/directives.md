@@ -124,20 +124,41 @@ The directive value is a dictionary which must contain one of the following keys
 ## coerce
 
 **Transformation Directive**<br>
-**type** Python callable `(value) -> new value`
+**type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
 Call a Python function with the value to get a new one to use.
+Or, if the directive is a string, look up the registered coerce function to perform coercion.
+By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
+
 It's important to note that this function is called *before* all other directives that might reject a value.
 This is a good directive to use if you want to normalize invalid documents to a form that can be considered valid.
 
 ## coerce_post
 
 **Transformation Directive**<br>
-**type** Python callable `(value) -> new value`
+**type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
-Call a Python function with the value to get a new one to use.
+Call a Python function with the value to get a new one to use, *after* all other validation.
+Or, if the directive is a string, look up the registered coerce function to perform coercion.
+By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
+
+<div class="sureberus-info">
+
 Unlike `coerce`, this function is applied *after* all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.
+
+</div>
+
+
+## coerce_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (coerce names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`coerce`](#coerce) and [`coerce_post`](#coerce_post) directives.
+Each key in the directive should be a name, and the value should be a Python function that takes a single argument and returns a new value,
+just like the functions you would normally pass to `coerce`.
+Then you can pass the name of the registered function to `coerce` or `coerce_post` to invoke the registered function.
 
 ## default_registry
 
@@ -145,9 +166,8 @@ so it's allowed to return values that wouldn't validate according to other direc
 **type** `dict` of `str` (setter names) to Python callables
 
 This allows you to register functions with a name that can be used in the `default_setter` directive of [field schemas](#schema-for-dicts).
-Each key in the directive should be a name, and the value should be a Python function that takes a single argument
-(the dictionary on which the default is being added)
-and returns a new value to be used when the key does not appear in the document.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `default_setter` function.
+Then you can pass the name of the registered function to `default_setter` to invoke the registered function.
 
 ## modify_context
 

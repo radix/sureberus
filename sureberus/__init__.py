@@ -20,19 +20,10 @@ class Context(object):
     stack = attr.ib(factory=tuple)
     schema_registry = attr.ib(factory=dict)
     default_registry = attr.ib(factory=dict)
+    coerce_registry = attr.ib(factory=dict)
+    modify_context_registry = attr.ib(factory=dict)
+    validator_factory = attr.ib(factory=dict)
     tags = attr.ib(factory=dict)
-
-    @classmethod
-    def new(cls, allow_unknown):
-        return cls(
-            stack=(),
-            allow_unknown=allow_unknown,
-            default_registry={
-                "list": lambda _: [],
-                "dict": lambda _: {},
-                "set": lambda _: set(),
-            },
-        )
 
     def push_stack(self, x):
         return attr.evolve(self, stack=self.stack + (x,))
@@ -50,16 +41,37 @@ class Context(object):
         reg.update(registry)
         return attr.evolve(self, default_registry=reg)
 
+    def register_coerces(self, registry):
+        reg = self.coerce_registry.copy()
+        reg.update(registry)
+        return attr.evolve(self, coerce_registry=reg)
+
+    def register_validators(self, registry):
+        reg = self.validator_registry.copy()
+        reg.update(registry)
+        return attr.evolve(self, validator_registry=reg)
+
+    def register_modify_contexts(self, registry):
+        reg = self.modify_context_registry.copy()
+        reg.update(registry)
+        return attr.evolve(self, modify_context_registry=reg)
+
     def resolve_default_setter(self, setter):
-        if isinstance(setter, six.string_types):
-            if setter in self.default_registry:
-                return self.default_registry[setter]
+        return self._resolve_registered(setter, self.default_registry, "default")
+
+    def resolve_coerce(self, coerce):
+        return self._resolve_registered(coerce, self.coerce_registry, "coerce")
+
+    def _resolve_registered(self, thing, registry, name):
+        if isinstance(thing, six.string_types):
+            if thing in registry:
+                return registry[thing]
             else:
                 # this *shouldn't* take the stack; this error should be discovered
                 # when the schema is initially being parsed.
-                raise E.SetterNotFound(setter, self.stack)
+                raise E.RegisteredFunctionNotFound(thing, name, self.stack)
         else:
-            return setter
+            return thing
 
     def find_schema(self, name):
         return self.schema_registry[name]
@@ -75,13 +87,28 @@ class Context(object):
         return self.tags.get(tag, default)
 
 
+INIT_CONTEXT = Context(
+    stack=(),
+    allow_unknown=False,
+    default_registry={
+        "list": lambda _: [],
+        "dict": lambda _: {},
+        "set": lambda _: set(),
+    },
+    coerce_registry={
+        "to_list": lambda x: [x] if not isinstance(x, list) else x,
+        "to_set": lambda x: {x} if not isinstance(x, set) else x,
+    },
+)
+
+
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
-    ctx = Context.new(allow_unknown=allow_unknown)
+    ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
     return _normalize_dict(dict_schema, value, ctx)
 
 
 def normalize_schema(schema, value, stack=(), allow_unknown=False):
-    ctx = Context.new(allow_unknown=allow_unknown)
+    ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
     return _normalize_schema(schema, value, ctx)
 
 
@@ -182,8 +209,19 @@ class Normalizer(object):
 
     @directive("registry")
     def handle_registry(self, value, directive_value, ctx):
-        ctx = ctx.register_schemas(directive_value)
-        return (value, ctx)
+        return (value, ctx.register_schemas(directive_value))
+
+    @directive("coerce_registry")
+    def handle_coerce_registry(self, value, directive_value, ctx):
+        return (value, ctx.register_coerces(directive_value))
+
+    @directive("validator_registry")
+    def handle_validator_registry(self, value, directive_value, ctx):
+        return (value, ctx.register_validators(directive_value))
+
+    @directive("modify_context_registry")
+    def handle_modify_context_registry(self, value, directive_value, ctx):
+        return (value, ctx.register_modify_contexts(directive_value))
 
     @directive("schema_ref")
     def handle_registered_schema(self, value, directive_value, ctx):
@@ -200,7 +238,7 @@ class Normalizer(object):
     @directive("coerce")
     def handle_coerce(self, value, directive_value, ctx):
         try:
-            return (directive_value(value), ctx)
+            return (ctx.resolve_coerce(directive_value)(value), ctx)
         except E.SureError:
             raise
         except Exception as e:

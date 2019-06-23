@@ -340,8 +340,8 @@ class Normalizer(object):
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
         allowed_choices = list(directive_value["choices"].keys())
-        if choice_key not in new_schema.setdefault("schema", {}):
-            new_schema["schema"][choice_key] = {"allowed": allowed_choices}
+        if choice_key not in new_schema.setdefault("fields", {}):
+            new_schema["fields"][choice_key] = {"allowed": allowed_choices}
         if choice_key not in value:
             if "default_choice" in directive_value:
                 chosen_type = directive_value["default_choice"]
@@ -357,7 +357,12 @@ class Normalizer(object):
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
-        new_schema["schema"].update(subschema.pop("schema"))
+        # this is some shenanigans to support both "fields" and "schema"
+        fields = new_schema.pop("schema", {}).copy()
+        fields.update(new_schema.pop("fields", {}))
+        new_schema["fields"] = fields
+        new_schema["fields"].update(subschema.pop("schema", {}))
+        new_schema["fields"].update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion
@@ -392,7 +397,12 @@ class Normalizer(object):
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
-        new_schema.setdefault("schema", {}).update(subschema.pop("schema"))
+        # this is some shenanigans to support both "fields" and "schema"
+        fields = new_schema.pop("schema", {}).copy()
+        fields.update(new_schema.pop("fields", {}))
+        new_schema["fields"] = fields
+        new_schema["fields"].update(subschema.pop("schema", {}))
+        new_schema["fields"].update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion

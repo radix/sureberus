@@ -121,6 +121,13 @@ class BranchWhenTagIs(Instruction):
         return (value, ctx)
 
 
+@attr.s
+class CheckFields(Instruction):
+    fields = attr.ib()
+
+    def perform(self, value, ctx):
+        raise NotImplementedError()
+
 ## Validation Directives
 
 
@@ -140,6 +147,16 @@ class SkipIfNone(Instruction):
     def perform(self, value, ctx):
         if value is None:
             return _ShortCircuit(value)
+        return (value, ctx)
+
+
+@attr.s
+class CheckAllowList(Instruction):
+    allowed = attr.ib()
+
+    def perform(self, value, ctx):
+        if value not in self.allowed:
+            raise E.DisallowedValue(value, self.allowed, ctx.stack)
         return (value, ctx)
 
 

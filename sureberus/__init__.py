@@ -423,9 +423,8 @@ class Normalizer(object):
 
     @directive("allowed")
     def handle_allowed(self, value, directive_value, ctx):
-        if value not in directive_value:
-            raise E.DisallowedValue(value, directive_value, ctx.stack)
-        return (value, ctx)
+        from .instructions import CheckAllowList
+        return CheckAllowList(directive_value).perform(value, ctx)
 
     @directive("type")
     def handle_type(self, value, directive_value, ctx):

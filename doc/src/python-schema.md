@@ -10,9 +10,9 @@ newline/indent-based line wrapping:
 myschema = {
     'type': 'dict',
     'anyof': [
-        {'schema': {'gradient': {'type': 'string'}}},
+        {'fields': {'gradient': {'type': 'string'}}},
         {
-            'schema': {
+            'fields': {
                 'image': {'type': 'string'},
                 'opacity': {'type': 'integer', 'default': 100},
             }
@@ -25,11 +25,11 @@ And here is a `sureberus.schema`-based schema, using the same line-wrapping
 rules:
 
 ```python
-from sureberus.schema import Dict, SubSchema, String, Integer
+from sureberus.schema import Dict, String, Integer
 myschema = Dict(
     anyof=[
-        SubSchema(gradient=String()),
-        SubSchema(image=String(), opacity=Integer(default=100))
+        dict(gradient=String()),
+        dict(image=String(), opacity=Integer(default=100))
     ]
 )
 ```

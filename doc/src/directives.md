@@ -50,7 +50,8 @@ If a schema can be applied successfully, the transformations it applies will be 
 ## choose_schema
 
 **Meta Directive**<br>
-**type** `dict` described below
+**type** `dict` described below<br>
+**Introduced in** Sureberus 0.8.0
 
 Choose a schema based on different factors of the input document and the current Context.
 See [Dynamically selecting schemas](./schema-selection.md) for more information.
@@ -116,7 +117,7 @@ The directive value is a dictionary which must contain one of the following keys
 
 * **function**
 
-  **type** Python callable `(value, context) -> Sureberus schema
+  **type** Python callable `(value, context)` -> Sureberus schema
 
   Dynamically choose a schema to use based on the current value and the Context object.
   The schema returned by the Python function will be applied to the value.
@@ -153,7 +154,8 @@ so it's allowed to return values that wouldn't validate according to other direc
 ## coerce_registry
 
 **Meta Directive**<br>
-**type** `dict` of `str` (coerce names) to Python callables
+**type** `dict` of `str` (coerce names) to Python callables<br>
+**Introduced in** Sureberus 0.9.0
 
 This allows you to register functions with a name that can be used in the [`coerce`](#coerce) and [`coerce_post`](#coerce_post) directives.
 Each key in the directive should be a name, and the value should be a Python function that takes a single argument and returns a new value,
@@ -163,16 +165,51 @@ Then you can pass the name of the registered function to `coerce` or `coerce_pos
 ## default_registry
 
 **Meta Directive**<br>
-**type** `dict` of `str` (setter names) to Python callables
+**type** `dict` of `str` (setter names) to Python callables<br>
+**Introduced in** Sureberus 0.9.0
 
-This allows you to register functions with a name that can be used in the `default_setter` directive of [field schemas](#schema-for-dicts).
+This allows you to register functions with a name that can be used in the `default_setter` directive of [field schemas](#fields).
 Each key in the directive should be a name, and the value should be a Python function that acts like a `default_setter` function.
 Then you can pass the name of the registered function to `default_setter` to invoke the registered function.
+
+
+## elements
+
+**Meta Directive**<br>
+**type** Sureberus schema<br>
+**Introduced in** Sureberus 0.9.0
+
+Apply the given schema to each element in a list or other iterable.
+
+
+## fields
+
+**Meta Directive**<br>
+**type** `dict` of keys to Sureberus schemas<br>
+**Introduced in** Sureberus 0.9.0
+
+When applying a schema with `fields` to a dictionary, each key in the value is looked up in the `fields` directive,
+and used to find a Sureberus schema to apply to the value associated with that key in the dictionary being validated.
+
+Each value is a Sureberus schema that can have a few **extra** directives, specific to dict fields.
+
+* `rename`: (string) If this is specified, then the dict key will be renamed to the specified key in the result.
+* `required`: (`bool`) Indicates whether the field must be present.
+* `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
+* `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
+  If you want to default a field to an empty list or dict, do *not* use `default: []`. Instead use `default_setter: "list"`.
+* `default_setter`: (Python callable of `(dict) -> value`, OR a string)
+  A Python function to call if the key was not present in the input.
+  It is passed the dictionary, and its return value will be used as the default.
+  If default_setter is given a string, then it will be used to look up a setter that has been registered with [`default_registry`](#default_registry).
+  By default, you can pass `"list"`, `"dict"`, or `"set"` to set the default to empty lists, dicts, and sets.
+
 
 ## modify_context
 
 **Meta Directive**<br>
-**type** Python callable `(value, Context) -> Context`
+**type** Python callable `(value, Context) -> Context`<br>
+**Introduced in** Sureberus 0.8.0
 
 Run a Python function to allow it to modify the current Context.
 The Python function will be passed the value and the current Context, and must return a new Context.
@@ -185,7 +222,8 @@ See [Dynamically selecting schemas](./schema-selection.md) for more information.
 ## modify_context_registry
 
 **Meta Directive**<br>
-**type** `dict` of `str` (modify_context names) to Python callables
+**type** `dict` of `str` (modify_context names) to Python callables<br>
+**Introduced in** Sureberus 0.9.0
 
 This allows you to register functions with a name that can be used in the [`modify_context`](#modify_context) directive.
 Each key in the directive should be a name, and the value should be a Python function that acts like a `modify_context` function.
@@ -274,6 +312,7 @@ See [Schema registries](./schema-registries.md) for more information.
 **type** Varies
 
 The meaning of a `schema` key inside a schema changes based on the type of the *value*. This is strange, but it's how Cerberus did things.
+Use of either the [`fields`](#fields) directive for dicts, or the [`elements`](#elements) directive for lists, is strongly preferred.
 
 When the value is a list, the directive is interpreted as a Sureberus schema to apply to each element of the list.
 
@@ -281,44 +320,22 @@ When the value is a dict, the keys of the dict are looked up in the directive, a
 
 <div class="sureberus-alert">
 
-The weird thing is that, e.g., it is possible to define a schema like `{'schema': {'type': 'integer'}}`.
-Note that there is no `type` specified along with this schema, so you can try to apply it to lists or dicts.
+The weird thing is that, e.g., it is possible to define a schema like `{'schema': {'type': 'integer'}}`,
+without a `type` specified along with the schema, so you can try to apply it to lists or dicts.
 Since we check the value at runtime, if it is a list, it validates each element of the list with that sub-schema.
 If it is a dict, it *tries* to apply the schema directly as the field-schema, which leads to a runtime error when it tries to interpret the string `integer` as a Sureberus schema!
 
-While originally Sureberus tried to match Cerberus bug-for-bug, this behavior is just too strange.
-Sureberus will be introducing more specific directives to indicate element-schemas and field-schemas in the future.
+While Sureberus tried to match Cerberus bug-for-bug, this behavior (and the naming of the `schema` directive) is just too strange.
+This is why Sureberus has introduced [`fields`](#fields) and [`elements`](#elements) directives. Please use those instead.
 
 </div>
-
-### schema (for lists)
-
-The `schema` directive, when applied to a list, is very straightforward. It simply applies the schema to each element in the list.
-
-### schema (for dicts)
-
-The `schema` directive on dicts is more complicated.
-
-Each key matches a key that can potentially be found in the dictionary.
-
-Each value is a Sureberus schema that can have a few **extra** directives, specific to dict fields.
-
-* `rename`: (string) If this is specified, then the dict key will be renamed to the specified key in the result.
-* `required`: (`bool`) Indicates whether the field must be present.
-* `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
-* `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
-  If you want to default a field to an empty list or dict, do *not* use `default: []`. Instead use `default_setter: "list"`.
-* `default_setter`: (Python callable of `(dict) -> value`, OR a string)
-  A Python function to call if the key was not present in the input.
-  It is passed the dictionary, and its return value will be used as the default.
-  If default_setter is given a string, then it will be used to look up a setter that has been registered with [`default_registry`](#default_registry).
-  By default, you can pass `"list"`, `"dict"`, or `"set"` to set the default to empty lists, dicts, and sets.
 
 
 ## set_tag
 
 **Meta Directive**<br>
-**type** `dict` or string (described below)
+**type** `dict` or string (described below)<br>
+**Introduced in** Sureberus 0.8.0
 
 Set a tag on the context. This directive can take various forms:
 
@@ -373,7 +390,8 @@ The function should return None if the value is valid, otherwise it should call
 ## validator_registry
 
 **Meta Directive**<br>
-**type** `dict` of `str` (validator names) to Python callables
+**type** `dict` of `str` (validator names) to Python callables<br>
+**Introduced in** Sureberus 0.9.0
 
 This allows you to register functions with a name that can be used in the [`validator`](#validator) directive.
 Each key in the directive should be a name, and the value should be a Python function that acts like a `validator` function.

@@ -29,10 +29,10 @@ choose_schema:
     key: "type"
     choices:
       "elephant":
-        schema:
+        fields:
           "trunk_length": {"type": "integer"}
       "eagle":
-        schema:
+        fields:
           "wingspan": {"type": "integer"}
 ```
 
@@ -56,11 +56,11 @@ type: dict
 choose_schema:
   when_key_exists:
     "image_url":
-      schema:
+      fields:
         "image_url": {"type": "string"}
         "width": {"type": "integer"}
     "color":
-      schema:
+      fields:
         "color": {"type": "string"}
 ```
 
@@ -113,23 +113,24 @@ Here's an example of a schema that can parse our sample data, using the Python s
 ```python
 schema = S.Dict(
   set_tag="type",
-  schema={
+  fields={
     "type": S.String(),
     "common": S.Dict(),
     "data_service": S.Dict(
-      schema={
+      fields={
         "renderers": S.List(
-          schema=S.Dict(
+          elements=S.Dict(
             choose_schema=S.when_tag_is(
               "type",
               {
-                "foo": S.Dict(schema={"foo_specific": S.String()}),
-                "bar": S.Dict(schema={"bar_specific": S.Integer()}),
+                "foo": S.Dict(fields={"foo_specific": S.String()}),
+                "bar": S.Dict(fields={"bar_specific": S.Integer()}),
               })))})})
 ```
 
 Here we're using the `set_tag` directive with its shorthand for specifying a tag name that will be equivalent to the name of the key to look up in the dict.
 When Sureberus applies this schema to the top-level `dict`, it looks for the key named `type`, and stores its value in the Context under a tag named `type`.
 Then, deeper inside this schema, we make use of the `choose_schema` directive with the `when_tag_is` sub-directive.
-We pass the tag name `type` here, so it looks up the value associated with the `type` tag in the Context, and uses that to select the corresponding schema defined in the choices passed to `when_tag_is`.
+We pass the tag name `type` here, so it looks up the value associated with the `type` tag in the Context,
+and uses that to select the corresponding schema defined in the choices passed to `when_tag_is`.
 Thus, when the top-level dict has `"type": "foo"`, Sureberus will ultimately select the schema containing `"foo_specific"`.

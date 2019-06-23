@@ -15,6 +15,15 @@ def test_dict_of_int():
     assert normalize_dict(id_int, sample) == sample
 
 
+@pytest.mark.parametrize(
+    "schema", [S.Dict(schema={"foo": S.Integer()}), S.Dict(fields={"foo": S.Integer()})]
+)
+def test_fields(schema):
+    assert normalize_schema(schema, {"foo": 3}) == {"foo": 3}
+    with pytest.raises(E.BadType):
+        normalize_schema(schema, {"foo": "3"})
+
+
 def test_valueschema():
     schema = S.Dict(allow_unknown=True, valueschema=S.Integer())
     assert normalize_schema(schema, {"foo": 3, 52: 52}) == {"foo": 3, 52: 52}
@@ -348,8 +357,10 @@ def test_list():
     assert normalize_schema(schema, val) == val
 
 
-def test_list_schema():
-    schema = S.List(schema=S.Integer())
+@pytest.mark.parametrize(
+    "schema", [S.List(schema=S.Integer()), S.List(elements=S.Integer())]
+)
+def test_list_schema(schema):
     val = [1, 2, 3]
     assert normalize_schema(schema, val) == val
 
@@ -584,6 +595,16 @@ wki_schema = S.Dict(
     )
 )
 
+wki_schema_fields = S.Dict(
+    choose_schema=S.when_key_is(
+        "type",
+        {
+            "foo": {"fields": {"foo_sibling": S.String()}},
+            "bar": {"fields": {"bar_sibling": S.Integer()}},
+        },
+    )
+)
+
 
 ignore_wki_deprecation = pytest.mark.filterwarnings(
     "ignore:.*when_key_is.*:DeprecationWarning"
@@ -592,6 +613,7 @@ ignore_wki_deprecation = pytest.mark.filterwarnings(
 equivalent_choice_schemas = [
     pytest.param(choice_schema, marks=ignore_wki_deprecation),
     wki_schema,
+    wki_schema_fields,
 ]
 
 
@@ -632,9 +654,10 @@ def test_when_key_is_other_schema_directives():
 
 
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
-def test_when_key_is_common_schema(choice_schema):
+@pytest.mark.parametrize("fields_name", ["schema", "fields"])
+def test_when_key_is_common_schema(choice_schema, fields_name):
     schema = deepcopy(choice_schema)
-    schema["schema"] = {"common!": S.String()}
+    schema[fields_name] = {"common!": S.String()}
     with pytest.raises(E.DictFieldNotFound) as ei:
         v = {"type": "foo", "foo_sibling": "hi"}
         normalize_schema(schema, v)
@@ -709,6 +732,15 @@ wke_schema = S.Dict(
     )
 )
 
+wke_schema_fields = S.Dict(
+    choose_schema=S.when_key_exists(
+        {
+            "image": {"fields": {"image": S.String(), "width": S.Integer()}},
+            "pattern": {"fields": {"pattern": S.Dict(), "color": S.String()}},
+        }
+    )
+)
+
 ignore_wke_deprecation = pytest.mark.filterwarnings(
     "ignore:.*when_key_exists.*:DeprecationWarning"
 )
@@ -716,6 +748,7 @@ ignore_wke_deprecation = pytest.mark.filterwarnings(
 equivalent_exists_schemas = [
     pytest.param(choice_existence_schema, marks=ignore_wke_deprecation),
     wke_schema,
+    wke_schema_fields,
 ]
 
 
@@ -960,13 +993,12 @@ def test_contextual_schemas():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "nope", "otherthing": True})
 
+
 def test_modify_context_registry():
     schema = dict(
-        modify_context_registry={
-            "modc": lambda v, c: c.set_tag("cool", "thing"),
-        },
+        modify_context_registry={"modc": lambda v, c: c.set_tag("cool", "thing")},
         modify_context="modc",
-        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})}
+        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})},
     )
     assert normalize_schema(schema, "heya")
 
@@ -1068,3 +1100,14 @@ def test_set_tag_fixed_value():
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": "hey"})
+
+
+def test_when_tag_is_merge_fields():
+    schema = S.Dict(
+        set_tag={"tag_name": "thetag", "value": "theval"},
+        fields={"common": S.Integer(default=0)},
+        choose_schema=S.when_tag_is(
+            "thetag", {"theval": {"fields": {"theval_field": S.Integer(default=1)}}}
+        ),
+    )
+    assert normalize_schema(schema, {}) == {"common": 0, "theval_field": 1}

@@ -66,7 +66,9 @@ class Context(object):
         return self._resolve_registered(validator, self.validator_registry, "validator")
 
     def resolve_modify_context(self, modify_context):
-        return self._resolve_registered(modify_context, self.modify_context_registry, "modify_context")
+        return self._resolve_registered(
+            modify_context, self.modify_context_registry, "modify_context"
+        )
 
     def _resolve_registered(self, thing, registry, name):
         if isinstance(thing, six.string_types):
@@ -316,6 +318,11 @@ class Normalizer(object):
             subschema = ctx.find_schema(subschema)
         new_schema = deepcopy(self.schema)
         subschema = subschema.copy()
+        if "fields" in new_schema or "fields" in subschema:
+            # merge in fields.
+            # I wish I didn't need to do this, but it's the only sensible way I can figure out
+            # to support both common and tag-specific fields in the same schema.
+            new_schema.setdefault("fields", {}).update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         del new_schema["choose_schema"]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
@@ -338,8 +345,8 @@ class Normalizer(object):
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
         allowed_choices = list(directive_value["choices"].keys())
-        if choice_key not in new_schema.setdefault("schema", {}):
-            new_schema["schema"][choice_key] = {"allowed": allowed_choices}
+        if choice_key not in new_schema.setdefault("fields", {}):
+            new_schema["fields"][choice_key] = {"allowed": allowed_choices}
         if choice_key not in value:
             if "default_choice" in directive_value:
                 chosen_type = directive_value["default_choice"]
@@ -355,7 +362,12 @@ class Normalizer(object):
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
-        new_schema["schema"].update(subschema.pop("schema"))
+        # this is some shenanigans to support both "fields" and "schema"
+        fields = new_schema.pop("schema", {}).copy()
+        fields.update(new_schema.pop("fields", {}))
+        new_schema["fields"] = fields
+        new_schema["fields"].update(subschema.pop("schema", {}))
+        new_schema["fields"].update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion
@@ -390,7 +402,12 @@ class Normalizer(object):
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
-        new_schema.setdefault("schema", {}).update(subschema.pop("schema"))
+        # this is some shenanigans to support both "fields" and "schema"
+        fields = new_schema.pop("schema", {}).copy()
+        fields.update(new_schema.pop("fields", {}))
+        new_schema["fields"] = fields
+        new_schema["fields"].update(subschema.pop("schema", {}))
+        new_schema["fields"].update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion
@@ -462,6 +479,18 @@ class Normalizer(object):
             value[k] = _normalize_schema(directive_value, v, ctx.push_stack(k))
         return (value, ctx)
 
+    @directive("elements")
+    def handle_elements(self, value, directive_value, ctx):
+        result = [
+            _normalize_schema(directive_value, element, ctx.push_stack(idx))
+            for idx, element in enumerate(value)
+        ]
+        return (result, ctx)
+
+    @directive("fields")
+    def handle_fields(self, value, directive_value, ctx):
+        return (_normalize_dict(directive_value, value, ctx), ctx)
+
     @directive("schema")
     def handle_schema(self, value, directive_value, ctx):
         # The meaning of a `schema` key inside a schema changes based on the
@@ -473,14 +502,9 @@ class Normalizer(object):
         # as the dict-schema, which leads to a runtime error when it tries to
         # interpret the string `integer` as a schema! Welp, bug-for-bug...
         if isinstance(value, list):
-            result = []
-            for idx, element in enumerate(value):
-                result.append(
-                    _normalize_schema(directive_value, element, ctx.push_stack(idx))
-                )
-            return (result, ctx)
+            return self.handle_elements(value, directive_value, ctx)
         elif isinstance(value, dict):
-            return (_normalize_dict(directive_value, value, ctx), ctx)
+            return self.handle_fields(value, directive_value, ctx)
         # And if you pass something that's not a list or a dict, cerberus just allows it
         return (value, ctx)
 

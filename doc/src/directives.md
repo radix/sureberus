@@ -127,7 +127,7 @@ The directive value is a dictionary which must contain one of the following keys
 **type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
 Call a Python function with the value to get a new one to use.
-Or, if the directive is a string, look up the registered coerce function to perform coercion.
+Or, if the directive is a string, look up the [registered coerce function](#coerce_registry) to perform coercion.
 By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
 
 It's important to note that this function is called *before* all other directives that might reject a value.
@@ -139,7 +139,7 @@ This is a good directive to use if you want to normalize invalid documents to a 
 **type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
 Call a Python function with the value to get a new one to use, *after* all other validation.
-Or, if the directive is a string, look up the registered coerce function to perform coercion.
+Or, if the directive is a string, look up the [registered coerce function](#coerce_registry) to perform coercion.
 By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
 
 <div class="sureberus-info">
@@ -352,12 +352,21 @@ These are the types available:
 ## validator
 
 **Validation Directive**<br>
-**type** Python callable `(field, value, error_func) -> None`
+**type** Python callable `(field, value, error_func) -> None`, OR a string naming a registered validator.
 
 Invokes a Python function to validate the value.
+Or, if the directive is a string, look up the [registered validator function](#validator_registry) to perform coercion.
 The function should return None if the value is valid, otherwise it should call
 `error_func(field, "error message")`.
 
+## validator_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (validator names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`validator`](#validator) directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `validator` function.
+Then you can pass the name of the registered function to `validator` to invoke the registered function.
 
 ## valueschema
 

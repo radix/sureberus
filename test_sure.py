@@ -439,6 +439,7 @@ def test_coerce_post_basic():
     schema = {"coerce_post": _to_list}
     assert normalize_schema(schema, 33) == [33]
 
+
 def test_coerce_post_registry():
     schema = {"coerce_registry": {"foo": lambda inp: inp + 3}, "coerce_post": "foo"}
     assert normalize_schema(schema, 100) == 103
@@ -490,6 +491,20 @@ def test_validator_error():
     schema = {"key": {"validator": val}}
     with pytest.raises(E.CustomValidatorError) as ei:
         assert normalize_dict(schema, {"key": "hi"}) == {"key": "hi"}
+    assert ei.value.field == "key"
+    assert ei.value.msg == "heyo"
+
+
+def test_validator_registry():
+    def val(field, value, error):
+        error(field, "heyo")
+
+    schema = {
+        "validator_registry": {"non1": val},
+        "schema": {"key": {"validator": "non1"}},
+    }
+    with pytest.raises(E.CustomValidatorError) as ei:
+        assert normalize_schema(schema, {"key": "hi"}) == {"key": "hi"}
     assert ei.value.field == "key"
     assert ei.value.msg == "heyo"
 

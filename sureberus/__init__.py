@@ -22,7 +22,7 @@ class Context(object):
     default_registry = attr.ib(factory=dict)
     coerce_registry = attr.ib(factory=dict)
     modify_context_registry = attr.ib(factory=dict)
-    validator_factory = attr.ib(factory=dict)
+    validator_registry = attr.ib(factory=dict)
     tags = attr.ib(factory=dict)
 
     def push_stack(self, x):
@@ -61,6 +61,9 @@ class Context(object):
 
     def resolve_coerce(self, coerce):
         return self._resolve_registered(coerce, self.coerce_registry, "coerce")
+
+    def resolve_validator(self, validator):
+        return self._resolve_registered(validator, self.validator_registry, "validator")
 
     def _resolve_registered(self, thing, registry, name):
         if isinstance(thing, six.string_types):
@@ -217,6 +220,7 @@ class Normalizer(object):
 
     @directive("validator_registry")
     def handle_validator_registry(self, value, directive_value, ctx):
+        print("[RADIX] registering validator", directive_value)
         return (value, ctx.register_validators(directive_value))
 
     @directive("modify_context_registry")
@@ -491,7 +495,7 @@ class Normalizer(object):
             raise E.CustomValidatorError(f, m, stack=ctx.stack)
 
         try:
-            directive_value(field, value, error)
+            ctx.resolve_validator(directive_value)(field, value, error)
         except E.SureError:
             raise
         except Exception as e:

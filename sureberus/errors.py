@@ -191,3 +191,11 @@ class TagNotFound(SureError):
     tag = attr.ib()
     tags = attr.ib()
     stack = attr.ib()
+
+
+@attr.s
+class RegisteredFunctionNotFound(SureError):
+    fmt = "There is no registered {registry_name} function named {setter}. See the `{registry_name}_registry` directive."
+    setter = attr.ib()
+    registry_name = attr.ib()
+    stack = attr.ib()

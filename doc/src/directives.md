@@ -124,20 +124,50 @@ The directive value is a dictionary which must contain one of the following keys
 ## coerce
 
 **Transformation Directive**<br>
-**type** Python callable `(value) -> new value`
+**type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
 Call a Python function with the value to get a new one to use.
+Or, if the directive is a string, look up the [registered coerce function](#coerce_registry) to perform coercion.
+By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
+
 It's important to note that this function is called *before* all other directives that might reject a value.
 This is a good directive to use if you want to normalize invalid documents to a form that can be considered valid.
 
 ## coerce_post
 
 **Transformation Directive**<br>
-**type** Python callable `(value) -> new value`
+**type** Python callable `(value) -> new value`, OR a string naming a registered coerce function
 
-Call a Python function with the value to get a new one to use.
+Call a Python function with the value to get a new one to use, *after* all other validation.
+Or, if the directive is a string, look up the [registered coerce function](#coerce_registry) to perform coercion.
+By default, you can pass `"to_list"` or `"to_set"` to convert the value to a list or set, if the value is not already a list or set, respectively.
+
+<div class="sureberus-info">
+
 Unlike `coerce`, this function is applied *after* all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.
+
+</div>
+
+
+## coerce_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (coerce names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`coerce`](#coerce) and [`coerce_post`](#coerce_post) directives.
+Each key in the directive should be a name, and the value should be a Python function that takes a single argument and returns a new value,
+just like the functions you would normally pass to `coerce`.
+Then you can pass the name of the registered function to `coerce` or `coerce_post` to invoke the registered function.
+
+## default_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (setter names) to Python callables
+
+This allows you to register functions with a name that can be used in the `default_setter` directive of [field schemas](#schema-for-dicts).
+Each key in the directive should be a name, and the value should be a Python function that acts like a `default_setter` function.
+Then you can pass the name of the registered function to `default_setter` to invoke the registered function.
 
 ## modify_context
 
@@ -150,6 +180,16 @@ This is most often used to call `context.set_tag(key, value)` to add a new tag t
 to later be used with [`choose_schema`](#choose_schema).
 
 See [Dynamically selecting schemas](./schema-selection.md) for more information.
+
+
+## modify_context_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (modify_context names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`modify_context`](#modify_context) directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `modify_context` function.
+Then you can pass the name of the registered function to `modify_context` to invoke the registered function.
 
 
 ## keyschema
@@ -267,8 +307,12 @@ Each value is a Sureberus schema that can have a few **extra** directives, speci
 * `required`: (`bool`) Indicates whether the field must be present.
 * `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
 * `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
-* `default_setter`: (Python callable of `(dict) -> value`) A Python function to call if the key was not present in the input.
+  If you want to default a field to an empty list or dict, do *not* use `default: []`. Instead use `default_setter: "list"`.
+* `default_setter`: (Python callable of `(dict) -> value`, OR a string)
+  A Python function to call if the key was not present in the input.
   It is passed the dictionary, and its return value will be used as the default.
+  If default_setter is given a string, then it will be used to look up a setter that has been registered with [`default_registry`](#default_registry).
+  By default, you can pass `"list"`, `"dict"`, or `"set"` to set the default to empty lists, dicts, and sets.
 
 
 ## set_tag
@@ -319,12 +363,21 @@ These are the types available:
 ## validator
 
 **Validation Directive**<br>
-**type** Python callable `(field, value, error_func) -> None`
+**type** Python callable `(field, value, error_func) -> None`, OR a string naming a registered validator.
 
 Invokes a Python function to validate the value.
+Or, if the directive is a string, look up the [registered validator function](#validator_registry) to perform coercion.
 The function should return None if the value is valid, otherwise it should call
 `error_func(field, "error message")`.
 
+## validator_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (validator names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`validator`](#validator) directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `validator` function.
+Then you can pass the name of the registered function to `validator` to invoke the registered function.
 
 ## valueschema
 

@@ -180,6 +180,31 @@ def test_default_setter():
     }
 
 
+def test_default_setter_registered():
+    schema = S.Dict(
+        default_registry={"foobar": lambda doco: doco["required"] + 1},
+        schema={
+            "required": S.Integer(),
+            "incremented": S.Integer(default_setter="foobar"),
+        },
+    )
+    assert normalize_schema(schema, {"required": 3}) == {
+        "required": 3,
+        "incremented": 4,
+    }
+
+
+def test_default_default_setters():
+    schema = S.Dict(
+        schema={
+            "list": S.List(default_setter="list"),
+            "dict": S.Dict(default_setter="dict"),
+            "set": S.Dict(default_setter="set"),
+        }
+    )
+    assert normalize_schema(schema, {}) == {"list": [], "dict": {}, "set": set()}
+
+
 def test_normalize_schema():
     assert normalize_schema(S.Integer(), 3)
 
@@ -389,6 +414,21 @@ def test_coerce():
     assert normalize_schema(schema, 33) == [33]
 
 
+def test_coerce_registry():
+    schema = {"coerce_registry": {"foo": lambda inp: inp + 3}, "coerce": "foo"}
+    assert normalize_schema(schema, 100) == 103
+
+
+def test_coerce_registered_defaults():
+    schema = {"coerce": "to_list"}
+    assert normalize_schema(schema, 100) == [100]
+    assert normalize_schema(schema, [100]) == [100]
+
+    schema = {"coerce": "to_set"}
+    assert normalize_schema(schema, 100) == {100}
+    assert normalize_schema(schema, {100}) == {100}
+
+
 def test_coerce_post_basic():
     def _to_list(item):
         if isinstance(item, list):
@@ -398,6 +438,21 @@ def test_coerce_post_basic():
 
     schema = {"coerce_post": _to_list}
     assert normalize_schema(schema, 33) == [33]
+
+
+def test_coerce_post_registry():
+    schema = {"coerce_registry": {"foo": lambda inp: inp + 3}, "coerce_post": "foo"}
+    assert normalize_schema(schema, 100) == 103
+
+
+def test_coerc_post_registered_defaults():
+    schema = {"coerce_post": "to_list"}
+    assert normalize_schema(schema, 100) == [100]
+    assert normalize_schema(schema, [100]) == [100]
+
+    schema = {"coerce_post": "to_set"}
+    assert normalize_schema(schema, 100) == {100}
+    assert normalize_schema(schema, {100}) == {100}
 
 
 def test_coerce_post_after_children():
@@ -436,6 +491,20 @@ def test_validator_error():
     schema = {"key": {"validator": val}}
     with pytest.raises(E.CustomValidatorError) as ei:
         assert normalize_dict(schema, {"key": "hi"}) == {"key": "hi"}
+    assert ei.value.field == "key"
+    assert ei.value.msg == "heyo"
+
+
+def test_validator_registry():
+    def val(field, value, error):
+        error(field, "heyo")
+
+    schema = {
+        "validator_registry": {"non1": val},
+        "schema": {"key": {"validator": "non1"}},
+    }
+    with pytest.raises(E.CustomValidatorError) as ei:
+        assert normalize_schema(schema, {"key": "hi"}) == {"key": "hi"}
     assert ei.value.field == "key"
     assert ei.value.msg == "heyo"
 
@@ -890,6 +959,16 @@ def test_contextual_schemas():
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "nope", "otherthing": True})
+
+def test_modify_context_registry():
+    schema = dict(
+        modify_context_registry={
+            "modc": lambda v, c: c.set_tag("cool", "thing"),
+        },
+        modify_context="modc",
+        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})}
+    )
+    assert normalize_schema(schema, "heya")
 
 
 def test_data_driven_context():

@@ -220,7 +220,6 @@ class Normalizer(object):
 
     @directive("validator_registry")
     def handle_validator_registry(self, value, directive_value, ctx):
-        print("[RADIX] registering validator", directive_value)
         return (value, ctx.register_validators(directive_value))
 
     @directive("modify_context_registry")

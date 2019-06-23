@@ -114,19 +114,19 @@ class BranchWhenTagIs(Instruction):
         if chosen not in self.branches:
             raise E.DisallowedValue(chosen, self.choices.keys(), ctx.stack)
         instructions = self.branches[chosen]
-        for instr in instructions:
-            # TODO: maybe we should have a way to *return* instructions
-            # from a perform so that we don't deeply recurse
-            value, ctx = instr.perform(value, ctx)
-        return (value, ctx)
+        return PerformMore(instructions, value, ctx)
 
 
-@attr.s
-class CheckFields(Instruction):
-    fields = attr.ib()
+class CheckField(Instruction):
+    field = attr.ib()
+    instructions = attr.ib()
+    required = attr.ib()
 
     def perform(self, value, ctx):
-        raise NotImplementedError()
+        if self.field in value:
+            return PerformMore(instructions, value[self.field], ctx.push_stack(self.field))
+        elif self.required:
+            raise E.DictFieldNotFound(self.field, value, ctx.stack)
 
 ## Validation Directives
 
@@ -174,3 +174,10 @@ class Coerce(Instruction):
             raise
         except Exception as e:
             raise E.CoerceUnexpectedError(value, e, ctx.stack)
+
+
+@attr.s
+class PerformMore(object):
+    instructions = attr.ib()
+    value = attr.ib()
+    ctx = attr.ib()

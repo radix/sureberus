@@ -111,13 +111,15 @@ INIT_CONTEXT = Context(
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
-    ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
-    return _normalize_dict(dict_schema, value, ctx)
+    schema = S.Dict(fields=dict_schema, allow_unknown=allow_unknown)
+    return normalize_schema(schema, value, INIT_CONTEXT)
 
 
 def normalize_schema(schema, value, stack=(), allow_unknown=False):
     ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
-    return _normalize_schema(schema, value, ctx)
+    from .compiler import compile
+    from .interpreter import interpret
+    return interpret(compile(schema), value, ctx)
 
 
 def _normalize_dict(dict_schema, value, ctx):

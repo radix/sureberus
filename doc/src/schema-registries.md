@@ -11,7 +11,7 @@ For example, here is a schema that validates any nested list of strings:
     "registry": {
         "nested_list": {
             "type": "list",
-            "schema": {
+            "elements": {
                 "anyof": [
                     {"type": "string"},
                     "nested_list",
@@ -20,7 +20,7 @@ For example, here is a schema that validates any nested list of strings:
         }
     },
     "type": "dict",
-    "schema": {"things": "nested_list"},
+    "fields": {"things": "nested_list"},
 }
 ```
 
@@ -39,7 +39,7 @@ exactly the same level, for example:
     "registry": {
         "nested_list": {
             "type": "list",
-            "schema": {"anyof": [{"type": "integer"}, "nested_list"]}
+            "elements": {"anyof": [{"type": "integer"}, "nested_list"]}
         }
     },
     "schema_ref": "nested_list",

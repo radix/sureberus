@@ -191,3 +191,10 @@ class TagNotFound(SureError):
     tag = attr.ib()
     tags = attr.ib()
     stack = attr.ib()
+
+
+@attr.s
+class SetterNotFound(SureError):
+    fmt = "There is no registered default_settert named {setter}. See the `default_registry` directive."
+    setter = attr.ib()
+    stack = attr.ib()

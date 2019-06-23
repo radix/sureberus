@@ -180,6 +180,31 @@ def test_default_setter():
     }
 
 
+def test_default_setter_registered():
+    schema = S.Dict(
+        default_registry={"foobar": lambda doco: doco["required"] + 1},
+        schema={
+            "required": S.Integer(),
+            "incremented": S.Integer(default_setter="foobar"),
+        },
+    )
+    assert normalize_schema(schema, {"required": 3}) == {
+        "required": 3,
+        "incremented": 4,
+    }
+
+
+def test_default_default_setters():
+    schema = S.Dict(
+        schema={
+            "list": S.List(default_setter="list"),
+            "dict": S.Dict(default_setter="dict"),
+            "set": S.Dict(default_setter="set"),
+        }
+    )
+    assert normalize_schema(schema, {}) == {"list": [], "dict": {}, "set": set()}
+
+
 def test_normalize_schema():
     assert normalize_schema(S.Integer(), 3)
 

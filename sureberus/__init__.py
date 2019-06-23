@@ -19,7 +19,20 @@ class Context(object):
     allow_unknown = attr.ib()
     stack = attr.ib(factory=tuple)
     schema_registry = attr.ib(factory=dict)
+    default_registry = attr.ib(factory=dict)
     tags = attr.ib(factory=dict)
+
+    @classmethod
+    def new(cls, allow_unknown):
+        return cls(
+            stack=(),
+            allow_unknown=allow_unknown,
+            default_registry={
+                "list": lambda _: [],
+                "dict": lambda _: {},
+                "set": lambda _: set(),
+            },
+        )
 
     def push_stack(self, x):
         return attr.evolve(self, stack=self.stack + (x,))
@@ -31,6 +44,22 @@ class Context(object):
         reg = self.schema_registry.copy()
         reg.update(registry)
         return attr.evolve(self, schema_registry=reg)
+
+    def register_defaults(self, registry):
+        reg = self.default_registry.copy()
+        reg.update(registry)
+        return attr.evolve(self, default_registry=reg)
+
+    def resolve_default_setter(self, setter):
+        if isinstance(setter, six.string_types):
+            if setter in self.default_registry:
+                return self.default_registry[setter]
+            else:
+                # this *shouldn't* take the stack; this error should be discovered
+                # when the schema is initially being parsed.
+                raise E.SetterNotFound(setter, self.stack)
+        else:
+            return setter
 
     def find_schema(self, name):
         return self.schema_registry[name]
@@ -47,12 +76,12 @@ class Context(object):
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
-    ctx = Context(stack=(), allow_unknown=allow_unknown)
+    ctx = Context.new(allow_unknown=allow_unknown)
     return _normalize_dict(dict_schema, value, ctx)
 
 
 def normalize_schema(schema, value, stack=(), allow_unknown=False):
-    ctx = Context(stack=(), allow_unknown=allow_unknown)
+    ctx = Context.new(allow_unknown=allow_unknown)
     return _normalize_schema(schema, value, ctx)
 
 
@@ -95,6 +124,7 @@ def _get_default(key, key_schema, doc, ctx):
     else:
         default_setter = key_schema.get("default_setter", None)
         if default_setter is not None:
+            default_setter = ctx.resolve_default_setter(default_setter)
             try:
                 return default_setter(doc)
             except Exception as e:
@@ -145,6 +175,10 @@ class _ShortCircuit(object):
 @attr.s
 class Normalizer(object):
     schema = attr.ib()
+
+    @directive("default_registry")
+    def handle_default_registry(self, value, directive_value, ctx):
+        return (value, ctx.register_defaults(directive_value))
 
     @directive("registry")
     def handle_registry(self, value, directive_value, ctx):

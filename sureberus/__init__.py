@@ -66,7 +66,9 @@ class Context(object):
         return self._resolve_registered(validator, self.validator_registry, "validator")
 
     def resolve_modify_context(self, modify_context):
-        return self._resolve_registered(modify_context, self.modify_context_registry, "modify_context")
+        return self._resolve_registered(
+            modify_context, self.modify_context_registry, "modify_context"
+        )
 
     def _resolve_registered(self, thing, registry, name):
         if isinstance(thing, six.string_types):
@@ -462,6 +464,18 @@ class Normalizer(object):
             value[k] = _normalize_schema(directive_value, v, ctx.push_stack(k))
         return (value, ctx)
 
+    @directive("elements")
+    def handle_elements(self, value, directive_value, ctx):
+        result = [
+            _normalize_schema(directive_value, element, ctx.push_stack(idx))
+            for idx, element in enumerate(value)
+        ]
+        return (result, ctx)
+
+    @directive("fields")
+    def handle_fields(self, value, directive_value, ctx):
+        return (_normalize_dict(directive_value, value, ctx), ctx)
+
     @directive("schema")
     def handle_schema(self, value, directive_value, ctx):
         # The meaning of a `schema` key inside a schema changes based on the
@@ -473,14 +487,9 @@ class Normalizer(object):
         # as the dict-schema, which leads to a runtime error when it tries to
         # interpret the string `integer` as a schema! Welp, bug-for-bug...
         if isinstance(value, list):
-            result = []
-            for idx, element in enumerate(value):
-                result.append(
-                    _normalize_schema(directive_value, element, ctx.push_stack(idx))
-                )
-            return (result, ctx)
+            return self.handle_elements(value, directive_value, ctx)
         elif isinstance(value, dict):
-            return (_normalize_dict(directive_value, value, ctx), ctx)
+            return self.handle_fields(value, directive_value, ctx)
         # And if you pass something that's not a list or a dict, cerberus just allows it
         return (value, ctx)
 

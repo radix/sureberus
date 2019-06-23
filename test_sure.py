@@ -15,6 +15,15 @@ def test_dict_of_int():
     assert normalize_dict(id_int, sample) == sample
 
 
+@pytest.mark.parametrize(
+    "schema", [S.Dict(schema={"foo": S.Integer()}), S.Dict(fields={"foo": S.Integer()})]
+)
+def test_fields(schema):
+    assert normalize_schema(schema, {"foo": 3}) == {"foo": 3}
+    with pytest.raises(E.BadType):
+        normalize_schema(schema, {"foo": "3"})
+
+
 def test_valueschema():
     schema = S.Dict(allow_unknown=True, valueschema=S.Integer())
     assert normalize_schema(schema, {"foo": 3, 52: 52}) == {"foo": 3, 52: 52}
@@ -348,8 +357,10 @@ def test_list():
     assert normalize_schema(schema, val) == val
 
 
-def test_list_schema():
-    schema = S.List(schema=S.Integer())
+@pytest.mark.parametrize(
+    "schema", [S.List(schema=S.Integer()), S.List(elements=S.Integer())]
+)
+def test_list_schema(schema):
     val = [1, 2, 3]
     assert normalize_schema(schema, val) == val
 
@@ -960,13 +971,12 @@ def test_contextual_schemas():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "nope", "otherthing": True})
 
+
 def test_modify_context_registry():
     schema = dict(
-        modify_context_registry={
-            "modc": lambda v, c: c.set_tag("cool", "thing"),
-        },
+        modify_context_registry={"modc": lambda v, c: c.set_tag("cool", "thing")},
         modify_context="modc",
-        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})}
+        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})},
     )
     assert normalize_schema(schema, "heya")
 

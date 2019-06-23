@@ -139,6 +139,16 @@ Call a Python function with the value to get a new one to use.
 Unlike `coerce`, this function is applied *after* all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.
 
+## default_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (setter names) to Python callables
+
+This allows you to register functions with a name that can be used in the `default_setter` directive of [field schemas](#schema-for-dicts).
+Each key in the directive should be a name, and the value should be a Python function that takes a single argument
+(the dictionary on which the default is being added)
+and returns a new value to be used when the key does not appear in the document.
+
 ## modify_context
 
 **Meta Directive**<br>
@@ -267,8 +277,11 @@ Each value is a Sureberus schema that can have a few **extra** directives, speci
 * `required`: (`bool`) Indicates whether the field must be present.
 * `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
 * `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
-* `default_setter`: (Python callable of `(dict) -> value`) A Python function to call if the key was not present in the input.
+* `default_setter`: (Python callable of `(dict) -> value`, OR a string)
+  A Python function to call if the key was not present in the input.
   It is passed the dictionary, and its return value will be used as the default.
+  If default_setter is given a string, then it will be used to look up a setter that has been registered with [`default_registry`](#default_registry).
+  By default, you can pass `"list"`, `"dict"`, or `"set"` to set the default to empty lists, dicts, and sets.
 
 
 ## set_tag

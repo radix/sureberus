@@ -65,6 +65,9 @@ class Context(object):
     def resolve_validator(self, validator):
         return self._resolve_registered(validator, self.validator_registry, "validator")
 
+    def resolve_modify_context(self, modify_context):
+        return self._resolve_registered(modify_context, self.modify_context_registry, "modify_context")
+
     def _resolve_registered(self, thing, registry, name):
         if isinstance(thing, six.string_types):
             if thing in registry:
@@ -255,7 +258,7 @@ class Normalizer(object):
 
     @directive("modify_context")
     def handle_modify_context(self, value, directive_value, ctx):
-        ctx = directive_value(value, ctx)
+        ctx = ctx.resolve_modify_context(directive_value)(value, ctx)
         return (value, ctx)
 
     @directive("set_tag")

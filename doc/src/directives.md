@@ -182,6 +182,16 @@ to later be used with [`choose_schema`](#choose_schema).
 See [Dynamically selecting schemas](./schema-selection.md) for more information.
 
 
+## modify_context_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (modify_context names) to Python callables
+
+This allows you to register functions with a name that can be used in the [`modify_context`](#modify_context) directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `modify_context` function.
+Then you can pass the name of the registered function to `modify_context` to invoke the registered function.
+
+
 ## keyschema
 
 **Meta Directive**<br>

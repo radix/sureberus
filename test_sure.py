@@ -960,6 +960,16 @@ def test_contextual_schemas():
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"type": "nope", "otherthing": True})
 
+def test_modify_context_registry():
+    schema = dict(
+        modify_context_registry={
+            "modc": lambda v, c: c.set_tag("cool", "thing"),
+        },
+        modify_context="modc",
+        schema={"choose_schema": S.when_tag_is("cool", {"thing": S.String()})}
+    )
+    assert normalize_schema(schema, "heya")
+
 
 def test_data_driven_context():
     schema = S.Dict(

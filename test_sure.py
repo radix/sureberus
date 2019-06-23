@@ -1100,3 +1100,14 @@ def test_set_tag_fixed_value():
     assert normalize_schema(schema, v) == v
     with pytest.raises(E.BadType) as ei:
         normalize_schema(schema, {"foo": "hey"})
+
+
+def test_when_tag_is_merge_fields():
+    schema = S.Dict(
+        set_tag={"tag_name": "thetag", "value": "theval"},
+        fields={"common": S.Integer(default=0)},
+        choose_schema=S.when_tag_is(
+            "thetag", {"theval": {"fields": {"theval_field": S.Integer(default=1)}}}
+        ),
+    )
+    assert normalize_schema(schema, {}) == {"common": 0, "theval_field": 1}

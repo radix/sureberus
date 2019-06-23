@@ -318,6 +318,11 @@ class Normalizer(object):
             subschema = ctx.find_schema(subschema)
         new_schema = deepcopy(self.schema)
         subschema = subschema.copy()
+        if "fields" in new_schema or "fields" in subschema:
+            # merge in fields.
+            # I wish I didn't need to do this, but it's the only sensible way I can figure out
+            # to support both common and tag-specific fields in the same schema.
+            new_schema.setdefault("fields", {}).update(subschema.pop("fields", {}))
         new_schema.update(subschema)
         del new_schema["choose_schema"]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))

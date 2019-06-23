@@ -167,18 +167,6 @@ def _get_default(key, key_schema, doc, ctx):
     return _marker
 
 
-TYPES = {
-    "none": type(None),
-    "integer": six.integer_types,
-    "float": (float,)
-    + six.integer_types,  # cerberus documentation lies -- float also includes ints.
-    "number": (float,) + six.integer_types,
-    "dict": dict,
-    "list": list,
-    "string": six.string_types,
-    "boolean": bool,
-}
-
 _directive_count = 0
 
 
@@ -213,73 +201,83 @@ class Normalizer(object):
 
     @directive("default_registry")
     def handle_default_registry(self, value, directive_value, ctx):
-        return (value, ctx.register_defaults(directive_value))
+        from .instructions import AddToDefaultRegistry
+        return (value, AddToDefaultRegistry(directive_value).perform(value, ctx)[1])
 
     @directive("registry")
     def handle_registry(self, value, directive_value, ctx):
-        return (value, ctx.register_schemas(directive_value))
+        from .instructions import AddToSchemaRegistry
+        return (value, AddToSchemaRegistry(directive_value).perform(value, ctx)[1])
 
     @directive("coerce_registry")
     def handle_coerce_registry(self, value, directive_value, ctx):
-        return (value, ctx.register_coerces(directive_value))
+        from .instructions import AddToCoerceRegistry
+        return (value, AddToCoerceRegistry(directive_value).perform(value, ctx)[1])
 
     @directive("validator_registry")
     def handle_validator_registry(self, value, directive_value, ctx):
-        return (value, ctx.register_validators(directive_value))
+        from .instructions import AddToValidatorRegistry
+        return (value, AddToValidatorRegistry(directive_value).perform(value, ctx)[1])
 
     @directive("modify_context_registry")
     def handle_modify_context_registry(self, value, directive_value, ctx):
-        return (value, ctx.register_modify_contexts(directive_value))
+        from .instructions import AddToModifyContextRegistry
+        return (value, AddToModifyContextRegistry(directive_value).perform(value, ctx)[1])
+
+    @directive("allow_unknown")
+    def handle_allow_unknown(self, value, directive_value, ctx):
+        from .instructions import AllowUnknown
+        return AllowUnknown(directive_value).perform(value, ctx)
 
     @directive("schema_ref")
     def handle_registered_schema(self, value, directive_value, ctx):
+        # this CANNOT be directly ported to an Instruction, because instructions don't have "schemas" to refer to.
+        # The compiler will need to do something special about this... I don't fuckin' know!
         schema = self.schema.copy()
         new_schema = ctx.find_schema(directive_value)
         schema.update(new_schema)
         del schema["schema_ref"]
         return _ShortCircuit(_normalize_schema(schema, value, ctx))
 
-    @directive("allow_unknown")
-    def handle_allow_unknown(self, value, directive_value, ctx):
-        return (value, ctx.set_allow_unknown(directive_value))
-
     @directive("coerce")
     def handle_coerce(self, value, directive_value, ctx):
-        try:
-            return (ctx.resolve_coerce(directive_value)(value), ctx)
-        except E.SureError:
-            raise
-        except Exception as e:
-            raise E.CoerceUnexpectedError(value, e, ctx.stack)
+        from .instructions import Coerce
+        func = ctx.resolve_coerce(directive_value)
+        instruction = Coerce(func)
+        return instruction.perform(value, ctx)
 
     @directive("nullable")
     def handle_nullable(self, value, directive_value, ctx):
-        if value is None and directive_value:
-            return _ShortCircuit(value)
+        if directive_value: # why would you ever pass `nullable: false`?
+            from .instructions import SkipIfNone
+            return SkipIfNone().perform(value, ctx)
         return (value, ctx)
 
     @directive("modify_context")
     def handle_modify_context(self, value, directive_value, ctx):
-        ctx = ctx.resolve_modify_context(directive_value)(value, ctx)
-        return (value, ctx)
+        from .instructions import ModifyContext
+        func = ctx.resolve_modify_context(directive_value)
+        return ModifyContext(func).perform(value, ctx)
 
     @directive("set_tag")
     def handle_set_tag(self, value, directive_value, ctx):
         if not isinstance(directive_value, list):
             directive_value = [directive_value]
+        # This logic will be moved to the compiler
         for dv in directive_value:
             if isinstance(dv, six.string_types):
                 ctx = ctx.set_tag(dv, value[dv])
             else:
                 if "key" in dv:
-                    val = value[dv["key"]]
+                    from .instructions import SetTagFromKey
+                    ctx = SetTagFromKey(dv["tag_name"], dv["key"]).perform(value, ctx)[1]
                 elif "value" in dv:
-                    val = dv["value"]
+                    from .instructions import SetTagValue
+                    ctx = SetTagValue(dv["tag_name"], dv["value"]).perform(value, ctx)[1]
                 else:
                     raise E.SimpleSchemaError(
                         msg="`set_tag` must have `key` or `value`"
                     )
-                ctx = ctx.set_tag(dv["tag_name"], val)
         return (value, ctx)
 
     @directive("choose_schema")
@@ -307,6 +305,7 @@ class Normalizer(object):
             )
 
     def _handle_when_tag_is(self, value, directive_value, ctx):
+        #BranchWhenTagIs(directive_value["tag"],)
         choice_key = directive_value["tag"]
         chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _marker))
         if chosen not in directive_value["choices"]:
@@ -430,10 +429,8 @@ class Normalizer(object):
 
     @directive("type")
     def handle_type(self, value, directive_value, ctx):
-        types = TYPES[directive_value]
-        if not isinstance(value, types):
-            raise E.BadType(value, directive_value, ctx.stack)
-        return (value, ctx)
+        from .instructions import CheckType
+        return CheckType(directive_value).perform(value, ctx)
 
     @directive("maxlength")
     def handle_maxlength(self, value, directive_value, ctx):

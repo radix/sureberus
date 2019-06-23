@@ -307,6 +307,7 @@ Each value is a Sureberus schema that can have a few **extra** directives, speci
 * `required`: (`bool`) Indicates whether the field must be present.
 * `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
 * `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
+  If you want to default a field to an empty list or dict, do *not* use `default: []`. Instead use `default_setter: "list"`.
 * `default_setter`: (Python callable of `(dict) -> value`, OR a string)
   A Python function to call if the key was not present in the input.
   It is passed the dictionary, and its return value will be used as the default.

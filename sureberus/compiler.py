@@ -3,7 +3,7 @@ Functions for converting a Sureberus schema into a list of instructions.
 """
 from copy import deepcopy
 
-from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, CheckAllowList, CheckField, CheckType
+from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, CheckAllowList, CheckField, CheckType
 from . import errors as E
 
 def compile(schema):
@@ -12,6 +12,8 @@ def compile(schema):
 
 def _compile(og):
     schema = deepcopy(og)
+    if "allow_unknown" in schema:
+        yield AllowUnknown(schema.pop("allow_unknown"))
     if "default_registry" in schema:
         yield AddToDefaultRegistry(schema.pop("default_registry"))
     if "registry" in schema:
@@ -28,6 +30,17 @@ def _compile(og):
             required = v.pop("required", False)
             # todo: default, default_setter, rename
             yield CheckField(k, compile(v), required)
+    if "elements" in schema:
+        yield CheckElements(compile(schema["elements"]))
+
+    if "schema" in schema:
+        try:
+            instructions = compile(schema["schema"])
+            yield CheckElements(instructions)
+        except E.SchemaError:
+            for x in compile({"fields": schema["schema"]}):
+                yield x
+
 
 
     if "required" in schema:

@@ -29,5 +29,5 @@ def test_compile_fields():
     schema = S.Dict(fields=dict(field=S.Integer()))
     assert compile(schema) == [
         CheckType("dict"),
-        CheckField("field", [CheckType("integer")]),
+        CheckField("field", [CheckType("integer")], True),
     ]

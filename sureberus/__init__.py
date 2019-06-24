@@ -111,7 +111,7 @@ INIT_CONTEXT = Context(
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
-    schema = S.Dict(fields=dict_schema, allow_unknown=allow_unknown)
+    schema = {"type": "dict", "fields": dict_schema, "allow_unknown":allow_unknown}
     return normalize_schema(schema, value, INIT_CONTEXT)
 
 

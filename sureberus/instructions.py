@@ -116,7 +116,7 @@ class BranchWhenTagIs(Instruction):
         instructions = self.branches[chosen]
         return PerformMore(instructions, value, ctx)
 
-
+@attr.s
 class CheckField(Instruction):
     field = attr.ib()
     instructions = attr.ib()
@@ -124,7 +124,7 @@ class CheckField(Instruction):
 
     def perform(self, value, ctx):
         if self.field in value:
-            return PerformMore(instructions, value[self.field], ctx.push_stack(self.field))
+            return PerformMore(self.instructions, value[self.field], ctx.push_stack(self.field))
         elif self.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
 

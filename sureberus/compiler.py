@@ -3,7 +3,7 @@ Functions for converting a Sureberus schema into a list of instructions.
 """
 from copy import deepcopy
 
-from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, CheckAllowList, CheckFields, CheckRequiredFields, CheckType
+from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, CheckAllowList, CheckField, CheckType
 from . import errors as E
 
 def compile(schema):
@@ -36,5 +36,4 @@ def _compile(og):
         schema.pop("required")
 
     if schema:
-        print("[RADIX] original schema blowing up is", og)
         raise E.UnknownSchemaDirectives(schema)

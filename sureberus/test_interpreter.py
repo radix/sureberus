@@ -10,4 +10,3 @@ def test_check_type():
     assert interpret(ins, 3, INIT_CONTEXT) == 3
     with pytest.raises(E.BadType):
         interpret(ins, "foo", INIT_CONTEXT)
-

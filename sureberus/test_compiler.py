@@ -4,6 +4,7 @@ import pytest
 from .compiler import compile
 from .instructions import AddToSchemaRegistry, CheckAllowList, CheckField, CheckType
 from . import schema as S
+from .constants import _marker
 
 
 def test_type():
@@ -29,5 +30,5 @@ def test_compile_fields():
     schema = S.Dict(fields=dict(field=S.Integer()))
     assert compile(schema) == [
         CheckType("dict"),
-        CheckField("field", [CheckType("integer")], True),
+        CheckField("field", [CheckType("integer")], True, default=_marker),
     ]

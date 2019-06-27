@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, CheckAllowList, CheckField, CheckType
 from . import errors as E
+from .constants import _marker
 
 def compile(schema):
     return list(_compile(schema))
@@ -24,12 +25,11 @@ def _compile(og):
     if "allowed" in schema:
         yield CheckAllowList(schema.pop("allowed"))
     if "fields" in schema:
-        fields = {}
-        required_fields = []
         for k, v in schema.pop("fields").items():
             required = v.pop("required", False)
-            # todo: default, default_setter, rename
-            yield CheckField(k, compile(v), required)
+            default = v.pop("default", _marker)
+            # todo: default_setter, rename
+            yield CheckField(k, compile(v), required=required, default=default)
     if "elements" in schema:
         yield CheckElements(compile(schema["elements"]))
 

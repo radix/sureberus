@@ -5,6 +5,7 @@ import six
 
 from . import errors as E
 from . import _ShortCircuit
+from .constants import _marker
 
 
 TYPES = {
@@ -116,17 +117,34 @@ class BranchWhenTagIs(Instruction):
         instructions = self.branches[chosen]
         return PerformMore(instructions, value, ctx)
 
+
 @attr.s
 class CheckField(Instruction):
     field = attr.ib()
     instructions = attr.ib()
     required = attr.ib()
+    default = attr.ib()
 
     def perform(self, value, ctx):
+        def merge_field_value(field_value):
+            value = value.copy()
+            value[self.field] = field_value
+            return value
+
         if self.field in value:
-            return PerformMore(self.instructions, value[self.field], ctx.push_stack(self.field))
+            return PerformMore(
+                self.instructions,
+                value[self.field],
+                ctx.push_stack(self.field),
+                merge=merge_field_value,
+            )
+        elif self.default is not _marker:
+            value = value.copy()
+            value[self.field] = self.default
+            return (value, ctx)
         elif self.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
+
 
 ## Validation Directives
 
@@ -181,3 +199,4 @@ class PerformMore(object):
     instructions = attr.ib()
     value = attr.ib()
     ctx = attr.ib()
+    merge = attr.ib(default=None)

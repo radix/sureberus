@@ -119,6 +119,30 @@ class BranchWhenTagIs(Instruction):
 
 
 @attr.s
+class CheckElements(Instruction):
+    instructions = attr.ib()
+
+    def perform(self, value, ctx):
+        idx = 0
+
+        def merge(element_value):
+            nonlocal idx
+            new_value = value[:]
+            new_value[idx] = element_value
+            idx += 1
+            return new_value
+
+        from .interpreter import interpret
+
+        # TODO: TCO
+        value = [
+            interpret(self.instructions, el, ctx.push_stack(idx))
+            for idx, el in enumerate(value)
+        ]
+        return (value, ctx)
+
+
+@attr.s
 class CheckField(Instruction):
     field = attr.ib()
     instructions = attr.ib()
@@ -202,3 +226,4 @@ class PerformMore(object):
     value = attr.ib()
     ctx = attr.ib()
     merge = attr.ib(default=None)
+

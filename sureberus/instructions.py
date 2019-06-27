@@ -101,7 +101,13 @@ class ModifyContext(Instruction):
     func = attr.ib()
 
     def perform(self, value, ctx):
-        return (value, self.func(value, ctx))
+        # I *think* it might be possible to move the function lookup to compile
+        # time instead of validate-time...
+        if isinstance(self.func, six.string_types):
+            func = ctx.resolve_modify_context(self.func)
+        else:
+            func = self.func
+        return (value, func(value, ctx))
 
 
 @attr.s
@@ -115,6 +121,18 @@ class BranchWhenTagIs(Instruction):
         if chosen not in self.branches:
             raise E.DisallowedValue(chosen, self.choices.keys(), ctx.stack)
         instructions = self.branches[chosen]
+        return PerformMore(instructions, value, ctx)
+
+
+@attr.s
+class ApplyDynamicSchema(Instruction):
+    func = attr.ib()
+    def perform(self, value, ctx):
+        new_schema = self.func(value, ctx)
+        from .compiler import compile
+        from .interpreter import interpret
+        # TODO: handle pre-compiled schemas
+        instructions = compile(new_schema)
         return PerformMore(instructions, value, ctx)
 
 

@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import six
 
-from .instructions import AddToDefaultRegistry, AddToModifyContextRegistry, AddToSchemaRegistry, AllowUnknown, BranchWhenTagIs, CheckAllowList, CheckElements, CheckField, CheckType, ModifyContext, SetTagFromKey, SetTagValue
+from .instructions import AddToDefaultRegistry, AddToModifyContextRegistry, AddToSchemaRegistry, AllowUnknown, ApplyDynamicSchema, BranchWhenTagIs, CheckAllowList, CheckElements, CheckField, CheckType, ModifyContext, SetTagFromKey, SetTagValue
 from . import errors as E
 from .constants import _marker
 
@@ -47,6 +47,8 @@ def _compile(og):
         if "when_tag_is" in choose_schema:
             branches = {k: compile(v) for k, v in choose_schema["when_tag_is"]["choices"].items()}
             yield BranchWhenTagIs(choose_schema["when_tag_is"]["tag"], choose_schema["when_tag_is"].get("default_choice", _marker), branches)
+        elif "function" in choose_schema:
+            yield ApplyDynamicSchema(choose_schema["function"])
     if "elements" in schema:
         yield CheckElements(compile(schema.pop("elements")))
     if "allowed" in schema:

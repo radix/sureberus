@@ -13,8 +13,8 @@ def test_type():
 
 def test_two_things():
     assert compile({"type": "integer", "allowed": [3, 2, 1]}) == [
-        CheckType("integer"),
         CheckAllowList([3, 2, 1]),
+        CheckType("integer"),
     ]
 
 
@@ -29,6 +29,6 @@ def test_compile_schema_registry():
 def test_compile_fields():
     schema = S.Dict(fields=dict(field=S.Integer()))
     assert compile(schema) == [
-        CheckType("dict"),
         CheckField("field", [CheckType("integer")], True, default=_marker),
+        CheckType("dict"),
     ]

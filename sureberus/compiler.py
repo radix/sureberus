@@ -3,7 +3,7 @@ Functions for converting a Sureberus schema into a list of instructions.
 """
 from copy import deepcopy
 
-from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, CheckAllowList, CheckField, CheckType
+from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, BranchWhenTagIs, CheckAllowList, CheckField, CheckType, SetTagFromKey
 from . import errors as E
 from .constants import _marker
 
@@ -13,6 +13,8 @@ def compile(schema):
 
 def _compile(og):
     schema = deepcopy(og)
+
+    # Meta Directives
     if "allow_unknown" in schema:
         yield AllowUnknown(schema.pop("allow_unknown"))
     if "default_registry" in schema:
@@ -20,6 +22,16 @@ def _compile(og):
     if "registry" in schema:
         registry = {k: compile(v) for k, v in schema.pop("registry").items()}
         yield AddToSchemaRegistry(registry)
+
+    if "set_tag" in schema:
+        set_tag = schema.pop("set_tag")
+        if "key" in set_tag:
+            yield SetTagFromKey(set_tag["tag_name"], set_tag["key"])
+    if "choose_schema" in schema:
+        choose_schema = schema.pop("choose_schema")
+        if "when_tag_is" in choose_schema:
+            branches = {k: compile(v) for k, v in choose_schema["when_tag_is"]["choices"].items()}
+            yield BranchWhenTagIs(choose_schema["when_tag_is"]["tag"], choose_schema["when_tag_is"].get("default_choice", _marker), branches)
     if "type" in schema:
         yield CheckType(schema.pop("type"))
     if "allowed" in schema:
@@ -34,11 +46,12 @@ def _compile(og):
         yield CheckElements(compile(schema["elements"]))
 
     if "schema" in schema:
+        subschema = schema.pop("schema")
         try:
-            instructions = compile(schema["schema"])
+            instructions = compile(subschema)
             yield CheckElements(instructions)
         except E.SchemaError:
-            for x in compile({"fields": schema["schema"]}):
+            for x in compile({"fields": subschema}):
                 yield x
 
 

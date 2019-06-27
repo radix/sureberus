@@ -127,9 +127,9 @@ class CheckField(Instruction):
 
     def perform(self, value, ctx):
         def merge_field_value(field_value):
-            value = value.copy()
-            value[self.field] = field_value
-            return value
+            new_value = value.copy()
+            new_value[self.field] = field_value
+            return new_value
 
         if self.field in value:
             return PerformMore(

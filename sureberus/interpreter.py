@@ -10,7 +10,11 @@ def _interpret(instructions, value, ctx):
             if result.merge is not None:
                 value = result.merge(subvalue)
         else:
-            value, ctx = result
+            try:
+                value, ctx = result
+            except:
+                print(instruction)
+                raise
     return value, ctx
 
 

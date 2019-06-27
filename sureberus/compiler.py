@@ -3,7 +3,7 @@ Functions for converting a Sureberus schema into a list of instructions.
 """
 from copy import deepcopy
 
-from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, BranchWhenTagIs, CheckAllowList, CheckField, CheckType, SetTagFromKey
+from .instructions import AddToDefaultRegistry, AddToSchemaRegistry, AllowUnknown, BranchWhenTagIs, CheckAllowList, CheckField, CheckType, ModifyContext, SetTagFromKey, SetTagValue
 from . import errors as E
 from .constants import _marker
 
@@ -27,6 +27,10 @@ def _compile(og):
         set_tag = schema.pop("set_tag")
         if "key" in set_tag:
             yield SetTagFromKey(set_tag["tag_name"], set_tag["key"])
+        elif "value" in set_tag:
+            yield SetTagValue(set_tag["tag_name"], set_tag["value"])
+    if "modify_context" in schema:
+        yield ModifyContext(schema.pop("modify_context"))
     if "choose_schema" in schema:
         choose_schema = schema.pop("choose_schema")
         if "when_tag_is" in choose_schema:

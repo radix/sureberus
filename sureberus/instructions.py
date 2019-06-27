@@ -144,6 +144,8 @@ class CheckField(Instruction):
             return (value, ctx)
         elif self.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
+        else:
+            return (value, ctx)
 
 
 ## Validation Directives

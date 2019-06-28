@@ -5,15 +5,47 @@ from copy import deepcopy
 
 import six
 
-from .instructions import AddToDefaultRegistry, AddToModifyContextRegistry, AddToSchemaRegistry, AllowUnknown, ApplyDynamicSchema, BranchWhenTagIs, CheckAllowList, CheckElements, CheckField, CheckType, ModifyContext, SetTagFromKey, SetTagValue
-from . import errors as E
+from .instructions import (
+    AddToDefaultRegistry,
+    AddToModifyContextRegistry,
+    AddToSchemaRegistry,
+    AllowUnknown,
+    ApplyDynamicSchema,
+    BranchWhenTagIs,
+    CheckAllowList,
+    CheckElements,
+    CheckField,
+    CheckType,
+    FieldTransformer,
+    ModifyContext,
+    SetTagFromKey,
+    SetTagValue,
+    Transformer,
+)
+from . import errors as E, INIT_CONTEXT
 from .constants import _marker
 
-def compile(schema):
-    return list(_compile(schema))
+
+def compile(schema, context=None):
+    """Create a Transformer from a schema definition.
+
+    This might return either an instance of `Transformer` or `FieldTransformer`,
+    depending on the presence of field-specific directives such as `required`.
+    """
+    if context is None:
+        context = INIT_CONTEXT
+    return Transformer(list(_compile(schema, context)))
 
 
-def _compile(og):
+def _compile_field(og, ctx):
+    schema = deepcopy(og)
+    required = schema.pop("required", False)
+    default = schema.pop("default", _marker)
+    transformer = compile(schema, ctx)
+    return FieldTransformer(transformer.instructions, required=required, default=default)
+
+
+def _compile(og, ctx):
     schema = deepcopy(og)
 
     # Meta Directives
@@ -21,7 +53,8 @@ def _compile(og):
     if "default_registry" in schema:
         yield AddToDefaultRegistry(schema.pop("default_registry"))
     if "registry" in schema:
-        registry = {k: compile(v) for k, v in schema.pop("registry").items()}
+        registry = {k: compile(v, ctx) for k, v in schema.pop("registry").items()}
+        ctx = ctx.register_schemas(registry)
         yield AddToSchemaRegistry(registry)
 
     if "modify_context_registry" in schema:
@@ -41,37 +74,43 @@ def _compile(og):
     if "allow_unknown" in schema:
         yield AllowUnknown(schema.pop("allow_unknown"))
 
-
     if "choose_schema" in schema:
         choose_schema = schema.pop("choose_schema")
         if "when_tag_is" in choose_schema:
-            branches = {k: compile(v) for k, v in choose_schema["when_tag_is"]["choices"].items()}
-            yield BranchWhenTagIs(choose_schema["when_tag_is"]["tag"], choose_schema["when_tag_is"].get("default_choice", _marker), branches)
+            branches = {
+                k: compile(v, ctx)
+                for k, v in choose_schema["when_tag_is"]["choices"].items()
+            }
+            yield BranchWhenTagIs(
+                choose_schema["when_tag_is"]["tag"],
+                choose_schema["when_tag_is"].get("default_choice", _marker),
+                branches,
+            )
         elif "function" in choose_schema:
             yield ApplyDynamicSchema(choose_schema["function"])
     if "elements" in schema:
-        yield CheckElements(compile(schema.pop("elements")))
+        yield CheckElements(compile(schema.pop("elements"), ctx))
     if "allowed" in schema:
         yield CheckAllowList(schema.pop("allowed"))
     if "fields" in schema:
         for k, v in schema.pop("fields").items():
-            required = v.pop("required", False)
-            default = v.pop("default", _marker)
-            # todo: default_setter, rename
-            yield CheckField(k, compile(v), required=required, default=default)
+            if isinstance(v, six.string_types):
+                field_schema = ctx.find_schema(v)
+                print("[RADIX] looked up schema", v)
+            else:
+                field_schema = _compile_field(v, ctx)
+            yield CheckField(k, field_schema)
     if "type" in schema:
         yield CheckType(schema.pop("type"))
 
     if "schema" in schema:
         subschema = schema.pop("schema")
         try:
-            instructions = compile(subschema)
+            instructions = compile(subschema, ctx)
             yield CheckElements(instructions)
         except E.SchemaError:
-            for x in compile({"fields": subschema}):
+            for x in compile({"fields": subschema}, ctx).instructions:
                 yield x
-
-
 
     if "required" in schema:
         # We put `required` in places where it doesn't necessarily make sense...

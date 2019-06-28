@@ -127,10 +127,12 @@ class BranchWhenTagIs(Instruction):
 @attr.s
 class ApplyDynamicSchema(Instruction):
     func = attr.ib()
+
     def perform(self, value, ctx):
         new_schema = self.func(value, ctx)
         from .compiler import compile
         from .interpreter import interpret
+
         # TODO: handle pre-compiled schemas
         instructions = compile(new_schema)
         return PerformMore(instructions, value, ctx)
@@ -163,9 +165,7 @@ class CheckElements(Instruction):
 @attr.s
 class CheckField(Instruction):
     field = attr.ib()
-    instructions = attr.ib()
-    required = attr.ib()
-    default = attr.ib()
+    field_schema = attr.ib()
 
     def perform(self, value, ctx):
         def merge_field_value(field_value):
@@ -175,16 +175,16 @@ class CheckField(Instruction):
 
         if self.field in value:
             return PerformMore(
-                self.instructions,
+                self.field_schema,
                 value[self.field],
                 ctx.push_stack(self.field),
                 merge=merge_field_value,
             )
-        elif self.default is not _marker:
+        elif self.field_schema.default is not _marker:
             value = value.copy()
-            value[self.field] = self.default
+            value[self.field] = self.field_schema.default
             return (value, ctx)
-        elif self.required:
+        elif self.field_schema.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
         else:
             return (value, ctx)
@@ -240,8 +240,20 @@ class Coerce(Instruction):
 
 @attr.s
 class PerformMore(object):
-    instructions = attr.ib()
+    transformer = attr.ib()
     value = attr.ib()
     ctx = attr.ib()
     merge = attr.ib(default=None)
 
+
+@attr.s
+class Transformer(object):
+    instructions = attr.ib()
+
+
+@attr.s
+class FieldTransformer(object):
+    instructions = attr.ib()
+    required = attr.ib(default=False)
+    default = attr.ib(default=_marker)
+    rename = attr.ib(default=None)

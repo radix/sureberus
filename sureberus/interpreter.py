@@ -1,12 +1,12 @@
 from .instructions import PerformMore
 
 
-def _interpret(instructions, value, ctx):
-    for instruction in instructions:
+def _interpret(transformer, value, ctx):
+    for instruction in transformer.instructions:
         result = instruction.perform(value, ctx)
         if isinstance(result, PerformMore):
             # TODO *actually* implement TCE
-            subvalue, ctx = _interpret(result.instructions, result.value, result.ctx)
+            subvalue, ctx = _interpret(result.transformer, result.value, result.ctx)
             if result.merge is not None:
                 value = result.merge(subvalue)
         else:
@@ -18,5 +18,5 @@ def _interpret(instructions, value, ctx):
     return value, ctx
 
 
-def interpret(instructions, value, ctx):
-    return _interpret(instructions, value, ctx)[0]
+def interpret(transformer, value, ctx):
+    return _interpret(transformer, value, ctx)[0]

@@ -456,7 +456,7 @@ def test_coerce_post_registry():
     assert normalize_schema(schema, 100) == 103
 
 
-def test_coerc_post_registered_defaults():
+def test_coerce_post_registered_defaults():
     schema = {"coerce_post": "to_list"}
     assert normalize_schema(schema, 100) == [100]
     assert normalize_schema(schema, [100]) == [100]

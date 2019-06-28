@@ -22,6 +22,7 @@ from .instructions import (
     SetTagFromKey,
     SetTagValue,
     Transformer,
+    SchemaReference,
 )
 from . import errors as E, INIT_CONTEXT
 from .constants import _marker
@@ -43,7 +44,9 @@ def _compile_field(og, ctx):
     required = schema.pop("required", False)
     default = schema.pop("default", _marker)
     transformer = compile(schema, ctx)
-    return FieldTransformer(transformer.instructions, required=required, default=default)
+    return FieldTransformer(
+        transformer.instructions, required=required, default=default
+    )
 
 
 def _compile(og, ctx):
@@ -89,9 +92,13 @@ def _compile(og, ctx):
             )
         elif "function" in choose_schema:
             yield ApplyDynamicSchema(choose_schema["function"])
+    if "schema_ref" in schema:
+        schema_ref = schema.pop("schema_ref")
+        transformer = ctx.find_schema(schema_ref)
+        yield ApplyDynamicSchema(lambda v, c: transformer)
     if "anyof" in schema:
         anyof = schema.pop("anyof")
-        yield AnyOf([compile(x) for x in anyof])
+        yield AnyOf([_compile_or_find(x, ctx) for x in anyof])
     if "elements" in schema:
         yield CheckElements(compile(schema.pop("elements"), ctx))
     if "allowed" in schema:
@@ -100,7 +107,6 @@ def _compile(og, ctx):
         for k, v in schema.pop("fields").items():
             if isinstance(v, six.string_types):
                 field_schema = ctx.find_schema(v)
-                print("[RADIX] looked up schema", v)
             else:
                 field_schema = _compile_field(v, ctx)
             yield CheckField(k, field_schema)
@@ -123,3 +129,18 @@ def _compile(og, ctx):
 
     if schema:
         raise E.UnknownSchemaDirectives(schema)
+
+
+def _compile_or_find(schema, ctx):
+    if isinstance(schema, six.string_types):
+        # When compiling a *reference* to a schema, it may not actually be fully
+        # defined yet! While schema-references must be purely lexical, the
+        # situation in which this arises is recursive schemas.
+        # E.g., {"registry": {"foo": {"fields": {"nested": "foo"}}}}
+        try:
+            return ctx.find_schema(schema)
+        except KeyError:
+            return SchemaReference(schema)
+    else:
+        return compile(schema)
+

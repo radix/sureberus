@@ -131,11 +131,13 @@ class ApplyDynamicSchema(Instruction):
     def perform(self, value, ctx):
         new_schema = self.func(value, ctx)
         from .compiler import compile
-        from .interpreter import interpret
 
         # TODO: handle pre-compiled schemas
-        instructions = compile(new_schema)
-        return PerformMore(instructions, value, ctx)
+        if isinstance(new_schema, Transformer):
+            transformer = new_schema
+        else:
+            transformer = compile(new_schema)
+        return PerformMore(transformer, value, ctx)
 
 
 @attr.s
@@ -144,6 +146,7 @@ class AnyOf(Instruction):
 
     def perform(self, value, ctx):
         from .interpreter import interpret
+
         errors = []
         for transformer in self.transformers:
             try:
@@ -153,7 +156,6 @@ class AnyOf(Instruction):
             else:
                 return (result, ctx)
         raise E.NoneMatched(value, errors, ctx.stack)
-
 
 
 @attr.s
@@ -275,3 +277,8 @@ class FieldTransformer(object):
     required = attr.ib(default=False)
     default = attr.ib(default=_marker)
     rename = attr.ib(default=None)
+
+
+@attr.s
+class SchemaReference(object):
+    schema_name = attr.ib()

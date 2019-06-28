@@ -1,7 +1,9 @@
-from .instructions import PerformMore
+from .instructions import PerformMore, SchemaReference
 
 
 def _interpret(transformer, value, ctx):
+    if isinstance(transformer, SchemaReference):
+        transformer = ctx.find_schema(transformer.schema_name)
     for instruction in transformer.instructions:
         result = instruction.perform(value, ctx)
         if isinstance(result, PerformMore):

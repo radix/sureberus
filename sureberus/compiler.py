@@ -10,6 +10,7 @@ from .instructions import (
     AddToModifyContextRegistry,
     AddToSchemaRegistry,
     AllowUnknown,
+    AnyOf,
     ApplyDynamicSchema,
     BranchWhenTagIs,
     CheckAllowList,
@@ -88,6 +89,9 @@ def _compile(og, ctx):
             )
         elif "function" in choose_schema:
             yield ApplyDynamicSchema(choose_schema["function"])
+    if "anyof" in schema:
+        anyof = schema.pop("anyof")
+        yield AnyOf([compile(x) for x in anyof])
     if "elements" in schema:
         yield CheckElements(compile(schema.pop("elements"), ctx))
     if "allowed" in schema:

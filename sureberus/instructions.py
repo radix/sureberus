@@ -139,6 +139,24 @@ class ApplyDynamicSchema(Instruction):
 
 
 @attr.s
+class AnyOf(Instruction):
+    transformers = attr.ib()
+
+    def perform(self, value, ctx):
+        from .interpreter import interpret
+        errors = []
+        for transformer in self.transformers:
+            try:
+                result = interpret(transformer, value, ctx)
+            except E.SureError as e:
+                errors.append(e)
+            else:
+                return (result, ctx)
+        raise E.NoneMatched(value, errors, ctx.stack)
+
+
+
+@attr.s
 class CheckElements(Instruction):
     instructions = attr.ib()
 

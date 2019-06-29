@@ -13,6 +13,7 @@ from .instructions import (
     AnyOf,
     ApplyDynamicSchema,
     BranchWhenKeyExists,
+    BranchWhenKeyIs,
     BranchWhenTagIs,
     CheckAllowList,
     CheckElements,
@@ -82,9 +83,16 @@ def _compile(og, ctx):
     if "when_key_exists" in schema:
         yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
 
+    if "when_key_is" in schema:
+        yield _compile_when_key_is(schema.pop("when_key_is"), ctx)
+
     if "choose_schema" in schema:
         if "when_key_exists" in schema["choose_schema"]:
-            yield _compile_when_key_exists(schema.pop("choose_schema")["when_key_exists"], ctx)
+            yield _compile_when_key_exists(
+                schema.pop("choose_schema")["when_key_exists"], ctx
+            )
+        elif "when_key_is" in schema["choose_schema"]:
+            yield _compile_when_key_is(schema.pop("choose_schema")["when_key_is"], ctx)
         elif "when_tag_is" in schema["choose_schema"]:
             choose_schema = schema.pop("choose_schema")
             branches = {
@@ -132,7 +140,6 @@ def _compile(og, ctx):
     if "coerce_post" in schema:
         yield Coerce(schema.pop("coerce_post"))
 
-    print("[RADIX] Done with schema!", schema)
     if schema:
         raise E.UnknownSchemaDirectives(schema)
 
@@ -140,6 +147,13 @@ def _compile(og, ctx):
 def _compile_when_key_exists(directive, ctx):
     branches = {k: _compile_or_find(v, ctx) for k, v in directive.items()}
     return BranchWhenKeyExists(branches)
+
+
+def _compile_when_key_is(directive, ctx):
+    branches = {k: _compile_or_find(v, ctx) for k, v in directive["choices"].items()}
+    return BranchWhenKeyIs(
+        directive["key"], directive.get("default_choice", _marker), branches
+    )
 
 
 def _compile_or_find(schema, ctx):

@@ -136,6 +136,22 @@ class BranchWhenKeyExists(Instruction):
 
 
 @attr.s
+class BranchWhenKeyIs(Instruction):
+    key = attr.ib()
+    default_choice = attr.ib()
+    branches = attr.ib()  # dict of value (associated with `key`) to list of instructions.
+
+    def perform(self, value, ctx):
+        choice = value.get(self.key, self.default_choice)
+        if choice is _marker:
+            raise E.DisallowedValue(
+                value.get(self.key), self.branches.keys(), ctx.stack
+            )
+        transformer = self.branches[choice]
+        return PerformMore(transformer, value, ctx)
+
+
+@attr.s
 class ApplyDynamicSchema(Instruction):
     func = attr.ib()
 

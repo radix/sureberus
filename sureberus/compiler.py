@@ -17,7 +17,6 @@ from .instructions import (
     CheckElements,
     CheckField,
     CheckType,
-    FieldTransformer,
     ModifyContext,
     SetTagFromKey,
     SetTagValue,
@@ -29,23 +28,18 @@ from .constants import _marker
 
 
 def compile(schema, context=None):
-    """Create a Transformer from a schema definition.
-
-    This might return either an instance of `Transformer` or `FieldTransformer`,
-    depending on the presence of field-specific directives such as `required`.
-    """
+    """Create a Transformer from a schema definition."""
     if context is None:
         context = INIT_CONTEXT
-    return Transformer(list(_compile(schema, context)))
-
-
-def _compile_field(og, ctx):
-    schema = deepcopy(og)
+    schema = deepcopy(schema)
     required = schema.pop("required", False)
     default = schema.pop("default", _marker)
-    transformer = compile(schema, ctx)
-    return FieldTransformer(
-        transformer.instructions, required=required, default=default
+    rename = schema.pop("rename", None)
+    return Transformer(
+        list(_compile(schema, context)),
+        required=required,
+        default=default,
+        rename=rename,
     )
 
 
@@ -100,15 +94,12 @@ def _compile(og, ctx):
         anyof = schema.pop("anyof")
         yield AnyOf([_compile_or_find(x, ctx) for x in anyof])
     if "elements" in schema:
-        yield CheckElements(compile(schema.pop("elements"), ctx))
+        yield CheckElements(_compile_or_find(schema.pop("elements"), ctx))
     if "allowed" in schema:
         yield CheckAllowList(schema.pop("allowed"))
     if "fields" in schema:
         for k, v in schema.pop("fields").items():
-            if isinstance(v, six.string_types):
-                field_schema = ctx.find_schema(v)
-            else:
-                field_schema = _compile_field(v, ctx)
+            field_schema = _compile_or_find(v, ctx)
             yield CheckField(k, field_schema)
     if "type" in schema:
         yield CheckType(schema.pop("type"))
@@ -116,16 +107,11 @@ def _compile(og, ctx):
     if "schema" in schema:
         subschema = schema.pop("schema")
         try:
-            instructions = compile(subschema, ctx)
+            instructions = _compile_or_find(subschema, ctx)
             yield CheckElements(instructions)
         except E.SchemaError:
-            for x in compile({"fields": subschema}, ctx).instructions:
+            for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
-
-    if "required" in schema:
-        # We put `required` in places where it doesn't necessarily make sense...
-        # Just ignore it.
-        schema.pop("required")
 
     if schema:
         raise E.UnknownSchemaDirectives(schema)
@@ -142,5 +128,5 @@ def _compile_or_find(schema, ctx):
         except KeyError:
             return SchemaReference(schema)
     else:
-        return compile(schema)
+        return compile(schema, ctx)
 

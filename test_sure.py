@@ -702,7 +702,6 @@ def test_when_key_is_type_check(choice_schema):
 
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
 def test_when_key_is_not_found(choice_schema):
-    print("but what IS choice schema", choice_schema)
     with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_schema(choice_schema, {"foo_sibling": "hello"})
     assert ei.value.key == "type"
@@ -874,8 +873,8 @@ def test_circular_registry():
     """Schema registries allow for schemas that refer to each other"""
     schema = {
         "registry": {
-            "a": S.Dict(schema={"a": "b"}),
-            "b": S.Dict(schema={"b": {"anyof": [S.Integer(), "a"]}}),
+            "a": S.Dict(fields={"a": "b"}),
+            "b": S.Dict(fields={"b": {"anyof": [S.Integer(), "a"]}}),
         },
         "schema_ref": "a",
     }
@@ -883,9 +882,11 @@ def test_circular_registry():
     for v in [{"a": {"b": 2}}, {"a": {"b": {"a": {"b": 2}}}}]:
         assert normalize_schema(schema, v) == v
 
-    for v in [{"a": {"b": []}}, {"a": {"a": {"a": {"b": 2}}}}]:
-        with pytest.raises(Exception):
-            normalize_schema(schema, v)
+    with pytest.raises(E.NoneMatched):
+        normalize_schema(schema, {"a": {"b": []}})
+
+    with pytest.raises(E.UnknownFields):
+        normalize_schema(schema, {"a": {"a": {"a": {"b": 2}}}})
 
 
 def test_schema_ref_with_differing_requirement():
@@ -1080,7 +1081,6 @@ def test_when_tag_is_type_check():
             ),
             "foo",
         )
-        print(v)
     assert ei.value.type_ == "dict"
     assert ei.value.value == "foo"
 

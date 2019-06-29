@@ -185,9 +185,13 @@ class CheckElements(Instruction):
 @attr.s
 class CheckField(Instruction):
     field = attr.ib()
-    field_schema = attr.ib()
+    field_transformer = attr.ib()
 
     def perform(self, value, ctx):
+        if isinstance(self.field_transformer, SchemaReference):
+            field_transformer = self.field_transformer.resolve(ctx)
+        else:
+            field_transformer = self.field_transformer
         def merge_field_value(field_value):
             new_value = value.copy()
             new_value[self.field] = field_value
@@ -195,16 +199,16 @@ class CheckField(Instruction):
 
         if self.field in value:
             return PerformMore(
-                self.field_schema,
+                field_transformer,
                 value[self.field],
                 ctx.push_stack(self.field),
                 merge=merge_field_value,
             )
-        elif self.field_schema.default is not _marker:
+        elif field_transformer.default is not _marker:
             value = value.copy()
-            value[self.field] = self.field_schema.default
+            value[self.field] = field_transformer.default
             return (value, ctx)
-        elif self.field_schema.required:
+        elif field_transformer.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
         else:
             return (value, ctx)
@@ -270,10 +274,7 @@ class PerformMore(object):
 class Transformer(object):
     instructions = attr.ib()
 
-
-@attr.s
-class FieldTransformer(object):
-    instructions = attr.ib()
+    # The following fields only have an effect when this Transformer is used as a field.
     required = attr.ib(default=False)
     default = attr.ib(default=_marker)
     rename = attr.ib(default=None)
@@ -282,3 +283,6 @@ class FieldTransformer(object):
 @attr.s
 class SchemaReference(object):
     schema_name = attr.ib()
+
+    def resolve(self, ctx):
+        return ctx.find_schema(self.schema_name)

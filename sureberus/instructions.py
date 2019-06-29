@@ -125,6 +125,17 @@ class BranchWhenTagIs(Instruction):
 
 
 @attr.s
+class BranchWhenKeyExists(Instruction):
+    branches = attr.ib()  # dict of key-name to list of instructions.
+
+    def perform(self, value, ctx):
+        for key in self.branches:
+            if key in value:
+                instructions = self.branches[key]
+                return PerformMore(instructions, value, ctx)
+
+
+@attr.s
 class ApplyDynamicSchema(Instruction):
     func = attr.ib()
 

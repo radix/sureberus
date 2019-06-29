@@ -12,6 +12,7 @@ from .instructions import (
     AllowUnknown,
     AnyOf,
     ApplyDynamicSchema,
+    BranchWhenKeyExists,
     BranchWhenTagIs,
     CheckAllowList,
     CheckElements,
@@ -78,9 +79,14 @@ def _compile(og, ctx):
         del schema["nullable"]
         yield SkipIfNone()
 
+    if "when_key_exists" in schema:
+        yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
+
     if "choose_schema" in schema:
-        choose_schema = schema.pop("choose_schema")
-        if "when_tag_is" in choose_schema:
+        if "when_key_exists" in schema["choose_schema"]:
+            yield _compile_when_key_exists(schema.pop("choose_schema")["when_key_exists"], ctx)
+        elif "when_tag_is" in schema["choose_schema"]:
+            choose_schema = schema.pop("choose_schema")
             branches = {
                 k: compile(v, ctx)
                 for k, v in choose_schema["when_tag_is"]["choices"].items()
@@ -90,7 +96,8 @@ def _compile(og, ctx):
                 choose_schema["when_tag_is"].get("default_choice", _marker),
                 branches,
             )
-        elif "function" in choose_schema:
+        elif "function" in schema["choose_schema"]:
+            choose_schema = schema.pop("choose_schema")
             yield ApplyDynamicSchema(choose_schema["function"])
     if "schema_ref" in schema:
         schema_ref = schema.pop("schema_ref")
@@ -122,12 +129,17 @@ def _compile(og, ctx):
             for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
 
-
     if "coerce_post" in schema:
         yield Coerce(schema.pop("coerce_post"))
 
+    print("[RADIX] Done with schema!", schema)
     if schema:
         raise E.UnknownSchemaDirectives(schema)
+
+
+def _compile_when_key_exists(directive, ctx):
+    branches = {k: _compile_or_find(v, ctx) for k, v in directive.items()}
+    return BranchWhenKeyExists(branches)
 
 
 def _compile_or_find(schema, ctx):

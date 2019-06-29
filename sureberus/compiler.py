@@ -17,11 +17,13 @@ from .instructions import (
     CheckElements,
     CheckField,
     CheckType,
+    Coerce,
     ModifyContext,
     SetTagFromKey,
     SetTagValue,
     Transformer,
     SchemaReference,
+    SkipIfNone,
 )
 from . import errors as E, INIT_CONTEXT
 from .constants import _marker
@@ -72,6 +74,10 @@ def _compile(og, ctx):
     if "allow_unknown" in schema:
         yield AllowUnknown(schema.pop("allow_unknown"))
 
+    if "nullable" in schema:
+        del schema["nullable"]
+        yield SkipIfNone()
+
     if "choose_schema" in schema:
         choose_schema = schema.pop("choose_schema")
         if "when_tag_is" in choose_schema:
@@ -93,6 +99,9 @@ def _compile(og, ctx):
     if "anyof" in schema:
         anyof = schema.pop("anyof")
         yield AnyOf([_compile_or_find(x, ctx) for x in anyof])
+
+    if "coerce" in schema:
+        yield Coerce(schema.pop("coerce"))
     if "elements" in schema:
         yield CheckElements(_compile_or_find(schema.pop("elements"), ctx))
     if "allowed" in schema:
@@ -112,6 +121,10 @@ def _compile(og, ctx):
         except E.SchemaError:
             for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
+
+
+    if "coerce_post" in schema:
+        yield Coerce(schema.pop("coerce_post"))
 
     if schema:
         raise E.UnknownSchemaDirectives(schema)

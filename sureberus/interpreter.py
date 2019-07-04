@@ -1,4 +1,5 @@
 from .instructions import PerformMore, SchemaReference
+from . import _ShortCircuit
 
 
 def _interpret(transformer, value, ctx):
@@ -11,6 +12,8 @@ def _interpret(transformer, value, ctx):
             subvalue, ctx = _interpret(result.transformer, result.value, result.ctx)
             if result.merge is not None:
                 value = result.merge(subvalue)
+        elif isinstance(result, _ShortCircuit):
+            return result.value, ctx
         else:
             try:
                 value, ctx = result

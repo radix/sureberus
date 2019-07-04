@@ -56,8 +56,8 @@ def _compile(og, ctx):
         yield I.AllowUnknown(schema.pop("allow_unknown"))
 
     if "nullable" in schema:
-        del schema["nullable"]
-        yield I.SkipIfNone()
+        if schema.pop("nullable") is True:
+            yield I.SkipIfNone()
 
     if "when_key_exists" in schema:
         yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)

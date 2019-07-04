@@ -325,14 +325,17 @@ def test_rename_with_default():
     assert normalize_schema(schema, val) == {"moo": False}
 
 
-def test_rename_with_both_attributes_present():
+def test_rename_with_both_fields_present():
+    """Rename can overwrite the target field."""
     schema = S.Dict(
         schema={"foo": {"rename": "moo", "coerce": str}}, allow_unknown=True
     )
     val = {"foo": 1, "moo": 2}
     assert normalize_schema(schema, val) == {"moo": "1"}
 
-    # Yes, we can swap attributes
+
+def test_rename_swap_fields():
+    """We can swap fields"""
     schema = S.Dict(
         schema={
             "foo": {"rename": "moo", "coerce": str},

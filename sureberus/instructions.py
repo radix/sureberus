@@ -141,7 +141,8 @@ class BranchWhenKeyExists(Instruction):
 class BranchWhenKeyIs(Instruction):
     key = attr.ib()
     default_choice = attr.ib()
-    branches = attr.ib()  # dict of value (associated with `key`) to list of instructions.
+    # branches: dict of value (associated with `key`) to list of instructions.
+    branches = attr.ib()
 
     def perform(self, value, ctx):
         choice = value.get(self.key, self.default_choice)
@@ -221,11 +222,19 @@ class CheckField(Instruction):
             field_transformer = self.field_transformer.resolve(ctx)
         else:
             field_transformer = self.field_transformer
+
         def merge_field_value(field_value):
             new_value = value.copy()
-            new_value[self.field] = field_value
+            new_key = rename if rename is not None else self.field
+            del new_value[self.field]
+            new_value[new_key] = field_value
             return new_value
 
+        if field_transformer.default is not _marker and self.field not in value:
+            value = value.copy()
+            value[self.field] = field_transformer.default
+
+        rename = self.field_transformer.rename
         if self.field in value:
             return PerformMore(
                 field_transformer,
@@ -233,10 +242,6 @@ class CheckField(Instruction):
                 ctx.push_stack(self.field),
                 merge=merge_field_value,
             )
-        elif field_transformer.default is not _marker:
-            value = value.copy()
-            value[self.field] = field_transformer.default
-            return (value, ctx)
         elif field_transformer.required:
             raise E.DictFieldNotFound(self.field, value, ctx.stack)
         else:
@@ -250,6 +255,7 @@ class CheckKeys(Instruction):
     def perform(self, value, ctx):
 
         from .interpreter import interpret
+
         for key in value:
             key_ctx = ctx.push_stack(key)
             new_key = interpret(self.transformer, key, key_ctx)
@@ -264,12 +270,12 @@ class CheckValues(Instruction):
     def perform(self, value, ctx):
 
         from .interpreter import interpret
+
         for key, subvalue in value.items():
             key_ctx = ctx.push_stack(key)
             new_value = interpret(self.transformer, subvalue, key_ctx)
             value[key] = new_value
         return (value, ctx)
-
 
 
 ## Validation Directives
@@ -311,7 +317,9 @@ class CheckBounds(Instruction):
 
     def perform(self, value, ctx):
         if value < self.min or value > self.max:
-            raise E.OutOfBounds(number=value, min=self.min, max=self.max, stack=ctx.stack)
+            raise E.OutOfBounds(
+                number=value, min=self.min, max=self.max, stack=ctx.stack
+            )
         return (value, ctx)
 
 
@@ -338,7 +346,8 @@ class CheckRegex(Instruction):
                 "Using the `regex` directive with non-strings is deprecated. "
                 "In the future this will raise a type error. "
                 "This was applied to {!r}".format(value),
-                DeprecationWarning)
+                DeprecationWarning,
+            )
         return (value, ctx)
 
 
@@ -359,8 +368,6 @@ class CustomValidator(Instruction):
         except Exception as e:
             raise E.ValidatorUnexpectedError(field, value, e, ctx.stack)
         return (value, ctx)
-
-
 
 
 ## Coercion Directives

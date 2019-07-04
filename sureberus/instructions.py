@@ -316,6 +316,16 @@ class CheckBounds(Instruction):
 
 
 @attr.s
+class CheckLength(Instruction):
+    maxlength = attr.ib()
+
+    def perform(self, value, ctx):
+        if len(value) > self.maxlength:
+            raise E.MaxLengthExceeded(value, self.maxlength, ctx.stack)
+        return (value, ctx)
+
+
+@attr.s
 class CheckRegex(Instruction):
     regex = attr.ib()
 

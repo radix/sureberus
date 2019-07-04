@@ -129,6 +129,9 @@ def _compile(og, ctx):
             for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
 
+    if "validator" in schema:
+        yield I.CustomValidator(schema.pop("validator"))
+
     if "coerce_post" in schema:
         yield I.Coerce(schema.pop("coerce_post"))
 

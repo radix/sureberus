@@ -342,6 +342,26 @@ class CheckRegex(Instruction):
         return (value, ctx)
 
 
+@attr.s
+class CustomValidator(Instruction):
+    validator = attr.ib()
+
+    def perform(self, value, ctx):
+        field = ctx.stack[-1] if len(ctx.stack) else None
+
+        def error(f, m):
+            raise E.CustomValidatorError(f, m, stack=ctx.stack)
+
+        try:
+            ctx.resolve_validator(self.validator)(field, value, error)
+        except E.SureError:
+            raise
+        except Exception as e:
+            raise E.ValidatorUnexpectedError(field, value, e, ctx.stack)
+        return (value, ctx)
+
+
+
 
 ## Coercion Directives
 

@@ -96,6 +96,8 @@ def _compile(og, ctx):
 
     if "min" in schema or "max" in schema:
         yield I.CheckBounds(min=schema.pop("min"), max=schema.pop("max"))
+    if "regex" in schema:
+        yield I.CheckRegex(schema.pop("regex"))
 
     if "coerce" in schema:
         yield I.Coerce(schema.pop("coerce"))

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import re
+import warnings
 
 import attr
 import six
@@ -311,6 +313,24 @@ class CheckBounds(Instruction):
         if value < self.min or value > self.max:
             raise E.OutOfBounds(number=value, min=self.min, max=self.max, stack=ctx.stack)
         return (value, ctx)
+
+
+@attr.s
+class CheckRegex(Instruction):
+    regex = attr.ib()
+
+    def perform(self, value, ctx):
+        if isinstance(value, str):
+            if not re.match(self.regex, value):
+                raise E.RegexMismatch(value, self.regex, ctx.stack)
+        else:
+            warnings.warn(
+                "Using the `regex` directive with non-strings is deprecated. "
+                "In the future this will raise a type error. "
+                "This was applied to {!r}".format(value),
+                DeprecationWarning)
+        return (value, ctx)
+
 
 
 ## Coercion Directives

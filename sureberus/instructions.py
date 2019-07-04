@@ -241,6 +241,35 @@ class CheckField(Instruction):
             return (value, ctx)
 
 
+@attr.s
+class CheckKeys(Instruction):
+    transformer = attr.ib()
+
+    def perform(self, value, ctx):
+
+        from .interpreter import interpret
+        for key in value:
+            key_ctx = ctx.push_stack(key)
+            new_key = interpret(self.transformer, key, key_ctx)
+            value[new_key] = value.pop(key)
+        return (value, ctx)
+
+
+@attr.s
+class CheckValues(Instruction):
+    transformer = attr.ib()
+
+    def perform(self, value, ctx):
+
+        from .interpreter import interpret
+        for key, subvalue in value.items():
+            key_ctx = ctx.push_stack(key)
+            new_value = interpret(self.transformer, subvalue, key_ctx)
+            value[key] = new_value
+        return (value, ctx)
+
+
+
 ## Validation Directives
 
 
@@ -270,6 +299,17 @@ class CheckAllowList(Instruction):
     def perform(self, value, ctx):
         if value not in self.allowed:
             raise E.DisallowedValue(value, self.allowed, ctx.stack)
+        return (value, ctx)
+
+
+@attr.s
+class CheckBounds(Instruction):
+    min = attr.ib()
+    max = attr.ib()
+
+    def perform(self, value, ctx):
+        if value < self.min or value > self.max:
+            raise E.OutOfBounds(number=value, min=self.min, max=self.max, stack=ctx.stack)
         return (value, ctx)
 
 

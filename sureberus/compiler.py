@@ -66,6 +66,9 @@ def _compile(og, ctx):
         if schema.pop("nullable") is True:
             yield I.SkipIfNone()
 
+    if "coerce" in schema:
+        yield I.Coerce(schema.pop("coerce"))
+
     if "when_key_exists" in schema:
         yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
 
@@ -116,8 +119,6 @@ def _compile(og, ctx):
     if "regex" in schema:
         yield I.CheckRegex(schema.pop("regex"))
 
-    if "coerce" in schema:
-        yield I.Coerce(schema.pop("coerce"))
     if "elements" in schema:
         yield I.CheckElements(_compile_or_find(schema.pop("elements"), ctx))
     if "allowed" in schema:

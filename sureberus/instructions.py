@@ -131,11 +131,16 @@ class BranchWhenKeyExists(Instruction):
     branches = attr.ib()  # dict of key-name to list of instructions.
 
     def perform(self, value, ctx):
+        chosen_key = _marker
         for key in self.branches:
             if key in value:
-                instructions = self.branches[key]
-                return PerformMore(instructions, value, ctx)
-
+                if chosen_key is not _marker:
+                    raise E.DisallowedField(chosen_key, key, ctx.stack)
+                chosen_key = key
+        if chosen_key is not _marker:
+            return PerformMore(self.branches[chosen_key], value, ctx)
+        else:
+            raise E.ExpectedOneField(list(self.branches.keys()), value, ctx.stack)
 
 @attr.s
 class BranchWhenKeyIs(Instruction):

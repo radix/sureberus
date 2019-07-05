@@ -166,12 +166,36 @@ class ApplyDynamicSchema(Instruction):
         new_schema = self.func(value, ctx)
         from .compiler import compile
 
-        # TODO: handle pre-compiled schemas
         if isinstance(new_schema, Transformer):
             transformer = new_schema
         else:
+            # "choose_schema" functions can return *schemas*, not necessarily transformers.
             transformer = compile(new_schema)
         return PerformMore(transformer, value, ctx)
+
+
+@attr.s
+class OneOf(Instruction):
+    transformers = attr.ib()
+
+    def perform(self, value, ctx):
+        from .interpreter import interpret
+
+        errors = []
+        matched = []
+        for transformer in self.transformers:
+            try:
+                result = interpret(transformer, value, ctx)
+            except E.SureError as e:
+                errors.append(e)
+            else:
+                matched.append((transformer, result))
+        if len(matched) == 1:
+            return (matched[0][1], ctx)
+        elif len(matched) == 0:
+            raise E.NoneMatched(value, errors, ctx.stack)
+        else:
+            raise E.MoreThanOneMatched(value, matched, ctx.stack)
 
 
 @attr.s

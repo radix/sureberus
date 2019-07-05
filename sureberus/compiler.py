@@ -105,10 +105,15 @@ def _compile(og, ctx):
         elif "function" in schema["choose_schema"]:
             choose_schema = schema.pop("choose_schema")
             yield I.ApplyDynamicSchema(choose_schema["function"])
+
     if "schema_ref" in schema:
         schema_ref = schema.pop("schema_ref")
         transformer = ctx.find_schema(schema_ref)
         yield I.ApplyDynamicSchema(lambda v, c: transformer)
+
+    if "oneof" in schema:
+        yield I.OneOf([_compile_or_find(x, ctx) for x in schema.pop("oneof")])
+
     if "anyof" in schema:
         anyof = schema.pop("anyof")
         yield I.AnyOf([_compile_or_find(x, ctx) for x in anyof])
@@ -125,7 +130,9 @@ def _compile(og, ctx):
     if "allowed" in schema:
         yield I.CheckAllowList(schema.pop("allowed"))
     if "fields" in schema:
-        transformers = {k: _compile_or_find(v, ctx) for k, v in schema.pop("fields").items()}
+        transformers = {
+            k: _compile_or_find(v, ctx) for k, v in schema.pop("fields").items()
+        }
         yield I.CheckFields(transformers)
 
     if "keyschema" in schema:
@@ -137,7 +144,9 @@ def _compile(og, ctx):
         yield I.CheckType(schema.pop("type"))
 
     if "schema" in schema:
-        warnings.warn("Please use 'fields' or 'elements' instead of 'schema'.", DeprecationWarning)
+        warnings.warn(
+            "Please use 'fields' or 'elements' instead of 'schema'.", DeprecationWarning
+        )
         subschema = schema.pop("schema")
         try:
             instructions = _compile_or_find({"fields": subschema}, ctx).instructions
@@ -147,7 +156,9 @@ def _compile(og, ctx):
             # It could be compiled as a fields... but can it ALSO compile as elements?
             # If so, let's do some heuristics...
             try:
-                elements_instructions = _compile_or_find({"elements": subschema}, ctx).instructions
+                elements_instructions = _compile_or_find(
+                    {"elements": subschema}, ctx
+                ).instructions
             except Exception:
                 pass
                 # ok, forget about it
@@ -158,6 +169,7 @@ def _compile(og, ctx):
 
         for i in instructions:
             yield i
+
     if "validator" in schema:
         yield I.CustomValidator(schema.pop("validator"))
 
@@ -191,9 +203,7 @@ def _compile_when_key_is(directive, parent_fields, ctx):
         new_fields.update(fields)
         choice_schema["fields"] = new_fields
     branches = {k: _compile_or_find(v, ctx) for k, v in directive["choices"].items()}
-    return I.BranchWhenKeyIs(
-        key, directive.get("default_choice", _marker), branches
-    )
+    return I.BranchWhenKeyIs(key, directive.get("default_choice", _marker), branches)
 
 
 def _compile_or_find(schema, ctx):

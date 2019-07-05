@@ -263,7 +263,7 @@ def test_nullable():
 def test_nullable_with_anyof():
     """This is the second reason that sureberus exists."""
     anyof = {"nullable": True, "anyof": [S.Integer(), S.String()]}
-    assert normalize_schema(anyof, None) == None
+    assert normalize_schema(anyof, None) is None
 
 
 def test_oneof():

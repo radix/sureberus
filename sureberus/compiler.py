@@ -41,6 +41,17 @@ def _compile(og, ctx):
 
     if "default_registry" in schema:
         yield I.AddToDefaultRegistry(schema.pop("default_registry"))
+
+    if "validator_registry" in schema:
+        validators = schema.pop("validator_registry")
+        ctx = ctx.register_validators(validators)
+        yield I.AddToValidatorRegistry(validators)
+
+    if "coerce_registry" in schema:
+        coerce_registry = schema.pop("coerce_registry")
+        ctx = ctx.register_coerces(coerce_registry)
+        yield I.AddToCoerceRegistry(coerce_registry)
+
     if "registry" in schema:
         registry = {k: compile(v, ctx) for k, v in schema.pop("registry").items()}
         ctx = ctx.register_schemas(registry)
@@ -68,7 +79,8 @@ def _compile(og, ctx):
             yield I.SkipIfNone()
 
     if "coerce" in schema:
-        yield I.Coerce(schema.pop("coerce"))
+        coerce = ctx.resolve_coerce(schema.pop("coerce"))
+        yield I.Coerce(coerce)
 
     if "type" in schema:
         yield I.CheckType(schema.pop("type"))
@@ -171,10 +183,12 @@ def _compile(og, ctx):
             yield i
 
     if "validator" in schema:
-        yield I.CustomValidator(schema.pop("validator"))
+        validator = ctx.resolve_validator(schema.pop("validator"))
+        yield I.CustomValidator(validator)
 
     if "coerce_post" in schema:
-        yield I.Coerce(schema.pop("coerce_post"))
+        coerce_post = ctx.resolve_coerce(schema.pop("coerce_post"))
+        yield I.Coerce(coerce_post)
 
     if schema:
         raise E.UnknownSchemaDirectives(schema)

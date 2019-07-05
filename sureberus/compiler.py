@@ -70,7 +70,11 @@ def _compile(og, ctx):
         yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
 
     if "when_key_is" in schema:
-        yield _compile_when_key_is(schema.pop("when_key_is"), ctx)
+        yield _compile_when_key_is(
+            schema.pop("when_key_is"),
+            schema.pop("fields", schema.pop("schema", None)),
+            ctx,
+        )
 
     if "choose_schema" in schema:
         if "when_key_exists" in schema["choose_schema"]:
@@ -78,7 +82,11 @@ def _compile(og, ctx):
                 schema.pop("choose_schema")["when_key_exists"], ctx
             )
         elif "when_key_is" in schema["choose_schema"]:
-            yield _compile_when_key_is(schema.pop("choose_schema")["when_key_is"], ctx)
+            yield _compile_when_key_is(
+                schema.pop("choose_schema")["when_key_is"],
+                schema.pop("fields", schema.pop("schema", None)),
+                ctx,
+            )
         elif "when_tag_is" in schema["choose_schema"]:
             choose_schema = schema.pop("choose_schema")
             branches = {
@@ -150,17 +158,23 @@ def _compile_when_key_exists(directive, ctx):
     return I.BranchWhenKeyExists(branches)
 
 
-def _compile_when_key_is(directive, ctx):
+def _compile_when_key_is(directive, parent_fields, ctx):
     # We need to do various tricky things here
     # 1. merge in "fields" schemas in the choice-schema with "fields" in the current schema.
+    #    The only reason we need to do this is because CheckFields explicitly checks if there are
+    #    any EXTRA fields. We could maybe simplify this if we instead added another instruction
+    #    called "CheckExcludedFields".
     # 2. implicitly add the key to the CheckFields that is generated
     key = directive["key"]
     choice_keys = list(directive["choices"].keys())
     for choice_key, choice_schema in directive["choices"].items():
         # schema usage here is deprecated
-        fields = choice_schema.get("fields", choice_schema.get("schema"))
+        fields = choice_schema.pop("fields", choice_schema.pop("schema", None))
         if fields is not None and key not in fields:
             fields[key] = {"allowed": choice_keys}
+        new_fields = parent_fields.copy() if parent_fields is not None else {}
+        new_fields.update(fields)
+        choice_schema["fields"] = new_fields
     branches = {k: _compile_or_find(v, ctx) for k, v in directive["choices"].items()}
     return I.BranchWhenKeyIs(
         key, directive.get("default_choice", _marker), branches

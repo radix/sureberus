@@ -2,6 +2,7 @@
 Functions for converting a Sureberus schema into a list of instructions.
 """
 from copy import deepcopy
+import warnings
 
 import six
 
@@ -136,11 +137,12 @@ def _compile(og, ctx):
         yield I.CheckType(schema.pop("type"))
 
     if "schema" in schema:
+        warnings.warn("Please use 'fields' or 'elements' instead of 'schema'.", DeprecationWarning)
         subschema = schema.pop("schema")
         try:
             for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
-        except E.SchemaError:
+        except Exception:
             instructions = _compile_or_find(subschema, ctx)
             yield I.CheckElements(instructions)
 

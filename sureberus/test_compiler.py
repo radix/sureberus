@@ -13,8 +13,8 @@ def test_type():
 
 def test_two_things():
     assert compile({"type": "integer", "allowed": [3, 2, 1]}) == Transformer([
-        CheckAllowList([3, 2, 1]),
         CheckType("integer"),
+        CheckAllowList([3, 2, 1]),
     ])
 
 
@@ -29,6 +29,6 @@ def test_compile_schema_registry():
 def test_compile_fields():
     schema = S.Dict(fields=dict(field=S.Integer()))
     assert compile(schema) == Transformer([
-        CheckFields({"field": Transformer([CheckType("integer")], required=True, default=_marker, rename=None)}),
         CheckType("dict"),
+        CheckFields({"field": Transformer([CheckType("integer")], required=True, default=_marker, rename=None)}),
     ], required=True)

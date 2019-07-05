@@ -70,6 +70,9 @@ def _compile(og, ctx):
     if "coerce" in schema:
         yield I.Coerce(schema.pop("coerce"))
 
+    if "type" in schema:
+        yield I.CheckType(schema.pop("type"))
+
     if "when_key_exists" in schema:
         yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
 
@@ -139,9 +142,6 @@ def _compile(og, ctx):
         yield I.CheckKeys(_compile_or_find(schema.pop("keyschema"), ctx))
     if "valueschema" in schema:
         yield I.CheckValues(_compile_or_find(schema.pop("valueschema"), ctx))
-
-    if "type" in schema:
-        yield I.CheckType(schema.pop("type"))
 
     if "schema" in schema:
         warnings.warn(

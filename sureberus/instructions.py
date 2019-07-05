@@ -217,9 +217,6 @@ class CheckFields(Instruction):
     field_transformers = attr.ib()
 
     def perform(self, value, ctx):
-
-        print("[RADIX]", value)
-
         from .interpreter import interpret
 
         new_dict = {}

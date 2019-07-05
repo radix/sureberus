@@ -151,9 +151,19 @@ def _compile_when_key_exists(directive, ctx):
 
 
 def _compile_when_key_is(directive, ctx):
+    # We need to do various tricky things here
+    # 1. merge in "fields" schemas in the choice-schema with "fields" in the current schema.
+    # 2. implicitly add the key to the CheckFields that is generated
+    key = directive["key"]
+    choice_keys = list(directive["choices"].keys())
+    for choice_key, choice_schema in directive["choices"].items():
+        # schema usage here is deprecated
+        fields = choice_schema.get("fields", choice_schema.get("schema"))
+        if fields is not None and key not in fields:
+            fields[key] = {"allowed": choice_keys}
     branches = {k: _compile_or_find(v, ctx) for k, v in directive["choices"].items()}
     return I.BranchWhenKeyIs(
-        directive["key"], directive.get("default_choice", _marker), branches
+        key, directive.get("default_choice", _marker), branches
     )
 
 

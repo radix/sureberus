@@ -140,12 +140,24 @@ def _compile(og, ctx):
         warnings.warn("Please use 'fields' or 'elements' instead of 'schema'.", DeprecationWarning)
         subschema = schema.pop("schema")
         try:
-            for x in _compile_or_find({"fields": subschema}, ctx).instructions:
-                yield x
+            instructions = _compile_or_find({"fields": subschema}, ctx).instructions
         except Exception:
-            instructions = _compile_or_find(subschema, ctx)
-            yield I.CheckElements(instructions)
+            instructions = _compile_or_find({"elements": subschema}, ctx).instructions
+        else:
+            # It could be compiled as a fields... but can it ALSO compile as elements?
+            # If so, let's do some heuristics...
+            try:
+                elements_instructions = _compile_or_find({"elements": subschema}, ctx).instructions
+            except Exception:
+                pass
+                # ok, forget about it
+            else:
+                if "type" in subschema:
+                    # let's assume it's an ELEMENTS.
+                    instructions = elements_instructions
 
+        for i in instructions:
+            yield i
     if "validator" in schema:
         yield I.CustomValidator(schema.pop("validator"))
 

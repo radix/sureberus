@@ -147,8 +147,12 @@ class BranchWhenKeyIs(Instruction):
     def perform(self, value, ctx):
         choice = value.get(self.key, self.default_choice)
         if choice is _marker:
+            raise E.DictFieldNotFound(
+                self.key, value, ctx.stack
+            )
+        if choice not in self.branches:
             raise E.DisallowedValue(
-                value.get(self.key), self.branches.keys(), ctx.stack
+                choice, list(self.branches.keys()), ctx.push_stack(self.key).stack
             )
         transformer = self.branches[choice]
         return PerformMore(transformer, value, ctx)

@@ -213,39 +213,57 @@ class CheckElements(Instruction):
 
 
 @attr.s
-class CheckField(Instruction):
-    field = attr.ib()
-    field_transformer = attr.ib()
+class CheckFields(Instruction):
+    field_transformers = attr.ib()
 
     def perform(self, value, ctx):
-        if isinstance(self.field_transformer, SchemaReference):
-            field_transformer = self.field_transformer.resolve(ctx)
+
+        print("[RADIX]", value)
+
+        from .interpreter import interpret
+
+        new_dict = {}
+        extra_keys = set(value.keys()) - set(self.field_transformers.keys())
+        if extra_keys:
+            if ctx.allow_unknown:
+                for k in extra_keys:
+                    new_dict[k] = value[k]
+            else:
+                raise E.UnknownFields(value, extra_keys, stack=ctx.stack)
+        for key, field_transformer in self.field_transformers.items():
+            if isinstance(field_transformer, str):
+                field_transformer = ctx.find_schema(field_transformer)
+            new_key = field_transformer.rename if field_transformer.rename else key
+            if key not in value:
+                replacement = self._get_default(key, field_transformer, value, ctx)
+                if replacement is not _marker:
+                    new_dict[new_key] = replacement
+                elif field_transformer.required:
+                    raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
+            if key in value:
+                new_dict[new_key] = interpret(
+                    field_transformer, value[key], ctx.push_stack(key)
+                )
+                excludes = field_transformer.excludes
+                for excluded_field in excludes:
+                    if excluded_field in value:
+                        raise E.DisallowedField(key, excluded_field, ctx.stack)
+        return (new_dict, ctx)
+
+    def _get_default(self, key, transformer, doc, ctx):
+        default = transformer.default
+        if default is not _marker:
+            return default
         else:
-            field_transformer = self.field_transformer
+            default_setter = transformer.default_setter
+            if default_setter is not None:
+                default_setter = ctx.resolve_default_setter(default_setter)
+                try:
+                    return default_setter(doc)
+                except Exception as e:
+                    raise E.DefaultSetterUnexpectedError(key, doc, e, ctx.stack)
+        return _marker
 
-        def merge_field_value(field_value):
-            new_value = value.copy()
-            new_key = rename if rename is not None else self.field
-            del new_value[self.field]
-            new_value[new_key] = field_value
-            return new_value
-
-        if field_transformer.default is not _marker and self.field not in value:
-            value = value.copy()
-            value[self.field] = field_transformer.default
-
-        rename = self.field_transformer.rename
-        if self.field in value:
-            return PerformMore(
-                field_transformer,
-                value[self.field],
-                ctx.push_stack(self.field),
-                merge=merge_field_value,
-            )
-        elif field_transformer.required:
-            raise E.DictFieldNotFound(self.field, value, ctx.stack)
-        else:
-            return (value, ctx)
 
 
 @attr.s
@@ -401,6 +419,8 @@ class Transformer(object):
     # The following fields only have an effect when this Transformer is used as a field.
     required = attr.ib(default=False)
     default = attr.ib(default=_marker)
+    default_setter = attr.ib(default=None)
+    excludes = attr.ib(factory=list)
     rename = attr.ib(default=None)
 
 

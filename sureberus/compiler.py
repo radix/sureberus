@@ -17,12 +17,19 @@ def compile(schema, context=None):
     schema = deepcopy(schema)
     required = schema.pop("required", False)
     default = schema.pop("default", _marker)
+    default_setter = schema.pop("default_setter", None)
     rename = schema.pop("rename", None)
+    excludes = schema.pop("excludes", [])
+    if not isinstance(excludes, list):
+        excludes = [excludes]
+
     return I.Transformer(
         list(_compile(schema, context)),
         required=required,
         default=default,
+        default_setter=default_setter,
         rename=rename,
+        excludes=excludes,
     )
 
 
@@ -108,9 +115,8 @@ def _compile(og, ctx):
     if "allowed" in schema:
         yield I.CheckAllowList(schema.pop("allowed"))
     if "fields" in schema:
-        for k, v in schema.pop("fields").items():
-            field_schema = _compile_or_find(v, ctx)
-            yield I.CheckField(k, field_schema)
+        transformers = {k: _compile_or_find(v, ctx) for k, v in schema.pop("fields").items()}
+        yield I.CheckFields(transformers)
 
     if "keyschema" in schema:
         yield I.CheckKeys(_compile_or_find(schema.pop("keyschema"), ctx))
@@ -123,11 +129,11 @@ def _compile(og, ctx):
     if "schema" in schema:
         subschema = schema.pop("schema")
         try:
-            instructions = _compile_or_find(subschema, ctx)
-            yield I.CheckElements(instructions)
-        except E.SchemaError:
             for x in _compile_or_find({"fields": subschema}, ctx).instructions:
                 yield x
+        except E.SchemaError:
+            instructions = _compile_or_find(subschema, ctx)
+            yield I.CheckElements(instructions)
 
     if "validator" in schema:
         yield I.CustomValidator(schema.pop("validator"))

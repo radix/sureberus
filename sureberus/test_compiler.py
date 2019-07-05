@@ -2,7 +2,7 @@ import pytest
 
 
 from .compiler import compile
-from .instructions import AddToSchemaRegistry, CheckAllowList, CheckField, CheckType, Transformer
+from .instructions import AddToSchemaRegistry, CheckAllowList, CheckFields, CheckType, Transformer
 from . import schema as S
 from .constants import _marker
 
@@ -29,6 +29,6 @@ def test_compile_schema_registry():
 def test_compile_fields():
     schema = S.Dict(fields=dict(field=S.Integer()))
     assert compile(schema) == Transformer([
-        CheckField("field", Transformer([CheckType("integer")], required=True, default=_marker, rename=None)),
+        CheckFields({"field": Transformer([CheckType("integer")], required=True, default=_marker, rename=None)}),
         CheckType("dict"),
     ], required=True)

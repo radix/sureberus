@@ -86,7 +86,11 @@ def _compile(og, ctx):
         yield I.CheckType(schema.pop("type"))
 
     if "when_key_exists" in schema:
-        yield _compile_when_key_exists(schema.pop("when_key_exists"), ctx)
+        yield _compile_when_key_exists(
+            schema.pop("when_key_exists"),
+            schema.pop("fields", schema.pop("schema", None)),
+            ctx,
+        )
 
     if "when_key_is" in schema:
         yield _compile_when_key_is(
@@ -98,7 +102,9 @@ def _compile(og, ctx):
     if "choose_schema" in schema:
         if "when_key_exists" in schema["choose_schema"]:
             yield _compile_when_key_exists(
-                schema.pop("choose_schema")["when_key_exists"], ctx
+                schema.pop("choose_schema")["when_key_exists"],
+                schema.pop("fields", schema.pop("schema", None)),
+                ctx,
             )
         elif "when_key_is" in schema["choose_schema"]:
             yield _compile_when_key_is(
@@ -194,7 +200,15 @@ def _compile(og, ctx):
         raise E.UnknownSchemaDirectives(schema)
 
 
-def _compile_when_key_exists(directive, ctx):
+def _compile_when_key_exists(directive, parent_fields, ctx):
+    branches = {k: _compile_or_find(v, ctx) for k, v in directive.items()}
+    for key, choice_schema in directive.items():
+        fields = choice_schema.pop("fields", choice_schema.pop("schema", None))
+        if fields is not None and key not in fields:
+            fields[key] = {"allowed": directive.keys()}
+        new_fields = parent_fields.copy() if parent_fields is not None else {}
+        new_fields.update(fields)
+        choice_schema["fields"] = new_fields
     branches = {k: _compile_or_find(v, ctx) for k, v in directive.items()}
     return I.BranchWhenKeyExists(branches)
 

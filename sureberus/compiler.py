@@ -53,6 +53,17 @@ def _compile(og, ctx):
         yield I.AddToCoerceRegistry(coerce_registry)
 
     if "registry" in schema:
+        # There's some potential for some fun with circular / recursive schemas:
+        # That is, a schema named "a" which has {"fields": {"recurse": "a"}}, which allows a data
+        # structure like `{"recurse": {"recurse": {"recurse": ...}}}`.
+
+        # We can just support this by doing all schema lookups dynamically at transformation-time,
+        # but since we have this compile-to-instructions architecture, we *can* optimize this so
+        # that we don't need to waste time on these lookups.
+
+        # How could we do this? Well, there are a lot of different ways, but here's what I want to
+        # try: # When we *start* registering a schema (before we start compiling it), we need to
+        # record a partially initialized transformer.
         registry = {k: compile(v, ctx) for k, v in schema.pop("registry").items()}
         ctx = ctx.register_schemas(registry)
         yield I.AddToSchemaRegistry(registry)
@@ -114,8 +125,16 @@ def _compile(og, ctx):
             )
         elif "when_tag_is" in schema["choose_schema"]:
             choose_schema = schema.pop("choose_schema")
+            parent_fields = schema.pop("fields", None)
+            for choice_tag, choice_schema in choose_schema["when_tag_is"]["choices"].items():
+                # schema usage here is deprecated
+                fields = choice_schema.pop("fields", None)
+                if fields is not None:
+                    new_fields = parent_fields.copy() if parent_fields is not None else {}
+                    new_fields.update(fields)
+                    choice_schema["fields"] = new_fields
             branches = {
-                k: compile(v, ctx)
+                k: _compile_or_find(v, ctx)
                 for k, v in choose_schema["when_tag_is"]["choices"].items()
             }
             yield I.BranchWhenTagIs(
@@ -162,9 +181,6 @@ def _compile(og, ctx):
         yield I.CheckValues(_compile_or_find(schema.pop("valueschema"), ctx))
 
     if "schema" in schema:
-        warnings.warn(
-            "Please use 'fields' or 'elements' instead of 'schema'.", DeprecationWarning
-        )
         subschema = schema.pop("schema")
         try:
             instructions = _compile_or_find({"fields": subschema}, ctx).instructions
@@ -243,6 +259,6 @@ def _compile_or_find(schema, ctx):
         try:
             return ctx.find_schema(schema)
         except KeyError:
-            return I.SchemaReference(schema)
+            return schema
     else:
         return compile(schema, ctx)

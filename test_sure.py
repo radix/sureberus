@@ -973,6 +973,15 @@ def test_when_key_is_direct_reference():
     assert normalize_schema(schema, {"type": "foo", "key": "a string"})
 
 
+def test_when_tag_is_direct_reference():
+    schema = S.Dict(
+        registry={"ref": S.Dict(fields={"key": S.String(default="foo")})},
+        set_tag={"tag_name": "mytag", "value": "whatever"},
+        choose_schema=S.when_tag_is("mytag", {"whatever": "ref"}),
+    )
+    assert normalize_schema(schema, {})
+
+
 def test_contextual_schemas():
     schema = S.Dict(
         modify_context=lambda v, c: c.set_tag("my_tag", v["type"]),

@@ -307,7 +307,6 @@ class Normalizer(object):
             )
 
     def _handle_when_tag_is(self, value, directive_value, ctx):
-        #BranchWhenTagIs(directive_value["tag"],)
         choice_key = directive_value["tag"]
         chosen = ctx.get_tag(choice_key, directive_value.get("default_choice", _marker))
         if chosen not in directive_value["choices"]:

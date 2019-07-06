@@ -3,8 +3,8 @@ from . import _ShortCircuit
 
 
 def _interpret(transformer, value, ctx):
-    if isinstance(transformer, SchemaReference):
-        transformer = ctx.find_schema(transformer.schema_name)
+    if isinstance(transformer, str):
+        transformer = ctx.find_schema(transformer)
     for instruction in transformer.instructions:
         result = instruction.perform(value, ctx)
         if isinstance(result, PerformMore):
@@ -12,14 +12,12 @@ def _interpret(transformer, value, ctx):
             subvalue, ctx = _interpret(result.transformer, result.value, result.ctx)
             if result.merge is not None:
                 value = result.merge(subvalue)
+            else:
+                value = subvalue
         elif isinstance(result, _ShortCircuit):
             return result.value, ctx
         else:
-            try:
-                value, ctx = result
-            except:
-                print(instruction)
-                raise
+            value, ctx = result
     return value, ctx
 
 

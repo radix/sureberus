@@ -169,10 +169,10 @@ choose_schema:
     key: &quot;type&quot;
     choices:
       &quot;elephant&quot;:
-        schema:
+        fields:
           &quot;trunk_length&quot;: {&quot;type&quot;: &quot;integer&quot;}
       &quot;eagle&quot;:
-        schema:
+        fields:
           &quot;wingspan&quot;: {&quot;type&quot;: &quot;integer&quot;}
 </code></pre>
 <p>When the value contains a <code>type</code> key of <code>elephant</code>, Sureberus will choose the schema that contains <code>trunk_length</code>.
@@ -188,11 +188,11 @@ For example, if you have data that can look like this:</p>
 choose_schema:
   when_key_exists:
     &quot;image_url&quot;:
-      schema:
+      fields:
         &quot;image_url&quot;: {&quot;type&quot;: &quot;string&quot;}
         &quot;width&quot;: {&quot;type&quot;: &quot;integer&quot;}
     &quot;color&quot;:
-      schema:
+      fields:
         &quot;color&quot;: {&quot;type&quot;: &quot;string&quot;}
 </code></pre>
 <p>Sureberus looks at the keys in the dictionary, and if one of the keys that are listed in <code>choices</code> are there, it will choose the corresponding schema.</p>
@@ -232,24 +232,25 @@ don't often need to be used.</p>
 <p>Here's an example of a schema that can parse our sample data, using the Python schema syntax.</p>
 <pre><code class="language-python">schema = S.Dict(
   set_tag=&quot;type&quot;,
-  schema={
+  fields={
     &quot;type&quot;: S.String(),
     &quot;common&quot;: S.Dict(),
     &quot;data_service&quot;: S.Dict(
-      schema={
+      fields={
         &quot;renderers&quot;: S.List(
-          schema=S.Dict(
+          elements=S.Dict(
             choose_schema=S.when_tag_is(
               &quot;type&quot;,
               {
-                &quot;foo&quot;: S.Dict(schema={&quot;foo_specific&quot;: S.String()}),
-                &quot;bar&quot;: S.Dict(schema={&quot;bar_specific&quot;: S.Integer()}),
+                &quot;foo&quot;: S.Dict(fields={&quot;foo_specific&quot;: S.String()}),
+                &quot;bar&quot;: S.Dict(fields={&quot;bar_specific&quot;: S.Integer()}),
               })))})})
 </code></pre>
 <p>Here we're using the <code>set_tag</code> directive with its shorthand for specifying a tag name that will be equivalent to the name of the key to look up in the dict.
 When Sureberus applies this schema to the top-level <code>dict</code>, it looks for the key named <code>type</code>, and stores its value in the Context under a tag named <code>type</code>.
 Then, deeper inside this schema, we make use of the <code>choose_schema</code> directive with the <code>when_tag_is</code> sub-directive.
-We pass the tag name <code>type</code> here, so it looks up the value associated with the <code>type</code> tag in the Context, and uses that to select the corresponding schema defined in the choices passed to <code>when_tag_is</code>.
+We pass the tag name <code>type</code> here, so it looks up the value associated with the <code>type</code> tag in the Context,
+and uses that to select the corresponding schema defined in the choices passed to <code>when_tag_is</code>.
 Thus, when the top-level dict has <code>&quot;type&quot;: &quot;foo&quot;</code>, Sureberus will ultimately select the schema containing <code>&quot;foo_specific&quot;</code>.</p>
 
                     </main>

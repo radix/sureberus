@@ -157,7 +157,7 @@ For example, here is a schema that validates any nested list of strings:</p>
     &quot;registry&quot;: {
         &quot;nested_list&quot;: {
             &quot;type&quot;: &quot;list&quot;,
-            &quot;schema&quot;: {
+            &quot;elements&quot;: {
                 &quot;anyof&quot;: [
                     {&quot;type&quot;: &quot;string&quot;},
                     &quot;nested_list&quot;,
@@ -166,7 +166,7 @@ For example, here is a schema that validates any nested list of strings:</p>
         }
     },
     &quot;type&quot;: &quot;dict&quot;,
-    &quot;schema&quot;: {&quot;things&quot;: &quot;nested_list&quot;},
+    &quot;fields&quot;: {&quot;things&quot;: &quot;nested_list&quot;},
 }
 </code></pre>
 <p>This will validate data like <code>{&quot;things&quot;: [&quot;one&quot;, [&quot;two&quot;, [&quot;three&quot;]]]}</code>.</p>
@@ -180,7 +180,7 @@ exactly the same level, for example:</p>
     &quot;registry&quot;: {
         &quot;nested_list&quot;: {
             &quot;type&quot;: &quot;list&quot;,
-            &quot;schema&quot;: {&quot;anyof&quot;: [{&quot;type&quot;: &quot;integer&quot;}, &quot;nested_list&quot;]}
+            &quot;elements&quot;: {&quot;anyof&quot;: [{&quot;type&quot;: &quot;integer&quot;}, &quot;nested_list&quot;]}
         }
     },
     &quot;schema_ref&quot;: &quot;nested_list&quot;,

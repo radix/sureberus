@@ -345,8 +345,12 @@ class Normalizer(object):
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
         allowed_choices = list(directive_value["choices"].keys())
-        if choice_key not in new_schema.setdefault("fields", {}):
-            new_schema["fields"][choice_key] = {"allowed": allowed_choices}
+        if "schema" in new_schema:
+            fields_directive = "schema"
+        else:
+            fields_directive = "fields"
+        if choice_key not in new_schema.setdefault(fields_directive, {}):
+            new_schema[fields_directive][choice_key] = {"allowed": allowed_choices}
         if choice_key not in value:
             if "default_choice" in directive_value:
                 chosen_type = directive_value["default_choice"]

@@ -702,7 +702,6 @@ def test_when_key_is_type_check(choice_schema):
 
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
 def test_when_key_is_not_found(choice_schema):
-    print("but what IS choice schema", choice_schema)
     with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_schema(choice_schema, {"foo_sibling": "hello"})
     assert ei.value.key == "type"
@@ -967,6 +966,21 @@ def test_when_key_is_direct_reference():
         choose_schema=S.when_key_is("type", {"foo": "ref"}),
     )
     assert normalize_schema(schema, {"type": "foo", "key": "a string"})
+
+
+def test_when_key_is_default_key_legacy_schema_directive():
+    schema = S.Dict(
+        choose_schema=S.when_key_is(
+            "flavor",
+            {"default": S.Dict(schema={"extra": S.String()})},
+            default_choice="default",
+        ),
+        schema={"flavor": S.String(default="default")},
+    )
+    assert normalize_schema(schema, {"extra": "hello"}, allow_unknown=True) == {
+        "flavor": "default",
+        "extra": "hello",
+    }
 
 
 def test_contextual_schemas():

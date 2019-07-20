@@ -922,6 +922,27 @@ def test_schema_ref_with_defaults_and_nullables():
     assert normalize_schema(schema, {}) == {"non_required": None}
 
 
+def test_schema_ref_merge_fields():
+    schema = {
+        "registry": {"common": S.Dict(fields={"common_field": S.String()})},
+        "schema_ref": "common",
+        "fields": {
+            "extra_field": S.String(),
+        }
+    }
+    with pytest.raises(E.DictFieldNotFound) as ei:
+        normalize_schema(schema, {"extra_field": "hello"})
+
+    assert ei.value == E.DictFieldNotFound(
+        key="common_field",
+        value={"extra_field": "hello"},
+        stack=(),
+    )
+
+    acceptable = {"common_field": "foo", "extra_field": "bar"}
+    assert normalize_schema(schema, acceptable) == acceptable
+
+
 def test_recursive_schemas_inside_when_key_exists():
     schema = S.Dict(
         registry={

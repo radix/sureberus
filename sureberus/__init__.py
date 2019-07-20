@@ -233,11 +233,20 @@ class Normalizer(object):
 
     @directive("schema_ref")
     def handle_registered_schema(self, value, directive_value, ctx):
-        schema = self.schema.copy()
-        new_schema = ctx.find_schema(directive_value)
-        schema.update(new_schema)
-        del schema["schema_ref"]
-        return _ShortCircuit(_normalize_schema(schema, value, ctx))
+        def _merge_schemas(schema1, schema2):
+            # This feature was implemented post-`fields`, so we don't need
+            # backwards-compatibility with `schema`.
+            new_schema = deepcopy(schema1)
+            schema2 = deepcopy(schema2)
+            og_fields = new_schema.get("fields")
+            if og_fields is not None and "fields" in schema2:
+                og_fields.update(schema2.pop("fields"))
+            new_schema.update(schema2)
+            return new_schema
+
+        new_schema = _merge_schemas(ctx.find_schema(directive_value), self.schema)
+        del new_schema["schema_ref"]
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("allow_unknown")
     def handle_allow_unknown(self, value, directive_value, ctx):

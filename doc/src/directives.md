@@ -303,6 +303,22 @@ Applies the named schema (defined in a registry) to the current value.
 This can be useful if you want to register a schema and use it at the same "level".
 Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.
 
+`schema_ref` can also be used as an "inheritance" mechanism: the referred-to schema will be merged in to the schema that has the `schema_ref` directive, with the `schema_ref` schema taking a lower precedence. Fields defined in a `fields` directive are also merged together. For example:
+
+```yaml
+registry:
+  "common":
+    type: dict
+    fields:
+      "common_field": {"type": "string"}
+type: dict
+schema_ref: "common"
+fields:
+  "extra_field": {"type": "string"}
+```
+
+This schema is equivalent to one that defines both `common_field` and `field` in the same `fields` directive.
+
 See [Schema registries](./schema-registries.md) for more information.
 
 

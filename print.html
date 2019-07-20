@@ -360,6 +360,18 @@ To <em>use</em> a registered schema, simply put its name (as a string) any place
 <p>Applies the named schema (defined in a registry) to the current value.
 This can be useful if you want to register a schema and use it at the same &quot;level&quot;.
 Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.</p>
+<p><code>schema_ref</code> can also be used as an &quot;inheritance&quot; mechanism: the referred-to schema will be merged in to the schema that has the <code>schema_ref</code> directive, with the <code>schema_ref</code> schema taking a lower precedence. Fields defined in a <code>fields</code> directive are also merged together. For example:</p>
+<pre><code class="language-yaml">registry:
+  &quot;common&quot;:
+    type: dict
+    fields:
+      &quot;common_field&quot;: {&quot;type&quot;: &quot;string&quot;}
+type: dict
+schema_ref: &quot;common&quot;
+fields:
+  &quot;extra_field&quot;: {&quot;type&quot;: &quot;string&quot;}
+</code></pre>
+<p>This schema is equivalent to one that defines both <code>common_field</code> and <code>field</code> in the same <code>fields</code> directive.</p>
 <p>See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
 <h2><a class="header" href="#schema" id="schema">schema</a></h2>
 <p><strong>Meta Directive</strong><br>

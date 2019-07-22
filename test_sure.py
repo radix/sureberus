@@ -625,6 +625,26 @@ def test_when_key_is(choice_schema):
     assert normalize_schema(choice_schema, v2) == v2
 
 
+def test_when_key_is_allowed_mutation():
+    """
+    Make sure we don't leak any mutation into the original schema when synthesizing
+    a field for the type-key with an `allowed` directive.
+    """
+    v = {'type': 'foo', 'foo_sibling': 'bar', 'common': 'common'}
+    schema = S.Dict(
+        choose_schema=S.when_key_is(
+            'type',
+            {
+                'foo': {'fields': {'foo_sibling': S.String()}}
+            }
+        ),
+        fields={'common': S.String()}
+    )
+    og_schema = deepcopy(schema)
+    assert normalize_schema(schema, v) == v
+    assert og_schema == schema
+
+
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
 def test_when_key_is_unknown(choice_schema):
     with pytest.raises(E.DisallowedValue) as ei:

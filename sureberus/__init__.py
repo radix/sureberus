@@ -331,7 +331,7 @@ class Normalizer(object):
         # keys. So let's make sure it's a dict.
         self.handle_type(value, "dict", ctx)
         choice_key = directive_value["key"]
-        new_schema = deepcopy(self.schema)
+        new_schema = self.schema.copy()
         # Putting the "choice key" into the dict schema is not required,
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
@@ -340,8 +340,10 @@ class Normalizer(object):
             fields_directive = "schema"
         else:
             fields_directive = "fields"
-        if choice_key not in new_schema.setdefault(fields_directive, {}):
-            new_schema[fields_directive][choice_key] = {"allowed": allowed_choices}
+        if choice_key not in new_schema.get(fields_directive, {}):
+            fields = new_schema.setdefault(fields_directive, {}).copy()
+            fields[choice_key] = {"allowed": allowed_choices}
+            new_schema[fields_directive] = fields
         if choice_key not in value:
             if "default_choice" in directive_value:
                 chosen_type = directive_value["default_choice"]
@@ -357,12 +359,11 @@ class Normalizer(object):
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
-        # this is some shenanigans to support both "fields" and "schema"
-        fields = new_schema.pop("schema", {}).copy()
-        fields.update(new_schema.pop("fields", {}))
-        new_schema["fields"] = fields
-        new_schema["fields"].update(subschema.pop("schema", {}))
-        new_schema["fields"].update(subschema.pop("fields", {}))
+        new_schema["fields"] = new_schema.pop(fields_directive, {}).copy()
+        if "fields" in subschema:
+            new_schema["fields"].update(subschema.pop("fields"))
+        else:
+            new_schema["fields"].update(subschema.pop("schema", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion
@@ -391,18 +392,23 @@ class Normalizer(object):
         if chosen_type is None:
             raise E.ExpectedOneField(possible_keys, value, ctx.stack)
 
-        new_schema = deepcopy(self.schema)
+        new_schema = self.schema.copy()
 
         subschema = directive_value[chosen_type]
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
         subschema = subschema.copy()
         # this is some shenanigans to support both "fields" and "schema"
-        fields = new_schema.pop("schema", {}).copy()
-        fields.update(new_schema.pop("fields", {}))
+        if "schema" in new_schema:
+            fields_directive = "schema"
+        else:
+            fields_directive = "fields"
+        fields = new_schema.pop(fields_directive, {}).copy()
         new_schema["fields"] = fields
-        new_schema["fields"].update(subschema.pop("schema", {}))
-        new_schema["fields"].update(subschema.pop("fields", {}))
+        if "fields" in subschema:
+            new_schema["fields"].update(subschema.pop("fields"))
+        else:
+            new_schema["fields"].update(subschema.pop("schema", {}))
         new_schema.update(subschema)
         # Make sure that the new schema does not include the same `choose_schema`
         # or `when_key_is` directive, to avoid infinite recursion
@@ -591,12 +597,11 @@ def _normalize_multi(schema, value, key, ctx):
     for subrule in schema[key]:
         if isinstance(subrule, str):
             subrule = ctx.find_schema(subrule)
-        cloned_schema = deepcopy(schema)
+        cloned_schema = schema.copy()
         del cloned_schema[key]
         cloned_schema.update(subrule)
-        subrule = cloned_schema
         try:
-            subresult = _normalize_schema(subrule, clone, ctx)
+            subresult = _normalize_schema(cloned_schema, clone, ctx)
         except E.SureError as e:
             errors.append(e)
         else:

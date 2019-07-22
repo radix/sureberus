@@ -233,21 +233,6 @@ class Normalizer(object):
 
     @directive("schema_ref")
     def handle_registered_schema(self, value, directive_value, ctx):
-        def _merge_schemas(schema1, schema2):
-            # This feature was implemented post-`fields`, so we don't need
-            # backwards-compatibility with `schema`. On the other hand, if we
-            # generalize this to being backwards-compatible, we could probably use it
-            # in more places (when_{key,tag}_exists).
-            # The copying shenanigans here are pretty complicated. It would be a lot
-            # easier if we just used Pyrsistent.
-            new_schema = schema1.copy()
-            schema2 = schema2.copy()
-            if "fields" in new_schema and "fields" in schema2:
-                new_schema["fields"] = new_schema["fields"].copy()
-                new_schema["fields"].update(schema2.pop("fields"))
-            new_schema.update(schema2)
-            return new_schema
-
         new_schema = _merge_schemas(ctx.find_schema(directive_value), self.schema)
         del new_schema["schema_ref"]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
@@ -329,14 +314,7 @@ class Normalizer(object):
         subschema = directive_value["choices"][chosen]
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
-        new_schema = deepcopy(self.schema)
-        subschema = subschema.copy()
-        if "fields" in new_schema or "fields" in subschema:
-            # merge in fields.
-            # I wish I didn't need to do this, but it's the only sensible way I can figure out
-            # to support both common and tag-specific fields in the same schema.
-            new_schema.setdefault("fields", {}).update(subschema.pop("fields", {}))
-        new_schema.update(subschema)
+        new_schema = _merge_schemas(self.schema, subschema)
         del new_schema["choose_schema"]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
@@ -553,6 +531,22 @@ class Normalizer(object):
         values or list elements).
         """
         return self.handle_coerce(value, directive_value, ctx)
+
+
+def _merge_schemas(schema1, schema2):
+    # This feature was implemented post-`fields`, so we don't need
+    # backwards-compatibility with `schema`. On the other hand, if we
+    # generalize this to being backwards-compatible, we could probably use it
+    # in more places (when_{key,tag}_exists).
+    # The copying shenanigans here are pretty complicated. It would be a lot
+    # easier if we just used Pyrsistent.
+    new_schema = schema1.copy()
+    schema2 = schema2.copy()
+    if "fields" in new_schema and "fields" in schema2:
+        new_schema["fields"] = new_schema["fields"].copy()
+        new_schema["fields"].update(schema2.pop("fields"))
+    new_schema.update(schema2)
+    return new_schema
 
 
 def _normalize_schema(schema, value, ctx):

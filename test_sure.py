@@ -630,15 +630,12 @@ def test_when_key_is_allowed_mutation():
     Make sure we don't leak any mutation into the original schema when synthesizing
     a field for the type-key with an `allowed` directive.
     """
-    v = {'type': 'foo', 'foo_sibling': 'bar', 'common': 'common'}
+    v = {"type": "foo", "foo_sibling": "bar", "common": "common"}
     schema = S.Dict(
         choose_schema=S.when_key_is(
-            'type',
-            {
-                'foo': {'fields': {'foo_sibling': S.String()}}
-            }
+            "type", {"foo": {"fields": {"foo_sibling": S.String()}}}
         ),
-        fields={'common': S.String()}
+        fields={"common": S.String()},
     )
     og_schema = deepcopy(schema)
     assert normalize_schema(schema, v) == v
@@ -946,21 +943,43 @@ def test_schema_ref_merge_fields():
     schema = {
         "registry": {"common": S.Dict(fields={"common_field": S.String()})},
         "schema_ref": "common",
-        "fields": {
-            "extra_field": S.String(),
-        }
+        "fields": {"extra_field": S.String()},
     }
     with pytest.raises(E.DictFieldNotFound) as ei:
         normalize_schema(schema, {"extra_field": "hello"})
 
     assert ei.value == E.DictFieldNotFound(
-        key="common_field",
-        value={"extra_field": "hello"},
-        stack=(),
+        key="common_field", value={"extra_field": "hello"}, stack=()
     )
 
     acceptable = {"common_field": "foo", "extra_field": "bar"}
     assert normalize_schema(schema, acceptable) == acceptable
+
+
+def test_schema_ref_registry():
+    """
+    When the referrer and the referent both have a schema registry, they are merged
+    together.
+
+    Actually, this test verifies that the schema_ref schema is merged into the outer
+    schema in the correct order.
+    """
+    schema = {
+        "registry": {
+            "schema1": S.String(),
+            "referred": {
+                "type": "dict",
+                "registry": {"schema2": S.String()},
+                "fields": {
+                    "s1field": "schema1",
+                    "s2field": "schema2",
+                }
+            },
+        },
+        "schema_ref": "referred",
+    }
+    v = {"s1field": "foo", "s2field": "bar"}
+    assert normalize_schema(schema, v) == v
 
 
 def test_recursive_schemas_inside_when_key_exists():

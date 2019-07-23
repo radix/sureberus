@@ -232,8 +232,8 @@ class Normalizer(object):
         return (value, ctx.register_modify_contexts(directive_value))
 
     @directive("schema_ref")
-    def handle_registered_schema(self, value, directive_value, ctx):
-        new_schema = _merge_schemas(ctx.find_schema(directive_value), self.schema)
+    def handle_schema_ref(self, value, directive_value, ctx):
+        new_schema = _merge_schemas(self.schema, ctx.find_schema(directive_value))
         del new_schema["schema_ref"]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 

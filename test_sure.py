@@ -886,6 +886,18 @@ def test_recursive_schemas():
         assert normalize_schema(schema, v) == v
 
 
+def test_schema_ref_to_schema_ref():
+    schema = {
+        "registry": {
+            "first": {"schema_ref": "second"},
+            "second": {"schema_ref": "third"},
+            "third": S.Dict(fields={"a": {"default": 0}}),
+        },
+        "schema_ref": "first",
+    }
+    assert normalize_schema(schema, {}) == {"a": 0}
+
+
 def test_circular_registry():
     """Schema registries allow for schemas that refer to each other"""
     schema = {
@@ -970,10 +982,7 @@ def test_schema_ref_registry():
             "referred": {
                 "type": "dict",
                 "registry": {"schema2": S.String()},
-                "fields": {
-                    "s1field": "schema1",
-                    "s2field": "schema2",
-                }
+                "fields": {"s1field": "schema1", "s2field": "schema2"},
             },
         },
         "schema_ref": "referred",

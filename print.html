@@ -237,6 +237,20 @@ It goes hand-in-hand with the <a href="#set_tag"><code>set_tag</code></a> or <a 
 It then looks up the schema to use by looking for that &quot;choice&quot; in the <code>choices</code> sub-directive.</p>
 </li>
 <li>
+<p><strong>when_type_is</strong></p>
+<p><strong>type</strong> <code>dict</code> (described below)<br>
+<strong>Introduced in</strong> Sureberus 0.11<br>
+<strong>example</strong></p>
+<pre><code class="language-yaml">choose_schema:
+  when_type_is:
+    integer: ...
+    dict: ...
+    list: ...
+</code></pre>
+<p>This directive is given a mapping of type names (using the same names that the <a href="#type"><code>type</code></a> directive takes) to schemas.
+A schema is chosen based on the type of the value.</p>
+</li>
+<li>
 <p><strong>function</strong></p>
 <p><strong>type</strong> Python callable <code>(value, context)</code> -&gt; Sureberus schema</p>
 <p>Dynamically choose a schema to use based on the current value and the Context object.
@@ -360,7 +374,8 @@ To <em>use</em> a registered schema, simply put its name (as a string) any place
 <p>Applies the named schema (defined in a registry) to the current value.
 This can be useful if you want to register a schema and use it at the same &quot;level&quot;.
 Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.</p>
-<p><code>schema_ref</code> can also be used as an &quot;inheritance&quot; mechanism: the referred-to schema will be merged in to the schema that has the <code>schema_ref</code> directive, with the <code>schema_ref</code> schema taking a lower precedence. Fields defined in a <code>fields</code> directive are also merged together. For example:</p>
+<p><code>schema_ref</code> can also be used as an &quot;inheritance&quot; mechanism: the referred-to schema will be merged in to the schema that has the <code>schema_ref</code> directive, with the <code>schema_ref</code> schema taking a lower precedence.
+As of Sureberus 0.10, Fields defined in a <code>fields</code> directive are also merged together. For example:</p>
 <pre><code class="language-yaml">registry:
   &quot;common&quot;:
     type: dict

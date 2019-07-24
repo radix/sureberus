@@ -167,17 +167,23 @@ def _get_default(key, key_schema, doc, ctx):
     return _marker
 
 
-TYPES = {
-    "none": type(None),
-    "integer": six.integer_types,
-    "float": (float,)
-    + six.integer_types,  # cerberus documentation lies -- float also includes ints.
-    "number": (float,) + six.integer_types,
-    "dict": dict,
-    "list": list,
-    "string": six.string_types,
-    "boolean": bool,
-}
+TYPES_BY_PRECEDENCE = [
+    # Order matters here:
+    # `when_type_is` checks the type of the value according to this list, and since
+    # some of these entries are subsets of others, the order will affect the behavior.
+    ("none", type(None)),
+    ("integer", six.integer_types),
+    (
+        "float",
+        (float,) + six.integer_types,
+    ),  # cerberus documentation lies: integers are also considered floats.
+    ("number", (float,) + six.integer_types),
+    ("dict", dict),
+    ("list", list),
+    ("string", six.string_types),
+    ("boolean", bool),
+]
+TYPES = dict(TYPES_BY_PRECEDENCE)
 
 _directive_count = 0
 
@@ -233,9 +239,9 @@ class Normalizer(object):
 
     @directive("schema_ref")
     def handle_schema_ref(self, value, directive_value, ctx):
-        new_schema = _merge_schemas(self.schema, ctx.find_schema(directive_value))
-        if new_schema["schema_ref"] == directive_value:
-            del new_schema["schema_ref"]
+        og_schema = self.schema.copy()
+        del og_schema["schema_ref"]
+        new_schema = _merge_schemas(og_schema, ctx.find_schema(directive_value))
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("allow_unknown")
@@ -300,10 +306,32 @@ class Normalizer(object):
             return self._handle_when_key_exists(
                 value, directive_value["when_key_exists"], ctx, "choose_schema"
             )
+        elif "when_type_is" in directive_value:
+            return self._handle_when_type_is(
+                value, directive_value["when_type_is"], ctx
+            )
         else:
             raise E.SimpleSchemaError(
-                msg="`choose_schema` must have `when_tag_is` or `function`."
+                msg="`choose_schema` must have `when_tag_is`, `function`, `when_key_is`, `when_key_exists`, or `when_type_is` directives inside."
             )
+
+    def _handle_when_type_is(self, value, choices, ctx):
+        # This could be more optimal.
+        result_type = None
+        for tyname, typeset in TYPES_BY_PRECEDENCE:
+            if isinstance(value, typeset) and tyname in choices:
+                result_type = tyname
+                break
+
+        if result_type is None:
+            raise Exception("no " + result_type)
+        chosen_schema = choices[result_type]
+        if isinstance(chosen_schema, str):
+            chosen_schema = ctx.find_schema(chosen_schema)
+        og_schema = self.schema.copy()
+        del og_schema["choose_schema"]
+        new_schema = _merge_schemas(og_schema, chosen_schema)
+        return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     def _handle_when_tag_is(self, value, directive_value, ctx):
         choice_key = directive_value["tag"]

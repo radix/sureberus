@@ -1194,3 +1194,20 @@ def test_when_tag_is_merge_fields():
         ),
     )
     assert normalize_schema(schema, {}) == {"common": 0, "theval_field": 1}
+
+
+def test_when_type_is():
+    schema = {
+        "registry": {
+            "nested list of ints": S.List(
+                elements={
+                    "choose_schema": {
+                        "when_type_is": {"list": "nested list of ints", "integer": {}}
+                    }
+                }
+            )
+        },
+        "schema_ref": "nested list of ints",
+    }
+    for v in [[3, 4, 5], [], [[3]], [[3, 4], 5, [6, 7, [8, 9, [10]]]]]:
+        assert normalize_schema(schema, v) == v

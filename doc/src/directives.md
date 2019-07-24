@@ -115,6 +115,22 @@ The directive value is a dictionary which must contain one of the following keys
   When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
   It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
 
+* **when_type_is**
+
+  **type** `dict` (described below)<br>
+  **Introduced in** Sureberus 0.11<br>
+  **example**
+  ```yaml
+  choose_schema:
+    when_type_is:
+      integer: ...
+      dict: ...
+      list: ...
+  ```
+
+  This directive is given a mapping of type names (using the same names that the [`type`](#type) directive takes) to schemas.
+  A schema is chosen based on the type of the value.
+
 * **function**
 
   **type** Python callable `(value, context)` -> Sureberus schema
@@ -303,7 +319,8 @@ Applies the named schema (defined in a registry) to the current value.
 This can be useful if you want to register a schema and use it at the same "level".
 Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.
 
-`schema_ref` can also be used as an "inheritance" mechanism: the referred-to schema will be merged in to the schema that has the `schema_ref` directive, with the `schema_ref` schema taking a lower precedence. Fields defined in a `fields` directive are also merged together. For example:
+`schema_ref` can also be used as an "inheritance" mechanism: the referred-to schema will be merged in to the schema that has the `schema_ref` directive, with the `schema_ref` schema taking a lower precedence.
+As of Sureberus 0.10, Fields defined in a `fields` directive are also merged together. For example:
 
 ```yaml
 registry:

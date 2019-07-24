@@ -324,7 +324,11 @@ class Normalizer(object):
                 break
 
         if result_type is None:
-            raise Exception("no " + result_type)
+            raise E.NoTypeMatch(
+                value_type=type(value),
+                selectable_types=list(choices.keys()),
+                stack=ctx.stack,
+            )
         chosen_schema = choices[result_type]
         if isinstance(chosen_schema, str):
             chosen_schema = ctx.find_schema(chosen_schema)

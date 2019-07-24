@@ -76,6 +76,14 @@ class MoreThanOneMatched(SureError):
 
 
 @attr.s
+class NoTypeMatch(SureError):
+    fmt = "Type {value_type!r} did not match any of the types {selectable_types}"
+    value_type = attr.ib()
+    selectable_types = attr.ib()
+    stack = attr.ib()
+
+
+@attr.s
 class RegexMismatch(SureError):
     fmt = "value does not match regex {value!r} {regex!r}"
     value = attr.ib()

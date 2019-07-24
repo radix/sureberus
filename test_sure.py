@@ -1211,3 +1211,13 @@ def test_when_type_is():
     }
     for v in [[3, 4, 5], [], [[3]], [[3, 4], 5, [6, 7, [8, 9, [10]]]]]:
         assert normalize_schema(schema, v) == v
+
+
+def test_when_type_is_not_found():
+    schema = {"choose_schema": {"when_type_is": {"integer": {}}}}
+    with pytest.raises(E.SureError) as ei:
+        normalize_schema(schema, "hi")
+    assert ei.value == E.NoTypeMatch(
+        value_type=type("hi"), selectable_types=["integer"], stack=()
+    )
+

@@ -496,7 +496,11 @@ class Normalizer(object):
         # apparently you can put `regex` even when `type` isn't `string`, and it
         # only actually gets run if the runtime value is a string.
         if isinstance(value, str):
-            if not re.match(directive_value, value):
+            # We can just use re.fullmatch when we drop Python 2.7 support.
+            regex = directive_value
+            if not regex.endswith("$"):
+                regex += "$"
+            if not re.match(regex, value):
                 raise E.RegexMismatch(value, directive_value, ctx.stack)
         return (value, ctx)
 

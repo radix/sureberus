@@ -294,6 +294,13 @@ def test_regex_non_string():
     assert normalize_schema({"regex": r"\d+"}, 3) == 3
 
 
+def test_regex_fullmatch():
+    """Regexes must match the ENTIRE input string"""
+    with pytest.raises(E.RegexMismatch) as ei:
+        normalize_schema({"regex": "foo"}, "foobar")
+    assert ei.value == E.RegexMismatch("foobar", "foo", ())
+
+
 def test_maxlength():
     with pytest.raises(E.MaxLengthExceeded):
         normalize_schema({"maxlength": 3}, "foob")

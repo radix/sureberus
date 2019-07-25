@@ -347,8 +347,9 @@ class Normalizer(object):
         subschema = directive_value["choices"][chosen]
         if isinstance(subschema, str):
             subschema = ctx.find_schema(subschema)
-        new_schema = _merge_schemas(self.schema, subschema)
-        del new_schema["choose_schema"]
+        og_schema = self.schema.copy()
+        del og_schema["choose_schema"]
+        new_schema = _merge_schemas(og_schema, subschema)
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("when_key_is")
@@ -365,6 +366,9 @@ class Normalizer(object):
         self.handle_type(value, "dict", ctx)
         choice_key = directive_value["key"]
         new_schema = self.schema.copy()
+        # Make sure that the new schema does not include the same `choose_schema`
+        # or `when_key_is` directive, to avoid infinite recursion
+        del new_schema[directive_name]
         # Putting the "choice key" into the dict schema is not required,
         # since we can figure out exactly which values it should allow based
         # on what's in the `when_key_is`.
@@ -398,9 +402,6 @@ class Normalizer(object):
         else:
             new_schema["fields"].update(subschema.pop("schema", {}))
         new_schema.update(subschema)
-        # Make sure that the new schema does not include the same `choose_schema`
-        # or `when_key_is` directive, to avoid infinite recursion
-        del new_schema[directive_name]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("when_key_exists")
@@ -426,6 +427,9 @@ class Normalizer(object):
             raise E.ExpectedOneField(possible_keys, value, ctx.stack)
 
         new_schema = self.schema.copy()
+        # Make sure that the new schema does not include the same `choose_schema`
+        # or `when_key_is` directive, to avoid infinite recursion
+        del new_schema[directive_name]
 
         subschema = directive_value[chosen_type]
         if isinstance(subschema, str):
@@ -443,9 +447,6 @@ class Normalizer(object):
         else:
             new_schema["fields"].update(subschema.pop("schema", {}))
         new_schema.update(subschema)
-        # Make sure that the new schema does not include the same `choose_schema`
-        # or `when_key_is` directive, to avoid infinite recursion
-        del new_schema[directive_name]
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("oneof")

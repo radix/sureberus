@@ -227,7 +227,7 @@ def test_anyof():
 
 
 def test_anyof_with_normalization():
-    """THIS IS THE WHOLE REASON FOR SUREBERUS TO EXIST"""
+    """The original reason for sureberus's existence, right here"""
     # We want to support
     # ANY OF:
     # - {'image': str, 'opacity': {'type': 'integer', 'default': 100}}
@@ -649,6 +649,27 @@ def test_when_key_is_allowed_mutation():
     assert og_schema == schema
 
 
+def test_when_key_is_into_choose_schema():
+    """Choosing a schema that chooses a schema should work!"""
+    schema = S.Dict(
+        choose_schema=S.when_key_is(
+            "type",
+            {
+                "choice_a": S.Dict(
+                    choose_schema=S.when_key_is(
+                        "type2",
+                        {"secondary_choice": S.Dict(fields={"a": {"default": 3}})},
+                    )
+                )
+            },
+        )
+    )
+    v = {"type": "choice_a", "type2": "secondary_choice"}
+    expected = v.copy()
+    expected["a"] = 3
+    assert normalize_schema(schema, v) == expected
+
+
 @pytest.mark.parametrize("choice_schema", equivalent_choice_schemas)
 def test_when_key_is_unknown(choice_schema):
     with pytest.raises(E.DisallowedValue) as ei:
@@ -804,6 +825,33 @@ def test_when_key_exists_NO_keys_exist(choice_existence_schema):
     with pytest.raises(E.ExpectedOneField) as ei:
         normalize_schema(choice_existence_schema, v)
     assert set(ei.value.expected) == {"pattern", "image"}
+
+
+def test_when_key_exists_into_choose_schema():
+    """Choosing a schema that chooses a schema should work!"""
+    schema = S.Dict(
+        choose_schema=S.when_key_exists(
+            {
+                "choice_a": S.Dict(
+                    fields={"choice_a": S.String()},
+                    choose_schema=S.when_key_exists(
+                        {
+                            "secondary_choice": S.Dict(
+                                fields={
+                                    "secondary_choice": S.String(),
+                                    "a": {"default": 3},
+                                }
+                            )
+                        }
+                    ),
+                )
+            }
+        )
+    )
+    v = {"choice_a": "foo", "secondary_choice": "bar"}
+    expected = v.copy()
+    expected["a"] = 3
+    assert normalize_schema(schema, v) == expected
 
 
 def test_when_key_exists_other_schema_directives():
@@ -1173,6 +1221,28 @@ def test_when_tag_is_type_check():
         print(v)
     assert ei.value.type_ == "dict"
     assert ei.value.value == "foo"
+
+
+def test_when_tag_is_into_choose_schema():
+    """Choosing a schema that chooses a schema should work!"""
+    schema = S.Dict(
+        choose_schema=S.when_tag_is(
+            "mytag",
+            {
+                "tag1": S.Dict(
+                    choose_schema=S.when_key_is(
+                        "type2",
+                        {"secondary_choice": S.Dict(fields={"a": {"default": 3}})},
+                    )
+                )
+            },
+        ),
+        set_tag={"tag_name": "mytag", "value": "tag1"},
+    )
+    v = {"type2": "secondary_choice"}
+    expected = v.copy()
+    expected["a"] = 3
+    assert normalize_schema(schema, v) == expected
 
 
 def test_set_tag_fixed_value():

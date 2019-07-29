@@ -489,6 +489,40 @@ def test_coerce_post_after_children():
     }
 
 
+def test_coerce_with_context():
+    def coercer(v, ctx):
+        app_id = ctx.get_tag("app_id")
+        return "{}/{}".format(app_id, v)
+
+    schema = {
+        "type": "dict",
+        "set_tag": "app_id",
+        "fields": {
+            "app_id": {"type": "string"},
+            "subdict": {
+                "type": "dict",
+                "fields": {"url": {"coerce_with_context": coercer}},
+            },
+        },
+    }
+
+    result = normalize_schema(
+        schema, {"app_id": "myapp", "subdict": {"url": "logo.png"}}
+    )
+    assert result["subdict"]["url"] == "myapp/logo.png"
+
+
+def test_coerce_with_context_errors_indicate_which_directive():
+    def coercer(v, ctx):
+        1 / 0
+
+    schema = {"coerce_with_context": coercer}
+    with pytest.raises(E.CoerceUnexpectedError) as ei:
+        normalize_schema(schema, 1)
+
+    assert ei.value.coerce_directive == "coerce_with_context"
+
+
 def test_validator():
     called = []
 

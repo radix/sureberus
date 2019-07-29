@@ -258,13 +258,13 @@ class Normalizer(object):
             raise E.CoerceUnexpectedError(directive, value, e, ctx.stack)
 
     @directive("coerce_with_context")
-    def handle_coerce_with_context(self, value, directive_value, ctx):
+    def handle_coerce_with_context(self, value, directive_value, ctx, directive="coerce_with_context"):
         try:
             return (ctx.resolve_coerce(directive_value)(value, ctx), ctx)
         except E.SureError:
             raise
         except Exception as e:
-            raise E.CoerceUnexpectedError("coerce_with_context", value, e, ctx.stack)
+            raise E.CoerceUnexpectedError(directive, value, e, ctx.stack)
 
     @directive("nullable")
     def handle_nullable(self, value, directive_value, ctx):
@@ -584,6 +584,10 @@ class Normalizer(object):
         values or list elements).
         """
         return self.handle_coerce(value, directive_value, ctx, directive="coerce_post")
+
+    @directive("coerce_post_with_context")
+    def handle_coerce_post_with_context(self, value, directive_value, ctx):
+        return self.handle_coerce_with_context(value, directive_value, ctx, directive="coerce_post_with_context")
 
 
 def _merge_schemas(schema1, schema2):

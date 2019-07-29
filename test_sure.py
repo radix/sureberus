@@ -523,6 +523,23 @@ def test_coerce_with_context_errors_indicate_which_directive():
     assert ei.value.coerce_directive == "coerce_with_context"
 
 
+def test_coerce_post_with_context_is_a_post():
+    def validator(f, v, e):
+        if v is not None:
+            e(f, "MUST BE NONE")
+
+    def coercer(v, c):
+        return c.get_tag("mytag")
+
+    schema = {
+        "validator": validator,
+        "coerce_post_with_context": coercer,
+        "set_tag": {"tag_name": "mytag", "value": "foo"},
+    }
+
+    assert normalize_schema(schema, None) == "foo"
+
+
 def test_validator():
     called = []
 

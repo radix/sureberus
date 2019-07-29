@@ -179,6 +179,15 @@ This can be used in tandem with [`set_tag`](#set_tag) or [`modify_context`](#mod
 The function can access tags stored in the context with the `Context.get_tag(tag_name)` method.
 
 
+## coerce_post_with_context
+
+**Transformation Directive**<br>
+**type** Python callable `(value, Context) -> new value`, OR a string naming a registered coerce function
+**Introduced in** Sureberus 0.12.0
+
+Identical to [`coerce`](#coerce_with_context), but runs after all validation.
+
+
 ## coerce_registry
 
 **Meta Directive**<br>

@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="sureberus",
-    version="0.11.2",
+    version="0.12.0",
     description="Validation & transformation.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

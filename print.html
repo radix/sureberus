@@ -275,6 +275,19 @@ By default, you can pass <code>&quot;to_list&quot;</code> or <code>&quot;to_set&
 <p>Unlike <code>coerce</code>, this function is applied <em>after</em> all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.</p>
 </div>
+<h2><a class="header" href="#coerce_with_context" id="coerce_with_context">coerce_with_context</a></h2>
+<p><strong>Transformation Directive</strong><br>
+<strong>type</strong> Python callable <code>(value, Context) -&gt; new value</code>, OR a string naming a registered coerce function<br>
+<strong>Introduced in</strong> Sureberus 0.12.0</p>
+<p>Call a Python function with the value <em>and the Context</em> to calculate a replacement.
+Or, if the directive is a string, look up the <a href="#coerce_registry">registered coerce function</a> to perform coercion.</p>
+<p>This can be used in tandem with <a href="#set_tag"><code>set_tag</code></a> or <a href="#modify_context"><code>modify_context</code></a> to pass data to transformers that are run on deeper parts of the document.
+The function can access tags stored in the context with the <code>Context.get_tag(tag_name)</code> method.</p>
+<h2><a class="header" href="#coerce_post_with_context" id="coerce_post_with_context">coerce_post_with_context</a></h2>
+<p><strong>Transformation Directive</strong><br>
+<strong>type</strong> Python callable <code>(value, Context) -&gt; new value</code>, OR a string naming a registered coerce function<br>
+<strong>Introduced in</strong> Sureberus 0.12.0</p>
+<p>Identical to <a href="#coerce_with_context"><code>coerce</code></a>, but runs after all validation.</p>
 <h2><a class="header" href="#coerce_registry" id="coerce_registry">coerce_registry</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>dict</code> of <code>str</code> (coerce names) to Python callables<br>

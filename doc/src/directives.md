@@ -166,6 +166,27 @@ so it's allowed to return values that wouldn't validate according to other direc
 
 </div>
 
+## coerce_with_context
+
+**Transformation Directive**<br>
+**type** Python callable `(value, Context) -> new value`, OR a string naming a registered coerce function<br>
+**Introduced in** Sureberus 0.12.0
+
+Call a Python function with the value *and the Context* to calculate a replacement.
+Or, if the directive is a string, look up the [registered coerce function](#coerce_registry) to perform coercion.
+
+This can be used in tandem with [`set_tag`](#set_tag) or [`modify_context`](#modify_context) to pass data to transformers that are run on deeper parts of the document.
+The function can access tags stored in the context with the `Context.get_tag(tag_name)` method.
+
+
+## coerce_post_with_context
+
+**Transformation Directive**<br>
+**type** Python callable `(value, Context) -> new value`, OR a string naming a registered coerce function<br>
+**Introduced in** Sureberus 0.12.0
+
+Identical to [`coerce`](#coerce_with_context), but runs after all validation.
+
 
 ## coerce_registry
 

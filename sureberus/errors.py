@@ -174,7 +174,8 @@ class ValidatorUnexpectedError(SureError):
 
 @attr.s
 class CoerceUnexpectedError(SureError):
-    fmt = "coerce failed with value {value!r}. Exception: {exception}"
+    fmt = "{coerce_directive} failed with value {value!r}. Exception: {exception}"
+    coerce_directive = attr.ib()
     value = attr.ib()
     exception = attr.ib()
     stack = attr.ib()

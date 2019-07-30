@@ -6,3 +6,6 @@ title = "Sureberus"
 
 [output.html]
 additional-css = ["src/custom.css"]
+
+[preprocessor.test]
+command = "python ./preprocessor.py"

@@ -1,0 +1,86 @@
+What's the schema? {'type': 'dict', 'allow_unknown': True, 'fields': {'known': {'type': 'integer'}}}
+
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+allow_unknown: true
+fields:
+  known: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"known": 3, "unknown": 4}</div>
+</div>
+
+</div>
+</div>
+</div>
+
+What's the schema? {'type': 'dict', 'allow_unknown': False, 'fields': {'known': {'type': 'integer'}}}
+
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+allow_unknown: false
+fields:
+  known: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Input</header>
+    <div class="sureberus-code-content">{"known": 3, "unknown": 4}</div>
+</div>
+
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Dict {&#x27;known&#x27;: 3, &#x27;unknown&#x27;: 4} had unknown fields: {&#x27;unknown&#x27;}&gt;</div>
+</div>
+
+</div>
+</div>
+</div>
+
+What's the schema? {'allowed': ['foo', 1, 2, 3]}
+
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">allowed: [&quot;foo&quot;, 1, 2, 3]</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">"foo"</div>
+</div>
+
+</div>
+
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">2</div>
+</div>
+
+</div>
+
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Input</header>
+    <div class="sureberus-code-content">5</div>
+</div>
+
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value 5 is not allowed. Must be one of [&#x27;foo&#x27;, 1, 2, 3]&gt;</div>
+</div>
+
+</div>
+</div>
+</div>
+

@@ -8,6 +8,31 @@ This chapter provides a reference of all Sureberus schema directives.
 **Validation Directive**<br>
 **type**: `bool`
 
+<example>
+<yaml-schema>
+type: dict
+allow_unknown: true
+fields:
+  known: {type: integer}
+</yaml-schema>
+<test>
+<valid-input>{"known": 3, "unknown": 4}</valid-input>
+</test>
+</example>
+
+<example>
+<yaml-schema>
+type: dict
+allow_unknown: false
+fields:
+  known: {type: integer}
+</yaml-schema>
+<test>
+<input>{"known": 3, "unknown": 4}</input>
+<error>UnknownFields(value={"known": 3, "unknown": 4}, fields={"unknown"}, stack=())</error>
+</test>
+</example>
+
 When **True**, extra keys in a dictionary are passed through silently.
 
 When **False**, keys that are found in a dictionary but which aren't specified in a fields schema will cause an error to be raised.
@@ -16,6 +41,26 @@ When **False**, keys that are found in a dictionary but which aren't specified i
 
 **Validation Directive**<br>
 **type**: `list` of arbitrary Python objects
+
+<example>
+<yaml-schema>
+allowed: ["foo", 1, 2, 3]
+</yaml-schema>
+
+<test>
+<valid-input>"foo"</valid-input>
+</test>
+
+<test>
+<valid-input>2</valid-input>
+</test>
+
+<test>
+<input>5</input>
+<error>DisallowedValue(value=5, values=["foo", 1, 2, 3], stack=())</error>
+</test>
+</example>
+
 
 The object being validated must be equal to one of the objects in the list in order to pass validation.
 

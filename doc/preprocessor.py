@@ -122,12 +122,13 @@ def test_normalize(schema, input_doc, expected):
 
 
 def render_examples(schema_type, raw_schema, tests):
-
     raw_schema = raw_schema.strip()
     tests = [
         test_template.format(
             input=test["input"],
-            input_type="Valid input" if "valid" in test else "Input",
+            input_type="Valid input"
+            if "valid" in test
+            else ("Erroneous input" if "error" in test else "Input"),
             output_or_error=format_output(test),
         )
         for test in tests

@@ -106,15 +106,34 @@ The directive value is a dictionary which must contain one of the following keys
 * **when_key_is**
 
   **type** `dict` containing `key`, `choices`, and optionally `default_choice`<br>
-  **example**<br>
-  ```yaml
-  choose_schema:
-    when_key_is:
-      key: "type"
-      choices:
-        "type1": ...
-        "type2": ...
-  ```
+
+  <example>
+  <yaml-schema>
+choose_schema:
+  when_key_is:
+    key: "chooser"
+    choices:
+      "choice_a":
+        type: dict
+        fields:
+          a_specific: {type: integer}
+      "choice_b":
+        type: dict
+        fields:
+          b_specific: {type: string}
+  </yaml-schema>
+
+  <test>
+  <valid-input>{"chooser": "choice_a", "a_specific": 3}</valid-input>
+  </test>
+  <test>
+  <valid-input>{"chooser": "choice_b", "b_specific": "foo"}</valid-input>
+  </test>
+  <test>
+  <input>{"chooser": "choice_a", "b_specific": "foo"}</input>
+  <error>UnknownFields(value={"chooser": "choice_a", "b_specific": "foo"}, fields={"b_specific"}, stack=())</error>
+  </test>
+  </example>
 
   Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
   For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,

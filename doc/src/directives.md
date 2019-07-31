@@ -8,6 +8,10 @@ This chapter provides a reference of all Sureberus schema directives.
 **Validation Directive**<br>
 **type**: `bool`
 
+When **True**, extra keys in a dictionary are passed through silently.
+
+When **False**, keys that are found in a dictionary but which aren't specified in a fields schema will cause an error to be raised.
+
 <example>
 <yaml-schema>
 type: dict
@@ -33,14 +37,13 @@ fields:
 </test>
 </example>
 
-When **True**, extra keys in a dictionary are passed through silently.
-
-When **False**, keys that are found in a dictionary but which aren't specified in a fields schema will cause an error to be raised.
 
 ## allowed
 
 **Validation Directive**<br>
 **type**: `list` of arbitrary Python objects
+
+The object being validated must be equal to one of the objects in the list in order to pass validation.
 
 <example>
 <yaml-schema>
@@ -61,8 +64,6 @@ allowed: ["foo", 1, 2, 3]
 </test>
 </example>
 
-
-The object being validated must be equal to one of the objects in the list in order to pass validation.
 
 ## *of (anyof, oneof)
 
@@ -107,6 +108,15 @@ The directive value is a dictionary which must contain one of the following keys
 
 **type** `dict` containing `key`, `choices`, and optionally `default_choice`
 
+Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
+For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
+where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
+then this directive can help you choose a specific schema to validate with.
+
+When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
+If it's not found, then `default_choice` is used.
+It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+
 <example>
 <yaml-schema>
 choose_schema:
@@ -135,18 +145,14 @@ choose_schema:
 </test>
 </example>
 
-Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
-For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
-where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
-then this directive can help you choose a specific schema to validate with.
-
-When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
-If it's not found, then `default_choice` is used.
-It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
-
 ### choose_schema/when_key_exists
 
 **type** `dict` (described below)
+
+Dynamically selects a schema based on whether a certain dict key exists.
+
+The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
+Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
 
 <example>
 <yaml-schema>
@@ -177,14 +183,16 @@ choose_schema:
 </test>
 </example>
 
-Dynamically selects a schema based on whether a certain dict key exists.
-
-The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
-Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
 
 ### choose_schema/when_tag_is
 
 **type** `dict` containing `tag`, `choices`, and optionally `default_choice`
+
+This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
+It goes hand-in-hand with the [`set_tag`](#set_tag) or [`modify_context`](#modify_context) directives.
+
+When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
+It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
 
 <example>
 <yaml-schema>
@@ -218,16 +226,14 @@ fields:
 
 </example>
 
-This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
-It goes hand-in-hand with the [`set_tag`](#set_tag) or [`modify_context`](#modify_context) directives.
-
-When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
-It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
 
 ### choose_schema/when_type_is
 
 **type** `dict` (described below)<br>
 **Introduced in** Sureberus 0.11<br>
+
+This directive is given a mapping of type names (using the same names that the [`type`](#type) directive takes) to schemas.
+A schema is chosen based on the type of the value.
 
 <example>
 <yaml-schema>
@@ -244,8 +250,6 @@ choose_schema:
 </test>
 </example>
 
-This directive is given a mapping of type names (using the same names that the [`type`](#type) directive takes) to schemas.
-A schema is chosen based on the type of the value.
 
 ### choose_schema/function
 
@@ -332,6 +336,8 @@ Then you can pass the name of the registered function to `default_setter` to inv
 **type** Sureberus schema<br>
 **Introduced in** Sureberus 0.9.0
 
+Apply the given schema to each element in a list or other iterable.
+
 <example>
 <yaml-schema>
 type: list
@@ -350,29 +356,12 @@ elements: {type: integer}
 </test>
 </example>
 
-Apply the given schema to each element in a list or other iterable.
-
 
 ## fields
 
 **Meta Directive**<br>
 **type** `dict` of keys to Sureberus schemas<br>
 **Introduced in** Sureberus 0.9.0
-
-<example>
-<yaml-schema>
-type: dict
-fields:
-  field1: {type: integer}
-  field2: {type: string}
-</yaml-schema>
-<test>
-<valid-input>{"field1": 42, "field2": "nice"}</valid-input>
-</test>
-<test>
-<valid-input>{}</valid-input>
-</test>
-</example>
 
 When applying a schema with `fields` to a dictionary, each key in the value is looked up in the `fields` directive,
 and used to find a Sureberus schema to apply to the value associated with that key in the dictionary being validated.
@@ -389,6 +378,21 @@ Each value is a Sureberus schema that can have a few **extra** directives, speci
   It is passed the dictionary, and its return value will be used as the default.
   If default_setter is given a string, then it will be used to look up a setter that has been registered with [`default_registry`](#default_registry).
   By default, you can pass `"list"`, `"dict"`, or `"set"` to set the default to empty lists, dicts, and sets.
+
+<example>
+<yaml-schema>
+type: dict
+fields:
+  field1: {type: integer}
+  field2: {type: string}
+</yaml-schema>
+<test>
+<valid-input>{"field1": 42, "field2": "nice"}</valid-input>
+</test>
+<test>
+<valid-input>{}</valid-input>
+</test>
+</example>
 
 
 ## modify_context
@@ -423,12 +427,42 @@ Then you can pass the name of the registered function to `modify_context` to inv
 
 Specify a schema to be applied to all keys in a dictionary.
 
+<example>
+<yaml-schema>
+type: dict
+keyschema: {type: integer}
+</yaml-schema>
+<test>
+<valid-input>{42: "hello", -500: null}</valid-input>
+</test>
+<test>
+<input>{"hello": 42}</input>
+<error>BadType(value="hello", type_="integer", stack=('hello',))</error>
+</test>
+</example>
+
+
 ## max
 
 **Validation Directive**<br>
 **type** Number (or anything that supports the comparison operators)
 
 Raises an exception if the value is greater than the given number.
+
+<example>
+<yaml-schema>
+type: integer
+max: 50
+</yaml-schema>
+<test>
+<valid-input>50</valid-input>
+</test>
+<test>
+<input>51</input>
+<error>OutOfBounds(number=51, min=None, max=50, stack=())</error>
+</test>
+</example>
+
 
 ## maxlength
 
@@ -437,12 +471,42 @@ Raises an exception if the value is greater than the given number.
 
 Raises an exception if the length of the value is greater than the given number.
 
+<example>
+<yaml-schema>
+maxlength: 2
+</yaml-schema>
+<test>
+<input>[1,2,3]</input>
+<error>MaxLengthExceeded(value=[1,2,3], length=2, stack=())</error>
+</test>
+<test>
+<input>"abcdef"</input>
+<error>MaxLengthExceeded(value="abcdef", length=2, stack=())</error>
+</test>
+</example>
+
+
 ## min
 
 **Validation Directive**<br>
 **type** Number (or anything that supports the comparison operators)
 
 Raises an exception if the value is less than the given number.
+
+<example>
+<yaml-schema>
+type: integer
+min: -1
+</yaml-schema>
+<test>
+<valid-input>-1</valid-input>
+</test>
+<test>
+<input>-2</input>
+<error>OutOfBounds(number=-2, min=-1, max=None, stack=())</error>
+</test>
+</example>
+
 
 ## nullable
 
@@ -459,12 +523,47 @@ See [cerberus#373](https://github.com/pyeve/cerberus/issues/373).
 
 </div>
 
+<example>
+<yaml-schema>
+type: integer
+nullable: true
+</yaml-schema>
+<test>
+<valid-input>null</valid-input>
+</test>
+</example>
+
+
 ## regex
 
 **Validation Directive**<br>
 **type** string (a regex)
 
 *If* the value is a string, and it does not match the given regex, an exception will be raised.
+The regex must match the entire string, from beginning to end.
+
+<div class="sureberus-info">
+
+In the future, applying the `regex` directive to non-strings will be deprecated.
+
+</div>
+
+<example>
+<yaml-schema>
+regex: "[a-z]+"
+</yaml-schema>
+<test>
+<valid-input>"foobar"</valid-input>
+</test>
+<test>
+<input>"Foobar"</input>
+<error>RegexMismatch(value="Foobar", regex="[a-z]+", stack=())</error>
+</test>
+<test>
+<valid-input>3</valid-input>
+</test>
+</example>
+
 
 ## registry
 
@@ -480,10 +579,45 @@ See [Schema registries](./schema-registries.md) for more information.
 
 See also the [schema_ref](#schema_ref) directive.
 
+
+<example>
+<yaml-schema>
+registry:
+  reusable_schema:
+    type: integer
+    min: 0
+    max: 500
+type: dict
+fields:
+  num1: reusable_schema
+  num2: reusable_schema
+</yaml-schema>
+<test>
+<valid-input>{num1: 0, num2: 30}</valid-input>
+</test>
+</example>
+
+<example>
+<yaml-schema>
+registry:
+  recursive_ints:
+    choose_schema:
+      when_type_is:
+        list: {elements: recursive_ints}
+        integer: {}
+schema_ref: recursive_ints
+</yaml-schema>
+<test><valid-input>[]</valid-input></test>
+<test><valid-input>[1, 2]</valid-input></test>
+<test><valid-input>[1, [2, [3, 4]]]</valid-input></test>
+</example>
+
+
 ## schema_ref
 
 **Meta Directive**<br>
 **type** string (naming a registered schema)
+
 
 Applies the named schema (defined in a registry) to the current value.
 This can be useful if you want to register a schema and use it at the same "level".
@@ -492,7 +626,8 @@ Most of the time you don't need this, and instead just refer to the named schema
 `schema_ref` can also be used as an "inheritance" mechanism: the referred-to schema will be merged in to the schema that has the `schema_ref` directive, with the `schema_ref` schema taking a lower precedence.
 As of Sureberus 0.10, Fields defined in a `fields` directive are also merged together. For example:
 
-```yaml
+<example>
+<yaml-schema>
 registry:
   "common":
     type: dict
@@ -500,9 +635,14 @@ registry:
       "common_field": {"type": "string"}
 type: dict
 schema_ref: "common"
+allow_unknown: false
 fields:
   "extra_field": {"type": "string"}
-```
+</yaml-schema>
+<test>
+<valid-input>{"common_field": "foo", "extra_field": "bar"}</valid-input>
+</test>
+</example>
 
 This schema is equivalent to one that defines both `common_field` and `field` in the same `fields` directive.
 
@@ -515,7 +655,7 @@ See [Schema registries](./schema-registries.md) for more information.
 **type** Varies
 
 The meaning of a `schema` key inside a schema changes based on the type of the *value*. This is strange, but it's how Cerberus did things.
-Use of either the [`fields`](#fields) directive for dicts, or the [`elements`](#elements) directive for lists, is strongly preferred.
+It's much better to use either the [`fields`](#fields) directive for dicts, or the [`elements`](#elements) directive for lists.
 
 When the value is a list, the directive is interpreted as a Sureberus schema to apply to each element of the list.
 
@@ -558,6 +698,9 @@ Set a tag on the context. This directive can take various forms:
   This is very rarely useful, but is a convenient shorthand if you are referring to a schema that relies on a tag,
   in a context where the tag doesn't vary based on anything.
 
+See [`choose_schema`/`when_tag_is`](#choose_schemawhen_tag_is) for an example.
+
+
 ## type
 
 **Validation Directive**<br>
@@ -579,6 +722,15 @@ These are the types available:
     "boolean": bool,
 }
 ```
+
+<example>
+<yaml-schema>{type: integer}</yaml-schema>
+<test><valid-input>3</valid-input></test>
+<test>
+<input>"3"</input>
+<error>BadType(value="3", type_="integer", stack=())</error>
+</test>
+</example>
 
 ## validator
 
@@ -607,3 +759,17 @@ Then you can pass the name of the registered function to `validator` to invoke t
 
 Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).
 
+
+<example>
+<yaml-schema>
+type: dict
+valueschema: {type: integer}
+</yaml-schema>
+<test>
+<valid-input>{"foo": 3, "bar": 5}</valid-input>
+</test>
+<test>
+<input>{"foo": "3"}</input>
+<error>BadType(value="3", type_="integer", stack=("foo",))</error>
+</test>
+</example>

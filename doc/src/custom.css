@@ -37,6 +37,13 @@
   font-weight: bold;
 }
 
+
+.sureberus-example-header {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
 .sureberus-example .sureberus-schema {
   flex-grow: 1;
   display: flex;

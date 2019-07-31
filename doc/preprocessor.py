@@ -155,6 +155,7 @@ def format_output(test):
 
 template = textwrap.dedent(
     """
+    <header class="sureberus-example-header">Example</header>
     <div class="sureberus-example">
     <div class="sureberus-schema">
         <header>{schema_type} schema</header>

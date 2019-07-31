@@ -154,10 +154,81 @@
 <strong>type</strong>: <code>bool</code></p>
 <p>When <strong>True</strong>, extra keys in a dictionary are passed through silently.</p>
 <p>When <strong>False</strong>, keys that are found in a dictionary but which aren't specified in a fields schema will cause an error to be raised.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+allow_unknown: true
+fields:
+  known: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"known": 3, "unknown": 4}</div>
+</div>
+</div>
+</div>
+</div>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+allow_unknown: false
+fields:
+  known: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">{"known": 3, "unknown": 4}</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Dict {&#x27;known&#x27;: 3, &#x27;unknown&#x27;: 4} had unknown fields: {&#x27;unknown&#x27;}&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#allowed" id="allowed">allowed</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong>: <code>list</code> of arbitrary Python objects</p>
 <p>The object being validated must be equal to one of the objects in the list in order to pass validation.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">allowed: [&quot;foo&quot;, 1, 2, 3]</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">"foo"</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">2</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">5</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value 5 is not allowed. Must be one of [&#x27;foo&#x27;, 1, 2, 3]&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#of-anyof-oneof" id="of-anyof-oneof">*of (anyof, oneof)</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>list</code> of Sureberus schemas</p>
@@ -181,18 +252,8 @@ If a schema can be applied successfully, the transformations it applies will be 
 <p>Choose a schema based on different factors of the input document and the current Context.
 See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
 <p>The directive value is a dictionary which must contain one of the following keys.</p>
-<ul>
-<li>
-<p><strong>when_key_is</strong></p>
-<p><strong>type</strong> <code>dict</code> containing <code>key</code>, <code>choices</code>, and optionally <code>default_choice</code><br>
-<strong>example</strong><br></p>
-<pre><code class="language-yaml">choose_schema:
-  when_key_is:
-    key: &quot;type&quot;
-    choices:
-      &quot;type1&quot;: ...
-      &quot;type2&quot;: ...
-</code></pre>
+<h3><a class="header" href="#choose_schemawhen_key_is" id="choose_schemawhen_key_is">choose_schema/when_key_is</a></h3>
+<p><strong>type</strong> <code>dict</code> containing <code>key</code>, <code>choices</code>, and optionally <code>default_choice</code></p>
 <p>Dynamically selects a schema based on the value of a specific key, specified by the <code>key</code> sub-directive.
 For example, if you have a value like <code>{&quot;type&quot;: &quot;foo&quot;, &quot;foo_specific&quot;: &quot;bar&quot;}</code>,
 where the <code>foo</code> part determines which other keys might exist in the dict (like <code>foo_specific</code>),
@@ -200,57 +261,173 @@ then this directive can help you choose a specific schema to validate with.</p>
 <p>When this directive is applied, it determines a schema to apply by accessing the key named by the <code>key</code> sub-directive in the value (which we'll call the &quot;choice&quot;).
 If it's not found, then <code>default_choice</code> is used.
 It then looks up the schema to use by looking for that &quot;choice&quot; in the <code>choices</code> sub-directive.</p>
-</li>
-<li>
-<p><strong>when_key_exists</strong></p>
-<p><strong>type</strong> <code>dict</code> (described below)<br>
-<strong>example</strong></p>
-<pre><code class="language-yaml">choose_schema:
-  when_key_exists:
-    &quot;keyA&quot;: ...
-    &quot;keyB&quot;: ...
-</code></pre>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">choose_schema:
+  when_key_is:
+    key: &quot;chooser&quot;
+    choices:
+      &quot;choice_a&quot;:
+        type: dict
+        fields:
+          a_specific: {type: integer}
+      &quot;choice_b&quot;:
+        type: dict
+        fields:
+          b_specific: {type: string}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"chooser": "choice_a", "a_specific": 3}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"chooser": "choice_b", "b_specific": "foo"}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">{"chooser": "choice_a", "b_specific": "foo"}</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Dict {&#x27;chooser&#x27;: &#x27;choice_a&#x27;, &#x27;b_specific&#x27;: &#x27;foo&#x27;} had unknown fields: {&#x27;b_specific&#x27;}&gt;</div>
+</div>
+</div>
+</div>
+</div>
+<h3><a class="header" href="#choose_schemawhen_key_exists" id="choose_schemawhen_key_exists">choose_schema/when_key_exists</a></h3>
+<p><strong>type</strong> <code>dict</code> (described below)</p>
 <p>Dynamically selects a schema based on whether a certain dict key exists.</p>
 <p>The directive should be provided a dictionary, where each <strong>key</strong> can potentially match a key in the value dictionary.
 Each <strong>value</strong> in the directive dictionary should be a Sureberus schema to apply to the dictionary <strong>if</strong> the key exists in the dictionary.</p>
-</li>
-<li>
-<p><strong>when_tag_is</strong></p>
-<p><strong>type</strong> <code>dict</code> containing <code>tag</code>, <code>choices</code>, and optionally <code>default_choice</code><br>
-<strong>example</strong></p>
-<pre><code class="language-yaml">choose_schema:
-  when_tag_is:
-    tag: mytag
-    choices:
-      &quot;choiceA&quot;: ...
-      &quot;choiceB&quot;: ...
-</code></pre>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">choose_schema:
+  when_key_exists:
+    &quot;keyA&quot;:
+      type: dict
+      fields:
+        keyA: {type: string}
+        a_related: {type: integer}
+    &quot;keyB&quot;:
+      type: dict
+      fields:
+        keyB: {type: integer}
+        b_related: {type: string}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"keyA": "a_value", "a_related": 33}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"keyB": 50, "b_related": "hi"}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">{"keyB": 50, "a_related": 33}</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Dict {&#x27;keyB&#x27;: 50, &#x27;a_related&#x27;: 33} had unknown fields: {&#x27;a_related&#x27;}&gt;</div>
+</div>
+</div>
+</div>
+</div>
+<h3><a class="header" href="#choose_schemawhen_tag_is" id="choose_schemawhen_tag_is">choose_schema/when_tag_is</a></h3>
+<p><strong>type</strong> <code>dict</code> containing <code>tag</code>, <code>choices</code>, and optionally <code>default_choice</code></p>
 <p>This is very similar to <code>when_key_is</code>, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
 It goes hand-in-hand with the <a href="#set_tag"><code>set_tag</code></a> or <a href="#modify_context"><code>modify_context</code></a> directives.</p>
 <p>When this directive is applied, it determines the schema to apply by looking up a tag named by the <code>tag</code> sub-directive (which we'll call the &quot;choice&quot;).
 It then looks up the schema to use by looking for that &quot;choice&quot; in the <code>choices</code> sub-directive.</p>
-</li>
-<li>
-<p><strong>when_type_is</strong></p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+# this `set_tag` sets the `mytag` key with the value
+# associated with `obj_type` in the document
+set_tag: {tag_name: &quot;mytag&quot;, key: &quot;obj_type&quot;}
+fields:
+  obj_type: {type: string}
+  configuration:
+    type: dict
+    fields:
+      config_item:
+        # here we&#x27;re selecting a schema based on
+        # something that appears higher up in the
+        # document hierarchy.
+        choose_schema:
+          when_tag_is:
+            tag: mytag
+            choices:
+              &quot;choice_a&quot;: {type: integer}
+              &quot;choice_b&quot;: {type: boolean}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"obj_type": "choice_a", "configuration": {"config_item": 3}}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"obj_type": "choice_b", "configuration": {"config_item": true}}</div>
+</div>
+</div>
+</div>
+</div>
+<h3><a class="header" href="#choose_schemawhen_type_is" id="choose_schemawhen_type_is">choose_schema/when_type_is</a></h3>
 <p><strong>type</strong> <code>dict</code> (described below)<br>
-<strong>Introduced in</strong> Sureberus 0.11<br>
-<strong>example</strong></p>
-<pre><code class="language-yaml">choose_schema:
-  when_type_is:
-    integer: ...
-    dict: ...
-    list: ...
-</code></pre>
+<strong>Introduced in</strong> Sureberus 0.11<br></p>
 <p>This directive is given a mapping of type names (using the same names that the <a href="#type"><code>type</code></a> directive takes) to schemas.
 A schema is chosen based on the type of the value.</p>
-</li>
-<li>
-<p><strong>function</strong></p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">choose_schema:
+  when_type_is:
+    list: {elements: {type: integer, min: 0}}
+    integer: {type: integer, min: 0}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">50</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[50, 60]</div>
+</div>
+</div>
+</div>
+</div>
+<h3><a class="header" href="#choose_schemafunction" id="choose_schemafunction">choose_schema/function</a></h3>
 <p><strong>type</strong> Python callable <code>(value, context)</code> -&gt; Sureberus schema</p>
 <p>Dynamically choose a schema to use based on the current value and the Context object.
 The schema returned by the Python function will be applied to the value.</p>
-</li>
-</ul>
 <h2><a class="header" href="#coerce" id="coerce">coerce</a></h2>
 <p><strong>Transformation Directive</strong><br>
 <strong>type</strong> Python callable <code>(value) -&gt; new value</code>, OR a string naming a registered coerce function</p>
@@ -302,6 +479,38 @@ Then you can pass the name of the registered function to <code>default_setter</c
 <strong>type</strong> Sureberus schema<br>
 <strong>Introduced in</strong> Sureberus 0.9.0</p>
 <p>Apply the given schema to each element in a list or other iterable.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: list
+elements: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[50, 60]</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[]</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">[50, "hello"]</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root[1]: &#x27;hello&#x27; must be of integer type&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#fields" id="fields">fields</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>dict</code> of keys to Sureberus schemas<br>
@@ -321,6 +530,30 @@ It is passed the dictionary, and its return value will be used as the default.
 If default_setter is given a string, then it will be used to look up a setter that has been registered with <a href="#default_registry"><code>default_registry</code></a>.
 By default, you can pass <code>&quot;list&quot;</code>, <code>&quot;dict&quot;</code>, or <code>&quot;set&quot;</code> to set the default to empty lists, dicts, and sets.</li>
 </ul>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+fields:
+  field1: {type: integer}
+  field2: {type: string}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"field1": 42, "field2": "nice"}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{}</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#modify_context" id="modify_context">modify_context</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> Python callable <code>(value, Context) -&gt; Context</code><br>
@@ -341,18 +574,125 @@ Then you can pass the name of the registered function to <code>modify_context</c
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> Sureberus schema</p>
 <p>Specify a schema to be applied to all keys in a dictionary.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+keyschema: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{42: "hello", -500: null}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">{"hello": 42}</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root[&#x27;hello&#x27;]: &#x27;hello&#x27; must be of integer type&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#max" id="max">max</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Number (or anything that supports the comparison operators)</p>
 <p>Raises an exception if the value is greater than the given number.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: integer
+max: 50</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">50</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">51</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Number 51 is out of bounds, must be at least None and at most 50&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#maxlength" id="maxlength">maxlength</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Number</p>
 <p>Raises an exception if the length of the value is greater than the given number.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">maxlength: 2</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">[1,2,3]</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value [1, 2, 3] is greater than max length of 2&gt;</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">"abcdef"</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value &#x27;abcdef&#x27; is greater than max length of 2&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#min" id="min">min</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Number (or anything that supports the comparison operators)</p>
 <p>Raises an exception if the value is less than the given number.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: integer
+min: -1</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">-1</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">-2</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Number -2 is out of bounds, must be at least -1 and at most None&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#nullable" id="nullable">nullable</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> <code>bool</code></p>
@@ -362,10 +702,61 @@ If the value is None, no other directives are applied.</p>
 <p>This directive slightly differs Cerberus's implementation, which doesn't honor <code>nullable</code> when a <code>*of</code> directive is present.
 See <a href="https://github.com/pyeve/cerberus/issues/373">cerberus#373</a>.</p>
 </div>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: integer
+nullable: true</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">null</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#regex" id="regex">regex</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> string (a regex)</p>
-<p><em>If</em> the value is a string, and it does not match the given regex, an exception will be raised.</p>
+<p><em>If</em> the value is a string, and it does not match the given regex, an exception will be raised.
+The regex must match the entire string, from beginning to end.</p>
+<div class="sureberus-info">
+<p>In the future, applying the <code>regex</code> directive to non-strings will be deprecated.</p>
+</div>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">regex: &quot;[a-z]+&quot;</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">"foobar"</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">"Foobar"</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: value does not match regex &#x27;Foobar&#x27; &#x27;[a-z]+&#x27;&gt;</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">3</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#registry" id="registry">registry</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>dict</code> of schema names (strings) to Sureberus schemas</p>
@@ -375,6 +766,62 @@ To <em>use</em> a registered schema, simply put its name (as a string) any place
 <code>schema_ref</code> can also be useful for invoking registered schemas in certain situations.</p>
 <p>See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
 <p>See also the <a href="#schema_ref">schema_ref</a> directive.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">registry:
+  reusable_schema:
+    type: integer
+    min: 0
+    max: 500
+type: dict
+fields:
+  num1: reusable_schema
+  num2: reusable_schema</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{num1: 0, num2: 30}</div>
+</div>
+</div>
+</div>
+</div>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">registry:
+  recursive_ints:
+    choose_schema:
+      when_type_is:
+        list: {elements: recursive_ints}
+        integer: {}
+schema_ref: recursive_ints</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[]</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[1, 2]</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">[1, [2, [3, 4]]]</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#schema_ref" id="schema_ref">schema_ref</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> string (naming a registered schema)</p>
@@ -383,23 +830,37 @@ This can be useful if you want to register a schema and use it at the same &quot
 Most of the time you don't need this, and instead just refer to the named schema by putting the schema name (as a string) anywhere you would normally specify a Sureberus schema.</p>
 <p><code>schema_ref</code> can also be used as an &quot;inheritance&quot; mechanism: the referred-to schema will be merged in to the schema that has the <code>schema_ref</code> directive, with the <code>schema_ref</code> schema taking a lower precedence.
 As of Sureberus 0.10, Fields defined in a <code>fields</code> directive are also merged together. For example:</p>
-<pre><code class="language-yaml">registry:
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">registry:
   &quot;common&quot;:
     type: dict
     fields:
       &quot;common_field&quot;: {&quot;type&quot;: &quot;string&quot;}
 type: dict
 schema_ref: &quot;common&quot;
+allow_unknown: false
 fields:
-  &quot;extra_field&quot;: {&quot;type&quot;: &quot;string&quot;}
-</code></pre>
+  &quot;extra_field&quot;: {&quot;type&quot;: &quot;string&quot;}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"common_field": "foo", "extra_field": "bar"}</div>
+</div>
+</div>
+</div>
+</div>
 <p>This schema is equivalent to one that defines both <code>common_field</code> and <code>field</code> in the same <code>fields</code> directive.</p>
 <p>See <a href="./schema-registries.html">Schema registries</a> for more information.</p>
 <h2><a class="header" href="#schema" id="schema">schema</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> Varies</p>
 <p>The meaning of a <code>schema</code> key inside a schema changes based on the type of the <em>value</em>. This is strange, but it's how Cerberus did things.
-Use of either the <a href="#fields"><code>fields</code></a> directive for dicts, or the <a href="#elements"><code>elements</code></a> directive for lists, is strongly preferred.</p>
+It's much better to use either the <a href="#fields"><code>fields</code></a> directive for dicts, or the <a href="#elements"><code>elements</code></a> directive for lists.</p>
 <p>When the value is a list, the directive is interpreted as a Sureberus schema to apply to each element of the list.</p>
 <p>When the value is a dict, the keys of the dict are looked up in the directive, and used to find a Sureberus schema to apply to the associated value.</p>
 <div class="sureberus-alert">
@@ -433,6 +894,7 @@ This is very rarely useful, but is a convenient shorthand if you are referring t
 in a context where the tag doesn't vary based on anything.</p>
 </li>
 </ul>
+<p>See <a href="#choose_schemawhen_tag_is"><code>choose_schema</code>/<code>when_tag_is</code></a> for an example.</p>
 <h2><a class="header" href="#type" id="type">type</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> string</p>
@@ -449,6 +911,31 @@ in a context where the tag doesn't vary based on anything.</p>
     &quot;boolean&quot;: bool,
 }
 </code></pre>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">{type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">3</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">"3"</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: &#x27;3&#x27; must be of integer type&gt;</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#validator" id="validator">validator</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Python callable <code>(field, value, error_func) -&gt; None</code>, OR a string naming a registered validator.</p>
@@ -467,6 +954,32 @@ Then you can pass the name of the registered function to <code>validator</code> 
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> Sureberus schema</p>
 <p>Applies the given Sureberus schema to all values in the dictionary (requires the value to be a dictionary).</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">type: dict
+valueschema: {type: integer}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Valid input</header>
+    <div class="sureberus-code-content">{"foo": 3, "bar": 5}</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">{"foo": "3"}</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root[&#x27;foo&#x27;]: &#x27;3&#x27; must be of integer type&gt;</div>
+</div>
+</div>
+</div>
+</div>
 
                     </main>
 

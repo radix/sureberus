@@ -103,12 +103,12 @@ See [Dynamically selecting schemas](./schema-selection.md) for more information.
 
 The directive value is a dictionary which must contain one of the following keys.
 
-* **when_key_is**
+### choose_schema/when_key_is
 
-  **type** `dict` containing `key`, `choices`, and optionally `default_choice`<br>
+**type** `dict` containing `key`, `choices`, and optionally `default_choice`
 
-  <example>
-  <yaml-schema>
+<example>
+<yaml-schema>
 choose_schema:
   when_key_is:
     key: "chooser"
@@ -121,86 +121,138 @@ choose_schema:
         type: dict
         fields:
           b_specific: {type: string}
-  </yaml-schema>
+</yaml-schema>
 
-  <test>
-  <valid-input>{"chooser": "choice_a", "a_specific": 3}</valid-input>
-  </test>
-  <test>
-  <valid-input>{"chooser": "choice_b", "b_specific": "foo"}</valid-input>
-  </test>
-  <test>
-  <input>{"chooser": "choice_a", "b_specific": "foo"}</input>
-  <error>UnknownFields(value={"chooser": "choice_a", "b_specific": "foo"}, fields={"b_specific"}, stack=())</error>
-  </test>
-  </example>
+<test>
+<valid-input>{"chooser": "choice_a", "a_specific": 3}</valid-input>
+</test>
+<test>
+<valid-input>{"chooser": "choice_b", "b_specific": "foo"}</valid-input>
+</test>
+<test>
+<input>{"chooser": "choice_a", "b_specific": "foo"}</input>
+<error>UnknownFields(value={"chooser": "choice_a", "b_specific": "foo"}, fields={"b_specific"}, stack=())</error>
+</test>
+</example>
 
-  Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
-  For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
-  where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
-  then this directive can help you choose a specific schema to validate with.
+Dynamically selects a schema based on the value of a specific key, specified by the `key` sub-directive.
+For example, if you have a value like `{"type": "foo", "foo_specific": "bar"}`,
+where the `foo` part determines which other keys might exist in the dict (like `foo_specific`),
+then this directive can help you choose a specific schema to validate with.
 
-  When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
-  If it's not found, then `default_choice` is used.
-  It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+When this directive is applied, it determines a schema to apply by accessing the key named by the `key` sub-directive in the value (which we'll call the "choice").
+If it's not found, then `default_choice` is used.
+It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
 
-* **when_key_exists**
+### choose_schema/when_key_exists
 
-  **type** `dict` (described below)<br>
-  **example**
-  ```yaml
-  choose_schema:
-    when_key_exists:
-      "keyA": ...
-      "keyB": ...
-  ```
+**type** `dict` (described below)
 
-  Dynamically selects a schema based on whether a certain dict key exists.
+<example>
+<yaml-schema>
+choose_schema:
+  when_key_exists:
+    "keyA":
+      type: dict
+      fields:
+        keyA: {type: string}
+        a_related: {type: integer}
+    "keyB":
+      type: dict
+      fields:
+        keyB: {type: integer}
+        b_related: {type: string}
+</yaml-schema>
 
-  The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
-  Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
+<test>
+<valid-input>{"keyA": "a_value", "a_related": 33}</valid-input>
+</test>
+<test>
+<valid-input>{"keyB": 50, "b_related": "hi"}</valid-input>
+</test>
 
-* **when_tag_is**
+<test>
+<input>{"keyB": 50, "a_related": 33}</input>
+<error>UnknownFields(value={"keyB": 50, "a_related": 33}, fields={"a_related"}, stack=())</error>
+</test>
+</example>
 
-  **type** `dict` containing `tag`, `choices`, and optionally `default_choice`<br>
-  **example**
-  ```yaml
-  choose_schema:
-    when_tag_is:
-      tag: mytag
-      choices:
-        "choiceA": ...
-        "choiceB": ...
-  ```
+Dynamically selects a schema based on whether a certain dict key exists.
 
-  This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
-  It goes hand-in-hand with the [`set_tag`](#set_tag) or [`modify_context`](#modify_context) directives.
+The directive should be provided a dictionary, where each **key** can potentially match a key in the value dictionary.
+Each **value** in the directive dictionary should be a Sureberus schema to apply to the dictionary **if** the key exists in the dictionary.
 
-  When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
-  It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+### choose_schema/when_tag_is
 
-* **when_type_is**
+**type** `dict` containing `tag`, `choices`, and optionally `default_choice`
 
-  **type** `dict` (described below)<br>
-  **Introduced in** Sureberus 0.11<br>
-  **example**
-  ```yaml
-  choose_schema:
-    when_type_is:
-      integer: ...
-      dict: ...
-      list: ...
-  ```
+<example>
+<yaml-schema>
+type: dict
+# this `set_tag` sets the `mytag` key with the value
+# associated with `obj_type` in the document
+set_tag: {tag_name: "mytag", key: "obj_type"}
+fields:
+  obj_type: {type: string}
+  configuration:
+    type: dict
+    fields:
+      config_item:
+        # here we're selecting a schema based on
+        # something that appears higher up in the
+        # document hierarchy.
+        choose_schema:
+          when_tag_is:
+            tag: mytag
+            choices:
+              "choice_a": {type: integer}
+              "choice_b": {type: boolean}
+</yaml-schema>
 
-  This directive is given a mapping of type names (using the same names that the [`type`](#type) directive takes) to schemas.
-  A schema is chosen based on the type of the value.
+<test>
+<valid-input>{"obj_type": "choice_a", "configuration": {"config_item": 3}}</valid-input>
+</test>
+<test>
+<valid-input>{"obj_type": "choice_b", "configuration": {"config_item": true}}</valid-input>
+</test>
 
-* **function**
+</example>
 
-  **type** Python callable `(value, context)` -> Sureberus schema
+This is very similar to `when_key_is`, but instead of choosing a schema based on the value of a dictionary key, it does it by using the context.
+It goes hand-in-hand with the [`set_tag`](#set_tag) or [`modify_context`](#modify_context) directives.
 
-  Dynamically choose a schema to use based on the current value and the Context object.
-  The schema returned by the Python function will be applied to the value.
+When this directive is applied, it determines the schema to apply by looking up a tag named by the `tag` sub-directive (which we'll call the "choice").
+It then looks up the schema to use by looking for that "choice" in the `choices` sub-directive.
+
+### choose_schema/when_type_is
+
+**type** `dict` (described below)<br>
+**Introduced in** Sureberus 0.11<br>
+
+<example>
+<yaml-schema>
+choose_schema:
+  when_type_is:
+    list: {elements: {type: integer, min: 0}}
+    integer: {type: integer, min: 0}
+</yaml-schema>
+<test>
+<valid-input>50</valid-input>
+</test>
+<test>
+<valid-input>[50, 60]</valid-input>
+</test>
+</example>
+
+This directive is given a mapping of type names (using the same names that the [`type`](#type) directive takes) to schemas.
+A schema is chosen based on the type of the value.
+
+### choose_schema/function
+
+**type** Python callable `(value, context)` -> Sureberus schema
+
+Dynamically choose a schema to use based on the current value and the Context object.
+The schema returned by the Python function will be applied to the value.
 
 ## coerce
 
@@ -280,6 +332,24 @@ Then you can pass the name of the registered function to `default_setter` to inv
 **type** Sureberus schema<br>
 **Introduced in** Sureberus 0.9.0
 
+<example>
+<yaml-schema>
+type: list
+elements: {type: integer}
+</yaml-schema>
+
+<test>
+<valid-input>[50, 60]</valid-input>
+</test>
+<test>
+<valid-input>[]</valid-input>
+</test>
+<test>
+<input>[50, "hello"]</input>
+<error>BadType(value="hello", type_="integer", stack=(1,))</error>
+</test>
+</example>
+
 Apply the given schema to each element in a list or other iterable.
 
 
@@ -288,6 +358,21 @@ Apply the given schema to each element in a list or other iterable.
 **Meta Directive**<br>
 **type** `dict` of keys to Sureberus schemas<br>
 **Introduced in** Sureberus 0.9.0
+
+<example>
+<yaml-schema>
+type: dict
+fields:
+  field1: {type: integer}
+  field2: {type: string}
+</yaml-schema>
+<test>
+<valid-input>{"field1": 42, "field2": "nice"}</valid-input>
+</test>
+<test>
+<valid-input>{}</valid-input>
+</test>
+</example>
 
 When applying a schema with `fields` to a dictionary, each key in the value is looked up in the `fields` directive,
 and used to find a Sureberus schema to apply to the value associated with that key in the dictionary being validated.

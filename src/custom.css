@@ -17,3 +17,55 @@
   padding: 0.5em;
   border-radius: 5px;
 }
+
+
+.sureberus-example {
+  display: flex;
+  align-items: stretch;
+
+  border-left: solid 3px;
+  border-right: solid 3px;
+  border-color: black;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding: 0.5em;
+  border-radius: 8px;
+  margin-bottom: 5px;
+}
+
+.sureberus-example header {
+  font-weight: bold;
+}
+
+
+.sureberus-example-header {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
+.sureberus-example .sureberus-schema {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sureberus-code-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  background: lightgray;
+  padding: 0.5em;
+  max-width: fit-content;
+}
+
+.sureberus-example .sureberus-tests {
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.sureberus-test {
+  margin-bottom: 5px;
+}

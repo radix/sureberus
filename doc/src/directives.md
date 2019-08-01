@@ -221,7 +221,7 @@ fields:
 <valid-input>{"obj_type": "choice_a", "configuration": {"config_item": 3}}</valid-input>
 </test>
 <test>
-<valid-input>{"obj_type": "choice_b", "configuration": {"config_item": true}}</valid-input>
+<valid-input>{"obj_type": "choice_b", "configuration": {"config_item": True}}</valid-input>
 </test>
 
 </example>
@@ -270,6 +270,17 @@ By default, you can pass `"to_list"` or `"to_set"` to convert the value to a lis
 It's important to note that this function is called *before* all other directives that might reject a value.
 This is a good directive to use if you want to normalize invalid documents to a form that can be considered valid.
 
+
+<example>
+<py-schema>
+{"type": "integer", "coerce": lambda i: i + 1}
+</py-schema>
+<test>
+<input>3</input>
+<output>4</output>
+</test>
+</example>
+
 ## coerce_post
 
 **Transformation Directive**<br>
@@ -285,6 +296,26 @@ Unlike `coerce`, this function is applied *after* all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.
 
 </div>
+
+<example>
+<py-schema>
+{
+  "type": "integer",
+  # note that this schema does *not* allow None as input,
+  # and yet the coerce_post can produce it as output
+  "coerce_post": lambda i: None if i == 0 else i
+}
+</py-schema>
+<test>
+<input>1</input>
+<output>1</output>
+</test>
+<test>
+<input>0</input>
+<output>None</output>
+</test>
+</example>
+
 
 ## coerce_with_context
 
@@ -433,7 +464,7 @@ type: dict
 keyschema: {type: integer}
 </yaml-schema>
 <test>
-<valid-input>{42: "hello", -500: null}</valid-input>
+<valid-input>{42: "hello", -500: None}</valid-input>
 </test>
 <test>
 <input>{"hello": 42}</input>
@@ -529,7 +560,7 @@ type: integer
 nullable: true
 </yaml-schema>
 <test>
-<valid-input>null</valid-input>
+<valid-input>None</valid-input>
 </test>
 </example>
 
@@ -593,7 +624,7 @@ fields:
   num2: reusable_schema
 </yaml-schema>
 <test>
-<valid-input>{num1: 0, num2: 30}</valid-input>
+<valid-input>{"num1": 0, "num2": 30}</valid-input>
 </test>
 </example>
 

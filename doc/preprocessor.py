@@ -7,6 +7,7 @@ from xml.etree import ElementTree as XML
 
 import yaml
 
+import sureberus
 from sureberus import errors as E, normalize_schema
 
 
@@ -64,7 +65,10 @@ def replace_example(example):
         if child.tag == "yaml-schema":
             schema_type = "yaml"
             schema = child.text
-        if child.tag == "test":
+        elif child.tag == "py-schema":
+            schema_type = "python"
+            schema = child.text
+        elif child.tag == "test":
             test = {}
             for test_child in child:
                 if test_child.tag == "valid-input":
@@ -84,13 +88,17 @@ def replace_example(example):
 def handle_example(schema_type, raw_schema, tests):
     if schema_type == "yaml":
         schema = yaml.safe_load(raw_schema)
+    elif schema_type == "python":
+        schema = eval(raw_schema, vars(sureberus))
+    else:
+        raise Exception("Sorry, bad schema type {}".format(schema_type))
     dbg("What's the schema?", schema)
     for test in tests:
-        input_doc = yaml.safe_load(test["input"])
+        input_doc = eval(test["input"])
         if test.get("valid"):
             test_normalize(schema, input_doc, input_doc)
         elif "output" in test:
-            test_normalize(schema, input_doc, yaml.safe_load(test["output"]))
+            test_normalize(schema, input_doc, eval(test["output"]))
         elif "error" in test:
             error_expr = "errors." + test["error"]
             expected_error = eval(error_expr, {"errors": E})

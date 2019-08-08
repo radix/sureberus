@@ -390,7 +390,7 @@ fields:
 <div class="sureberus-test">
 <div class="sureberus-input">
     <header>Valid input</header>
-    <div class="sureberus-code-content">{"obj_type": "choice_b", "configuration": {"config_item": true}}</div>
+    <div class="sureberus-code-content">{"obj_type": "choice_b", "configuration": {"config_item": True}}</div>
 </div>
 </div>
 </div>
@@ -436,6 +436,25 @@ Or, if the directive is a string, look up the <a href="#coerce_registry">registe
 By default, you can pass <code>&quot;to_list&quot;</code> or <code>&quot;to_set&quot;</code> to convert the value to a list or set, if the value is not already a list or set, respectively.</p>
 <p>It's important to note that this function is called <em>before</em> all other directives that might reject a value.
 This is a good directive to use if you want to normalize invalid documents to a form that can be considered valid.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>python schema</header>
+    <div class="sureberus-code-content">{&quot;type&quot;: &quot;integer&quot;, &quot;coerce&quot;: lambda i: i + 1}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Input</header>
+    <div class="sureberus-code-content">3</div>
+</div>
+<div class="sureberus-output">
+    <header>Output</header>
+    <div class="sureberus-code-content">4</div>
+</div>
+</div>
+</div>
+</div>
 <h2><a class="header" href="#coerce_post" id="coerce_post">coerce_post</a></h2>
 <p><strong>Transformation Directive</strong><br>
 <strong>type</strong> Python callable <code>(value) -&gt; new value</code>, OR a string naming a registered coerce function</p>
@@ -445,6 +464,40 @@ By default, you can pass <code>&quot;to_list&quot;</code> or <code>&quot;to_set&
 <div class="sureberus-info">
 <p>Unlike <code>coerce</code>, this function is applied <em>after</em> all other directives,
 so it's allowed to return values that wouldn't validate according to other directives in your schema.</p>
+</div>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>python schema</header>
+    <div class="sureberus-code-content">{
+  &quot;type&quot;: &quot;integer&quot;,
+  # note that this schema does *not* allow None as input,
+  # and yet the coerce_post can produce it as output
+  &quot;coerce_post&quot;: lambda i: None if i == 0 else i
+}</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Input</header>
+    <div class="sureberus-code-content">1</div>
+</div>
+<div class="sureberus-output">
+    <header>Output</header>
+    <div class="sureberus-code-content">1</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Input</header>
+    <div class="sureberus-code-content">0</div>
+</div>
+<div class="sureberus-output">
+    <header>Output</header>
+    <div class="sureberus-code-content">None</div>
+</div>
+</div>
+</div>
 </div>
 <h2><a class="header" href="#coerce_with_context" id="coerce_with_context">coerce_with_context</a></h2>
 <p><strong>Transformation Directive</strong><br>
@@ -524,6 +577,8 @@ and used to find a Sureberus schema to apply to the value associated with that k
 <li><code>excludes</code>: (<code>list of strings</code>) Specifies a list of keys which <em>must not exist</em> on the dictionary for this schema to validate.</li>
 <li><code>default</code>: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
 If you want to default a field to an empty list or dict, do <em>not</em> use <code>default: []</code>. Instead use <code>default_setter: &quot;list&quot;</code>.</li>
+<li><code>default_copy</code>: (object) A value to use as a default if the key is missing, just like <code>default</code>.
+The difference is that this directive causes a deep copy to be made each time it's inserted into a document, so it's safe to use values like <code>[]</code> and <code>{}</code>.</li>
 <li><code>default_setter</code>: (Python callable of <code>(dict) -&gt; value</code>, OR a string)
 A Python function to call if the key was not present in the input.
 It is passed the dictionary, and its return value will be used as the default.
@@ -554,22 +609,6 @@ fields:
 </div>
 </div>
 </div>
-<h2><a class="header" href="#modify_context" id="modify_context">modify_context</a></h2>
-<p><strong>Meta Directive</strong><br>
-<strong>type</strong> Python callable <code>(value, Context) -&gt; Context</code><br>
-<strong>Introduced in</strong> Sureberus 0.8.0</p>
-<p>Run a Python function to allow it to modify the current Context.
-The Python function will be passed the value and the current Context, and must return a new Context.
-This is most often used to call <code>context.set_tag(key, value)</code> to add a new tag to the Context,
-to later be used with <a href="#choose_schema"><code>choose_schema</code></a>.</p>
-<p>See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
-<h2><a class="header" href="#modify_context_registry" id="modify_context_registry">modify_context_registry</a></h2>
-<p><strong>Meta Directive</strong><br>
-<strong>type</strong> <code>dict</code> of <code>str</code> (modify_context names) to Python callables<br>
-<strong>Introduced in</strong> Sureberus 0.9.0</p>
-<p>This allows you to register functions with a name that can be used in the <a href="#modify_context"><code>modify_context</code></a> directive.
-Each key in the directive should be a name, and the value should be a Python function that acts like a <code>modify_context</code> function.
-Then you can pass the name of the registered function to <code>modify_context</code> to invoke the registered function.</p>
 <h2><a class="header" href="#keyschema" id="keyschema">keyschema</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> Sureberus schema</p>
@@ -585,7 +624,7 @@ keyschema: {type: integer}</div>
 <div class="sureberus-test">
 <div class="sureberus-input">
     <header>Valid input</header>
-    <div class="sureberus-code-content">{42: "hello", -500: null}</div>
+    <div class="sureberus-code-content">{42: "hello", -500: None}</div>
 </div>
 </div>
 <div class="sureberus-test">
@@ -630,6 +669,7 @@ max: 50</div>
 </div>
 </div>
 </div>
+<p>See also <a href="#min"><code>min</code></a>.</p>
 <h2><a class="header" href="#maxlength" id="maxlength">maxlength</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Number</p>
@@ -663,6 +703,12 @@ max: 50</div>
 </div>
 </div>
 </div>
+<h2><a class="header" href="#metadata" id="metadata">metadata</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> dict<br>
+<strong>Introduced in</strong> Sureberus 0.13.0</p>
+<p>This directive is unused by Sureberus.
+It is meant for embedding application-specific metadata in a Sureberus schema.</p>
 <h2><a class="header" href="#min" id="min">min</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> Number (or anything that supports the comparison operators)</p>
@@ -693,6 +739,22 @@ min: -1</div>
 </div>
 </div>
 </div>
+<h2><a class="header" href="#modify_context" id="modify_context">modify_context</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> Python callable <code>(value, Context) -&gt; Context</code><br>
+<strong>Introduced in</strong> Sureberus 0.8.0</p>
+<p>Run a Python function to allow it to modify the current Context.
+The Python function will be passed the value and the current Context, and must return a new Context.
+This is most often used to call <code>context.set_tag(key, value)</code> to add a new tag to the Context,
+to later be used with <a href="#choose_schema"><code>choose_schema</code></a>.</p>
+<p>See <a href="./schema-selection.html">Dynamically selecting schemas</a> for more information.</p>
+<h2><a class="header" href="#modify_context_registry" id="modify_context_registry">modify_context_registry</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>dict</code> of <code>str</code> (modify_context names) to Python callables<br>
+<strong>Introduced in</strong> Sureberus 0.9.0</p>
+<p>This allows you to register functions with a name that can be used in the <a href="#modify_context"><code>modify_context</code></a> directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a <code>modify_context</code> function.
+Then you can pass the name of the registered function to <code>modify_context</code> to invoke the registered function.</p>
 <h2><a class="header" href="#nullable" id="nullable">nullable</a></h2>
 <p><strong>Validation Directive</strong><br>
 <strong>type</strong> <code>bool</code></p>
@@ -713,7 +775,7 @@ nullable: true</div>
 <div class="sureberus-test">
 <div class="sureberus-input">
     <header>Valid input</header>
-    <div class="sureberus-code-content">null</div>
+    <div class="sureberus-code-content">None</div>
 </div>
 </div>
 </div>
@@ -784,7 +846,7 @@ fields:
 <div class="sureberus-test">
 <div class="sureberus-input">
     <header>Valid input</header>
-    <div class="sureberus-code-content">{num1: 0, num2: 30}</div>
+    <div class="sureberus-code-content">{"num1": 0, "num2": 30}</div>
 </div>
 </div>
 </div>
@@ -906,6 +968,7 @@ in a context where the tag doesn't vary based on anything.</p>
     &quot;float&quot;: (float,) + six.integer_types,
     &quot;number&quot;: (float,) + six.integer_types,
     &quot;dict&quot;: dict,
+    &quot;set&quot;: set,
     &quot;list&quot;: list,
     &quot;string&quot;: six.string_types,
     &quot;boolean&quot;: bool,

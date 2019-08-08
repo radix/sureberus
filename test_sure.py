@@ -175,8 +175,8 @@ def test_default_copy():
     schema = S.Dict(fields={"foo": {"default_copy": []}})
     r1 = normalize_schema(schema, {})
     r2 = normalize_schema(schema, {})
-    r1['foo'].append(1)
-    assert r2['foo'] == []
+    r1["foo"].append(1)
+    assert r2["foo"] == []
 
 
 def test_default_setter():
@@ -1368,3 +1368,7 @@ def test_when_type_is_not_found():
         value_type=type("hi"), selectable_types=["integer"], stack=()
     )
 
+
+def test_metadata():
+    schema = {"metadata": {"foo": "bar"}}
+    normalize_schema(schema, {"foo": []}) == {"foo": []}

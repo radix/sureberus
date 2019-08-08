@@ -428,31 +428,6 @@ fields:
 </example>
 
 
-## modify_context
-
-**Meta Directive**<br>
-**type** Python callable `(value, Context) -> Context`<br>
-**Introduced in** Sureberus 0.8.0
-
-Run a Python function to allow it to modify the current Context.
-The Python function will be passed the value and the current Context, and must return a new Context.
-This is most often used to call `context.set_tag(key, value)` to add a new tag to the Context,
-to later be used with [`choose_schema`](#choose_schema).
-
-See [Dynamically selecting schemas](./schema-selection.md) for more information.
-
-
-## modify_context_registry
-
-**Meta Directive**<br>
-**type** `dict` of `str` (modify_context names) to Python callables<br>
-**Introduced in** Sureberus 0.9.0
-
-This allows you to register functions with a name that can be used in the [`modify_context`](#modify_context) directive.
-Each key in the directive should be a name, and the value should be a Python function that acts like a `modify_context` function.
-Then you can pass the name of the registered function to `modify_context` to invoke the registered function.
-
-
 ## keyschema
 
 **Meta Directive**<br>
@@ -496,6 +471,8 @@ max: 50
 </test>
 </example>
 
+See also [`min`](#min).
+
 
 ## maxlength
 
@@ -519,6 +496,16 @@ maxlength: 2
 </example>
 
 
+## metadata
+
+**Meta Directive**<br>
+**type** dict<br>
+**Introduced in** Sureberus 0.13.0
+
+This directive is unused by Sureberus.
+It is meant for embedding application-specific metadata in a Sureberus schema.
+
+
 ## min
 
 **Validation Directive**<br>
@@ -539,6 +526,31 @@ min: -1
 <error>OutOfBounds(number=-2, min=-1, max=None, stack=())</error>
 </test>
 </example>
+
+
+## modify_context
+
+**Meta Directive**<br>
+**type** Python callable `(value, Context) -> Context`<br>
+**Introduced in** Sureberus 0.8.0
+
+Run a Python function to allow it to modify the current Context.
+The Python function will be passed the value and the current Context, and must return a new Context.
+This is most often used to call `context.set_tag(key, value)` to add a new tag to the Context,
+to later be used with [`choose_schema`](#choose_schema).
+
+See [Dynamically selecting schemas](./schema-selection.md) for more information.
+
+
+## modify_context_registry
+
+**Meta Directive**<br>
+**type** `dict` of `str` (modify_context names) to Python callables<br>
+**Introduced in** Sureberus 0.9.0
+
+This allows you to register functions with a name that can be used in the [`modify_context`](#modify_context) directive.
+Each key in the directive should be a name, and the value should be a Python function that acts like a `modify_context` function.
+Then you can pass the name of the registered function to `modify_context` to invoke the registered function.
 
 
 ## nullable

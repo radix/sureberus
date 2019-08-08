@@ -226,6 +226,10 @@ class _ShortCircuit(object):
 class Normalizer(object):
     schema = attr.ib()
 
+    @directive("metadata")
+    def handle_metadata(self, value, directive_value, ctx):
+        return (value, ctx)
+
     @directive("default_registry")
     def handle_default_registry(self, value, directive_value, ctx):
         return (value, ctx.register_defaults(directive_value))

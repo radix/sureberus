@@ -208,10 +208,21 @@ def test_default_default_setters():
         schema={
             "list": S.List(default_setter="list"),
             "dict": S.Dict(default_setter="dict"),
-            "set": S.Dict(default_setter="set"),
+            "set": S.Set(default_setter="set"),
         }
     )
     assert normalize_schema(schema, {}) == {"list": [], "dict": {}, "set": set()}
+
+
+def test_default_then_normalized():
+    schema = S.Dict(
+        fields={
+            "subdict": S.Dict(
+                default_setter="dict", fields={"otherthing": S.Integer(default=0)}
+            )
+        }
+    )
+    assert normalize_schema(schema, {}) == {"subdict": {"otherthing": 0}}
 
 
 def test_normalize_schema():

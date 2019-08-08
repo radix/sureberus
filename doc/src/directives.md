@@ -748,6 +748,7 @@ These are the types available:
     "float": (float,) + six.integer_types,
     "number": (float,) + six.integer_types,
     "dict": dict,
+    "set": set,
     "list": list,
     "string": six.string_types,
     "boolean": bool,

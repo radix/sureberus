@@ -143,6 +143,8 @@ def _normalize_dict(dict_schema, value, ctx):
             new_dict[new_key] = value[key]
         if new_key in new_dict:
             new_dict[new_key] = _normalize_schema(
+                # we push the *original* key onto the stack so users still see error
+                # messages in terms of their actual input
                 key_schema, new_dict[new_key], ctx.push_stack(key)
             )
             excludes = key_schema.get("excludes", [])

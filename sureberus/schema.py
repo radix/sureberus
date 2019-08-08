@@ -87,3 +87,7 @@ def Boolean(required=True, **kwargs):
 
 def List(required=True, _d=None, **kwargs):
     return mk(_d, kwargs, type="list", required=required)
+
+
+def Set(**kwargs):
+    return mk(None, kwargs, type="set")

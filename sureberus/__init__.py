@@ -137,11 +137,13 @@ def _normalize_dict(dict_schema, value, ctx):
             replacement = _get_default(key, key_schema, value, ctx)
             if replacement is not _marker:
                 new_dict[new_key] = replacement
-            elif key_schema.get("required", False) == True:
+            elif key_schema.get("required", False):
                 raise E.DictFieldNotFound(key, value=value, stack=ctx.stack)
-        if key in value:
+        else:
+            new_dict[new_key] = value[key]
+        if new_key in new_dict:
             new_dict[new_key] = _normalize_schema(
-                key_schema, value[key], ctx.push_stack(key)
+                key_schema, new_dict[new_key], ctx.push_stack(key)
             )
             excludes = key_schema.get("excludes", [])
             if not isinstance(excludes, list):
@@ -179,6 +181,7 @@ TYPES_BY_PRECEDENCE = [
     ),  # cerberus documentation lies: integers are also considered floats.
     ("number", (float,) + six.integer_types),
     ("dict", dict),
+    ("set", set),
     ("list", list),
     ("string", six.string_types),
     ("boolean", bool),

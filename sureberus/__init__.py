@@ -160,14 +160,18 @@ def _get_default(key, key_schema, doc, ctx):
     default = key_schema.get("default", _marker)
     if default is not _marker:
         return default
-    else:
-        default_setter = key_schema.get("default_setter", None)
-        if default_setter is not None:
-            default_setter = ctx.resolve_default_setter(default_setter)
-            try:
-                return default_setter(doc)
-            except Exception as e:
-                raise E.DefaultSetterUnexpectedError(key, doc, e, ctx.stack)
+
+    default_copy = key_schema.get("default_copy", _marker)
+    if default_copy is not _marker:
+        return deepcopy(default_copy)
+
+    default_setter = key_schema.get("default_setter", None)
+    if default_setter is not None:
+        default_setter = ctx.resolve_default_setter(default_setter)
+        try:
+            return default_setter(doc)
+        except Exception as e:
+            raise E.DefaultSetterUnexpectedError(key, doc, e, ctx.stack)
     return _marker
 
 
@@ -619,7 +623,7 @@ def _normalize_schema(schema, value, ctx):
     known_directives = set(directive["directive"] for directive in directives)
     # These are handled outside of the directive machinery
     known_directives.update(
-        {"excludes", "required", "default", "default_setter", "rename"}
+        {"excludes", "required", "default", "default_copy", "default_setter", "rename"}
     )
     unknown_directives = set(schema.keys()) - known_directives
     if unknown_directives:

@@ -404,6 +404,8 @@ Each value is a Sureberus schema that can have a few **extra** directives, speci
 * `excludes`: (`list of strings`) Specifies a list of keys which *must not exist* on the dictionary for this schema to validate.
 * `default`: (object) A value to associate with the key in the resulting dict if the key was not present in the input.
   If you want to default a field to an empty list or dict, do *not* use `default: []`. Instead use `default_setter: "list"`.
+* `default_copy`: (object) A value to use as a default if the key is missing, just like `default`.
+  The difference is that this directive causes a deep copy to be made each time it's inserted into a document, so it's safe to use values like `[]` and `{}`.
 * `default_setter`: (Python callable of `(dict) -> value`, OR a string)
   A Python function to call if the key was not present in the input.
   It is passed the dictionary, and its return value will be used as the default.

@@ -171,6 +171,14 @@ def test_default():
     assert new_dict == {"num": 0}
 
 
+def test_default_copy():
+    schema = S.Dict(fields={"foo": {"default_copy": []}})
+    r1 = normalize_schema(schema, {})
+    r2 = normalize_schema(schema, {})
+    r1['foo'].append(1)
+    assert r2['foo'] == []
+
+
 def test_default_setter():
     old_dict = {"foo": 0}
     schema = S.Dict(

@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from copy import deepcopy
+from datetime import datetime, date
 from inspect import getmembers
 import re
 import warnings
@@ -191,6 +192,8 @@ TYPES_BY_PRECEDENCE = [
     ("list", list),
     ("string", six.string_types),
     ("boolean", bool),
+    ("date", date),
+    ("datetime", datetime),
 ]
 TYPES = dict(TYPES_BY_PRECEDENCE)
 

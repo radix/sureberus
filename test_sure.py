@@ -5,6 +5,7 @@ import pytest
 from sureberus import normalize_dict, normalize_schema
 from sureberus import schema as S
 from sureberus import errors as E
+from datetime import date, datetime
 
 
 id_int = {"id": S.Integer()}
@@ -13,6 +14,31 @@ id_int = {"id": S.Integer()}
 def test_dict_of_int():
     sample = {"id": 3}
     assert normalize_dict(id_int, sample) == sample
+
+
+def test_dict_of_date():
+    id_date = {"id": S.Date()}
+    sample_date = {"id": datetime.now().date()}
+    sample_datetime = {"id": datetime.now()}
+    assert normalize_dict(id_date, sample_datetime) == sample_datetime
+    assert normalize_dict(id_date, sample_date) == sample_date
+
+    with pytest.raises(E.BadType):
+        normalize_dict(id_date, {"id": 3})
+
+
+def test_dict_of_datetime():
+    id_datetime = {"id": S.DateTime()}
+    sample_date = {"id": datetime.now().date()}
+    sample_datetime = {"id": datetime.now()}
+
+    assert normalize_dict(id_datetime, sample_datetime) == sample_datetime
+    # Dates are not datetimes
+    with pytest.raises(E.BadType):
+        assert normalize_dict(id_datetime, sample_date) == sample_date
+
+    with pytest.raises(E.BadType):
+        normalize_dict(id_datetime, {"id": 3})
 
 
 @pytest.mark.parametrize(

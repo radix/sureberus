@@ -91,3 +91,11 @@ def List(required=True, _d=None, **kwargs):
 
 def Set(**kwargs):
     return mk(None, kwargs, type="set")
+
+
+def Date(required=True, **kwargs):
+    return mk(None, kwargs, type="date", required=required)
+
+
+def DateTime(required=True, **kwargs):
+    return mk(None, kwargs, type="datetime", required=required)

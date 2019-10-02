@@ -498,6 +498,12 @@ class Normalizer(object):
             raise E.MaxLengthExceeded(value, directive_value, ctx.stack)
         return (value, ctx)
 
+    @directive("minlength")
+    def handle_minlength(self, value, directive_value, ctx):
+        if len(value) < directive_value:
+            raise E.MinLengthNotReached(value, directive_value, ctx.stack)
+        return (value, ctx)
+
     @directive("min")
     def handle_min(self, value, directive_value, ctx):
         if value < directive_value:

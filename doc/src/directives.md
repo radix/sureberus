@@ -496,6 +496,28 @@ maxlength: 2
 </example>
 
 
+## minlength
+
+**Validation Directive**<br>
+**type** Number
+
+Raises an exception if the length of the value is less than the given number.
+
+<example>
+<yaml-schema>
+minlength: 10
+</yaml-schema>
+<test>
+<input>[1,2,3]</input>
+<error>MinLengthNotReached(value=[1,2,3], length=10, stack=())</error>
+</test>
+<test>
+<input>"abcdef"</input>
+<error>MinLengthNotReached(value="abcdef", length=10, stack=())</error>
+</test>
+</example>
+
+
 ## metadata
 
 **Meta Directive**<br>

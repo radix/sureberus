@@ -328,6 +328,14 @@ def test_maxlength():
         normalize_schema({"maxlength": 3}, [0, 1, 2, 3])
 
 
+def test_minlength():
+    with pytest.raises(E.MinLengthNotReached):
+        normalize_schema({"minlength": 5}, "foob")
+
+    with pytest.raises(E.MinLengthNotReached):
+        normalize_schema({"minlength": 5}, [0, 1, 2, 3])
+
+
 def test_rename():
     schema = S.Dict(schema={"foo": {"rename": "moo"}})
     val = {"foo": 2}

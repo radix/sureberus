@@ -116,6 +116,14 @@ class MaxLengthExceeded(SureError):
 
 
 @attr.s
+class MinLengthNotReached(SureError):
+    fmt = "Value {value!r} is less than min length of {length}"
+    value = attr.ib()
+    length = attr.ib()
+    stack = attr.ib()
+
+
+@attr.s
 class DisallowedField(SureError):
     fmt = "Because {field!r} is defined, {excluded!r} must not be present"
     field = attr.ib()

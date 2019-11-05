@@ -350,6 +350,16 @@ Each key in the directive should be a name, and the value should be a Python fun
 just like the functions you would normally pass to `coerce`.
 Then you can pass the name of the registered function to `coerce` or `coerce_post` to invoke the registered function.
 
+## debug
+
+**Meta Directive**<br>
+**type** `str`<br>
+**Introduced In** Sureberus 0.14.0
+
+Print out some diagnostic information when this schema is being applied.
+The value given to the directive will be included in the output message.
+
+
 ## default_registry
 
 **Meta Directive**<br>
@@ -500,6 +510,7 @@ maxlength: 2
 
 **Validation Directive**<br>
 **type** Number
+**Introduced in** Sureberus 0.14.0
 
 Raises an exception if the length of the value is less than the given number.
 

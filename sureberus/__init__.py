@@ -226,6 +226,16 @@ class _ShortCircuit(object):
 class Normalizer(object):
     schema = attr.ib()
 
+    @directive("debug")
+    def handle_debug(self, value, directive_value, ctx):
+        if directive_value:
+            print("[SUREBERUS DEBUG]", directive_value)
+            import yaml
+            print("[SCHEMA]")
+            print(yaml.dump(self.schema))
+            print("[VALUE]", value)
+        return (value, ctx)
+
     @directive("metadata")
     def handle_metadata(self, value, directive_value, ctx):
         return (value, ctx)

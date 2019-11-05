@@ -132,6 +132,15 @@ def _normalize_dict(dict_schema, value, ctx):
     for key, key_schema in dict_schema.items():
         if isinstance(key_schema, str):
             key_schema = ctx.find_schema(key_schema)
+        if "schema_ref" in key_schema:
+            # The key_schema might have a schema_ref that merges in defaults and
+            # renames and who knows what else!
+            # It's pretty ugly that we have to deal with this here,
+            # but then all of the `default`, `required`, `rename` etc directives are
+            # pretty hacky in general!
+            key_schema = key_schema.copy()
+            reffed_schema = ctx.find_schema(key_schema.pop("schema_ref"))
+            key_schema = _merge_schemas(reffed_schema, key_schema)
         new_key = key_schema.get("rename", key)
         if key not in value:
             replacement = _get_default(key, key_schema, value, ctx)

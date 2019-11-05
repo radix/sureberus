@@ -1084,6 +1084,17 @@ def test_schema_ref_with_defaults_and_nullables():
     assert normalize_schema(schema, {}) == {"non_required": None}
 
 
+def test_schema_ref_defaults():
+    schema = {
+        "registry": {"common": {"type": "integer", "default": 0}},
+        "type": "dict",
+        "fields": {
+            "thefield": {"schema_ref": "common"},
+        }
+    }
+    assert normalize_schema(schema, {}) == {"thefield": 0}
+
+
 def test_schema_ref_merge_fields():
     schema = {
         "registry": {"common": S.Dict(fields={"common_field": S.String()})},

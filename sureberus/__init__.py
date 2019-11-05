@@ -145,7 +145,9 @@ def _normalize_dict(dict_schema, value, ctx):
             new_dict[new_key] = _normalize_schema(
                 # we push the *original* key onto the stack so users still see error
                 # messages in terms of their actual input
-                key_schema, new_dict[new_key], ctx.push_stack(key)
+                key_schema,
+                new_dict[new_key],
+                ctx.push_stack(key),
             )
             excludes = key_schema.get("excludes", [])
             if not isinstance(excludes, list):
@@ -230,9 +232,19 @@ class Normalizer(object):
     def handle_debug(self, value, directive_value, ctx):
         if directive_value:
             print("[SUREBERUS DEBUG]", directive_value)
-            import yaml
             print("[SCHEMA]")
-            print(yaml.dump(self.schema))
+            try:
+                import yaml
+
+                print(yaml.dump(self.schema))
+            except Exception:
+                import traceback
+
+                traceback.print_exc()
+                print(
+                    "[SUREBERUS] Couldn't serialize schema to yaml; using bad formatting"
+                )
+                print(self.schema)
             print("[VALUE]", value)
         return (value, ctx)
 
@@ -264,7 +276,7 @@ class Normalizer(object):
     def handle_schema_ref(self, value, directive_value, ctx):
         og_schema = self.schema.copy()
         del og_schema["schema_ref"]
-        new_schema = _merge_schemas(og_schema, ctx.find_schema(directive_value))
+        new_schema = _merge_schemas(ctx.find_schema(directive_value), og_schema)
         return _ShortCircuit(_normalize_schema(new_schema, value, ctx))
 
     @directive("allow_unknown")
@@ -281,7 +293,9 @@ class Normalizer(object):
             raise E.CoerceUnexpectedError(directive, value, e, ctx.stack)
 
     @directive("coerce_with_context")
-    def handle_coerce_with_context(self, value, directive_value, ctx, directive="coerce_with_context"):
+    def handle_coerce_with_context(
+        self, value, directive_value, ctx, directive="coerce_with_context"
+    ):
         try:
             return (ctx.resolve_coerce(directive_value)(value, ctx), ctx)
         except E.SureError:
@@ -616,10 +630,21 @@ class Normalizer(object):
 
     @directive("coerce_post_with_context")
     def handle_coerce_post_with_context(self, value, directive_value, ctx):
-        return self.handle_coerce_with_context(value, directive_value, ctx, directive="coerce_post_with_context")
+        return self.handle_coerce_with_context(
+            value, directive_value, ctx, directive="coerce_post_with_context"
+        )
 
 
 def _merge_schemas(schema1, schema2):
+    """
+    Merge two schemas together, with the second one taking precedence over the first one.
+
+    Various directives are merged smartly, such that their individual components are
+    merged together, again with the second schema taking precedence:
+    - `metadata`
+    - all of the registries
+    - dict `fields`
+    """
     # This feature was implemented post-`fields`, so we don't need
     # backwards-compatibility with `schema`. On the other hand, if we
     # generalize this to being backwards-compatible, we could probably use it
@@ -628,9 +653,18 @@ def _merge_schemas(schema1, schema2):
     # easier if we just used Pyrsistent.
     new_schema = schema1.copy()
     schema2 = schema2.copy()
-    if "fields" in new_schema and "fields" in schema2:
-        new_schema["fields"] = new_schema["fields"].copy()
-        new_schema["fields"].update(schema2.pop("fields"))
+    for directive in [
+        "fields",
+        "metadata",
+        "default_registry",
+        "registry",
+        "coerce_registry",
+        "validator_registry",
+        "modify_context_registry",
+    ]:
+        if directive in new_schema and directive in schema2:
+            new_schema[directive] = new_schema[directive].copy()
+            new_schema[directive].update(schema2.pop(directive))
     new_schema.update(schema2)
     return new_schema
 

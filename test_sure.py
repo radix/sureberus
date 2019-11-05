@@ -1101,6 +1101,19 @@ def test_schema_ref_merge_fields():
     assert normalize_schema(schema, acceptable) == acceptable
 
 
+def test_schema_ref_merge_field_prefers_local():
+    schema = {
+        "registry": {
+            "common": {"type": "dict", "fields": {"thefield": {"type": "integer"}}}
+        },
+        "schema_ref": "common",
+        "fields": {
+            "thefield": {"type": "integer", "default": 0},
+        }
+    }
+    assert normalize_schema(schema, {}) == {"thefield": 0}
+
+
 def test_schema_ref_registry():
     """
     When the referrer and the referent both have a schema registry, they are merged

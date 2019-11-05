@@ -526,6 +526,12 @@ The function can access tags stored in the context with the <code>Context.get_ta
 Each key in the directive should be a name, and the value should be a Python function that takes a single argument and returns a new value,
 just like the functions you would normally pass to <code>coerce</code>.
 Then you can pass the name of the registered function to <code>coerce</code> or <code>coerce_post</code> to invoke the registered function.</p>
+<h2><a class="header" href="#debug" id="debug">debug</a></h2>
+<p><strong>Meta Directive</strong><br>
+<strong>type</strong> <code>str</code><br>
+<strong>Introduced In</strong> Sureberus 0.14.0</p>
+<p>Print out some diagnostic information when this schema is being applied.
+The value given to the directive will be included in the output message.</p>
 <h2><a class="header" href="#default_registry" id="default_registry">default_registry</a></h2>
 <p><strong>Meta Directive</strong><br>
 <strong>type</strong> <code>dict</code> of <code>str</code> (setter names) to Python callables<br>
@@ -705,6 +711,40 @@ max: 50</div>
 <div class="sureberus-error">
     <header>Error</header>
     <div class="sureberus-code-content">&lt;At root: Value &#x27;abcdef&#x27; is greater than max length of 2&gt;</div>
+</div>
+</div>
+</div>
+</div>
+<h2><a class="header" href="#minlength" id="minlength">minlength</a></h2>
+<p><strong>Validation Directive</strong><br>
+<strong>type</strong> Number
+<strong>Introduced in</strong> Sureberus 0.14.0</p>
+<p>Raises an exception if the length of the value is less than the given number.</p>
+<header class="sureberus-example-header">Example</header>
+<div class="sureberus-example">
+<div class="sureberus-schema">
+    <header>yaml schema</header>
+    <div class="sureberus-code-content">minlength: 10</div>
+</div>
+<div class="sureberus-tests">
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">[1,2,3]</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value [1, 2, 3] is less than min length of 10&gt;</div>
+</div>
+</div>
+<div class="sureberus-test">
+<div class="sureberus-input">
+    <header>Erroneous input</header>
+    <div class="sureberus-code-content">"abcdef"</div>
+</div>
+<div class="sureberus-error">
+    <header>Error</header>
+    <div class="sureberus-code-content">&lt;At root: Value &#x27;abcdef&#x27; is less than min length of 10&gt;</div>
 </div>
 </div>
 </div>

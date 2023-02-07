@@ -111,11 +111,25 @@ INIT_CONTEXT = Context(
 
 
 def normalize_dict(dict_schema, value, stack=(), allow_unknown=False):
+    """Normalize a dictionary with a schema.
+
+    This is a legacy function. normalize_schema is preferred. This call:
+
+        normalize_dict(myschema, value)
+
+    should be replaced with this:
+
+        normalize_schema({"type": "dict", "fields": myschema}, value)
+    """
     ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
     return _normalize_dict(dict_schema, value, ctx)
 
 
 def normalize_schema(schema, value, stack=(), allow_unknown=False):
+    """Normalize a value with a schema.
+
+    This is the main entrypoint into sureberus. It will validate and normalize the given
+    value, returning a new value."""
     ctx = INIT_CONTEXT.set_allow_unknown(allow_unknown)
     return _normalize_schema(schema, value, ctx)
 

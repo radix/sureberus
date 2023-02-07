@@ -16,6 +16,20 @@ class SimpleSchemaError(SchemaError):
 
 
 class SureError(Exception):
+
+    def __reduce__(self):
+        # This is a workaround for a super obscure problem that make errors unpickleable
+        # in certain situations, when value, or parts of the schema, are unpickleable.
+        #
+        # First of all, why do we care about pickling exceptions? Because the python
+        # unittest code wants to pickle and unpickle exceptions when tests are run in
+        # parallel.
+        #
+        # So this is just a quick'n'dirty workaround to just serialize SureErrors as
+        # plain Exceptions with string messages. Printing an exception will be
+        # identical, but you will lose rich type info & individual fields.
+        return Exception, (str(self),)
+
     def __str__(self):
         stack = "root"
         stack += "".join("[{!r}]".format(el) for el in self.stack)

@@ -1,3 +1,5 @@
+import pickle
+import tempfile
 from copy import deepcopy
 
 import pytest
@@ -1404,3 +1406,15 @@ def test_when_type_is_not_found():
 def test_metadata():
     schema = {"metadata": {"foo": "bar"}}
     normalize_schema(schema, {"foo": []}) == {"foo": []}
+
+
+def test_pickling():
+    f = tempfile.TemporaryFile()
+    schema = {"type": "integer"}
+    try:
+        normalize_schema(schema, f)
+    except Exception as e:
+        error = e
+
+    newerror = pickle.loads(pickle.dumps(error))
+    assert str(newerror) == str(error)

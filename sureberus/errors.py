@@ -230,20 +230,3 @@ class RegisteredFunctionNotFound(SureError):
     setter = attr.ib()
     registry_name = attr.ib()
     stack = attr.ib()
-
-
-if __name__ == '__main__':
-    f = open("/tmp/blah", "w")
-    from sureberus import normalize_schema
-    import pickle
-    try:
-        normalize_schema({"type": "integer"}, f)
-    except Exception as e:
-        error = e
-    v = pickle.dumps(error)
-    print(v)
-    newv = pickle.loads(v)
-    print("OLD ERROR:")
-    print(error)
-    print("NEW ERROR:")
-    print(newv)
